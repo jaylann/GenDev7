@@ -4,10 +4,12 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.13"
 dependencies = [
+    "async-lru>=2.0.5",
     "fastapi>=0.115.12",
     "httpx[http2]>=0.28.1",
     "pandas>=2.2.3",
     "pydantic>=2.11.4",
+    "pydantic-settings>=2.9.1",
     "python-dotenv>=1.1.0",
     "python-multipart>=0.0.20",
     "redis>=6.0.0",
