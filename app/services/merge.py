@@ -60,36 +60,26 @@ def merge_offers(raw: List[Offer]) -> List[Offer]:
     seen: Dict[Tuple[str, str], Offer] = {}
 
     for offer in raw:
-        key = _key(offer)
-        offer_price = _effective_price(offer)
-        existing = seen.get(key)
+        offer: Offer
+        key: Tuple[str, str] = _key(offer)
+        offer_price: int = _effective_price(offer)
+        existing: Offer | None = seen.get(key)
 
         if existing is None:
             seen[key] = offer
-            logger.debug("Added offer for {}", key, extra={"price": offer_price})
+            logger.debug(f"Added offer for {key}", extra={"price": offer_price})
         else:
-            existing_price = _effective_price(existing)
+            existing_price: int = _effective_price(existing)
             if offer_price < existing_price:
                 seen[key] = offer
                 logger.debug(
-                    "Replaced offer for {}: {}¢ → {}¢",
-                    key,
-                    existing_price,
-                    offer_price
+                    f"Replaced offer for {key}: {existing_price}¢ → {offer_price}¢"
                 )
             else:
                 logger.debug(
-                    "Kept existing offer for {}: {}¢ ≤ {}¢",
-                    key,
-                    existing_price,
-                    offer_price
+                    f"Kept existing offer for {key}: {existing_price}¢ ≤ {offer_price}¢"
                 )
-
-    merged = list(seen.values())
+    merged: List[Offer] = list(seen.values())
     merged.sort(key=_effective_price)
-    logger.info(
-        "Merged {} raw offers into {} unique offers",
-        len(raw),
-        len(merged)
-    )
+    logger.info(f"Merged {len(raw)} raw offers into {len(merged)} unique offers")
     return merged

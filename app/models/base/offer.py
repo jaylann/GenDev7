@@ -3,7 +3,13 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional, Literal
 
-from pydantic import (BaseModel, Field, PositiveInt, field_validator, )
+from pydantic import (
+    BaseModel,
+    Field,
+    PositiveInt,
+    field_validator,
+    model_validator,
+)
 
 
 class VoucherKind(str, Enum):
@@ -94,16 +100,6 @@ class Offer(BaseModel):
         mapping = {"dsl": "DSL", "cable": "Cable", "fiber": "Fiber", "fibEr": "Fiber", "mobile": "Mobile"}
         return mapping.get(v.lower(), v)
 
-    @field_validator("tv_included", mode="before")
-    @classmethod
-    def _derive_tv_bool(cls, v, values):
-        """
-        Accept provider booleans **or** derive from *tv_package_name*.
-        """
-        if isinstance(v, bool):
-            return v
-        # Fall back to presence of a package name
-        return bool(values.get("tv_package_name"))
 
     @field_validator("voucher_value_percent")
     @classmethod
@@ -115,3 +111,14 @@ class Offer(BaseModel):
             if values.data.get("voucher_type") not in {VoucherKind.PERCENTAGE, VoucherKind.DISCOUNT}:
                 raise ValueError("voucher_value_percent set but voucher_type is not 'percentage' or 'discount'")
         return v
+
+
+    @model_validator(mode="after")
+    @classmethod
+    def _derive_tv_included(cls, values: Offer) -> Offer:
+        """
+        Derive tv_included from tv_package_name if not explicitly set.
+        """
+        if values.tv_included is None:
+            values.tv_included = bool(values.tv_package_name)
+        return values
