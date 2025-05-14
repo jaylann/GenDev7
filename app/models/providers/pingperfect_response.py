@@ -23,45 +23,6 @@ class PingPerfectResponse(BaseModel):
     voucher_value_cents: Optional[int]
     max_age: Optional[int]
 
-    @classmethod
-    def from_item(cls, item: Dict[str, Any]) -> Optional["PingPerfectResponse"]:
-        info = item.get("productInfo")
-        price = item.get("pricingDetails")
-        if info is None or price is None:
-            return None
-        provider_name = item.get("providerName", "")
-        speed_val = info.get("speed")
-        term_val = info.get("contractDurationInMonths")
-        product_uuid = uuid.uuid5(
-            uuid.NAMESPACE_DNS,
-            f"{provider_name}-{speed_val}-{term_val}",
-        ).hex
-        installation_raw = str(price.get("installationService", "")).strip().lower()
-        installation_included = installation_raw in {"yes", "included", "true"}
-        return cls(
-            provider_name=provider_name,
-            product_id=product_uuid,
-            speed_down_mbit=int(speed_val) if speed_val is not None else None,
-            connection_type=info.get("connectionType"),
-            data_cap_gb=(
-                int(info.get("limitFrom"))
-                if info.get("limitFrom") is not None
-                else None
-            ),
-            price_cents_month=(
-                int(price.get("monthlyCostInCent"))
-                if price.get("monthlyCostInCent")
-                else None
-            ),
-            contract_duration_months=int(term_val) if term_val is not None else None,
-            installation_service_included=installation_included,
-            tv_included=bool(info.get("tv")),
-            tv_package_name=info.get("tv"),
-            voucher_type=None,
-            voucher_value_cents=None,
-            max_age=int(info.get("maxAge")) if info.get("maxAge") is not None else None,
-        )
-
     def to_offer(self, provider_name: str) -> Offer:
         return Offer(
             provider=provider_name,

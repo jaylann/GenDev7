@@ -1,3 +1,4 @@
+# app/providers/verbyndich.py
 from __future__ import annotations
 
 import asyncio
@@ -15,30 +16,22 @@ from tenacity import (
     wait_exponential,
 )
 
-from .base import ProviderBase, ProviderError
-from ..core.config import get_settings
-from ..models import Address
-from ..models import Offer
-from ..models.providers.verbyndich_request import VerbynDichRequest
-from ..models.providers.verbyndich_response import VerbynDichResponse
+from app.core.config import get_settings
+from app.models import Address, Offer
+from .base import ProviderBase
+from ..factories.verbyndich_factory import VerbynDichFactory
 
-# --------------------------------------------------------------------------- #
-# Settings
-# --------------------------------------------------------------------------- #
 settings = get_settings()
 
-MAX_PAGES: int = 10  # hard cap – safety against runaway pagination
-PARALLEL: int = 5  # pages in flight
-PAGE_TMO: int = 15  # seconds
+# Pagination/cache constants
+MAX_PAGES = 10
+PARALLEL = 5
+PAGE_TMO = 15
+PAGE_FETCH_RETRY_ATTEMPTS = 3
+PAGE_FETCH_RETRY_EXP_MULTIPLIER = 1
+PAGE_FETCH_RETRY_EXP_MAX_WAIT = 10
 
-PAGE_FETCH_RETRY_ATTEMPTS: int = 3
-PAGE_FETCH_RETRY_EXP_MULTIPLIER: int = 1
-PAGE_FETCH_RETRY_EXP_MAX_WAIT: int = 10
 
-
-# --------------------------------------------------------------------------- #
-# Low-level page fetch with retry
-# --------------------------------------------------------------------------- #
 @alru_cache(maxsize=128)
 @retry(
     stop=stop_after_attempt(PAGE_FETCH_RETRY_ATTEMPTS),
@@ -49,13 +42,10 @@ PAGE_FETCH_RETRY_EXP_MAX_WAIT: int = 10
     retry=retry_if_exception_type((httpx.TimeoutException, httpx.HTTPStatusError)),
     reraise=True,
 )
-async def _page(client: httpx.AsyncClient, body: str, pg: int, api: str) -> dict:
-    """
-    POST one page of VerbynDich results.
-    """
+async def _fetch_page(client: httpx.AsyncClient, body: str, page: int) -> dict:
     r = await client.post(
-        api,
-        params={"apiKey": settings.verbyndich_api_key, "page": pg},
+        settings.verbyndich_base,
+        params={"apiKey": settings.verbyndich_api_key, "page": page},
         content=body,
         timeout=PAGE_TMO,
     )
@@ -63,72 +53,57 @@ async def _page(client: httpx.AsyncClient, body: str, pg: int, api: str) -> dict
     return r.json()
 
 
-# --------------------------------------------------------------------------- #
-# Provider
-# --------------------------------------------------------------------------- #
 class VerbynDichProvider(ProviderBase):
-    """
-    Fetches VerbynDich catalogue pages and normalises them into `Offer` objects.
-    """
-
     name = "VerbynDich"
 
     async def fetch(self, address: Address) -> List[Offer]:
         """
-        • POST the address once per page.
-        • Run up to ``PARALLEL`` requests concurrently.
-        • Stop when the API says ``"last": true`` or after ``MAX_PAGES``.
+        • Build the request body via the factory.
+        • Fetch up to MAX_PAGES pages in parallel with retries.
+        • Parse each item via the factory.
+        • Convert valid responses to Offer.
         """
-        request = VerbynDichRequest(
-            street=address.street,
-            house_number=address.house_number,
-            city=address.city,
-            plz=address.plz,
-        )
-        body = request.to_body()
+        body = VerbynDichFactory.build_body(address)
         sem = asyncio.Semaphore(PARALLEL)
-        offers: List[Offer] = []
         pages: List[dict] = []
+        offers: List[Offer] = []
 
         async def _one(pg: int):
             async with sem:
-                return pg, await _page(self.client, body, pg, settings.verbyndich_base)
+                return pg, await _fetch_page(self.client, body, pg)
 
-        page_idx = 0
+        # start initial batch
         pending = {asyncio.create_task(_one(i)) for i in range(PARALLEL)}
+        next_page = PARALLEL
 
         while pending:
             done, pending = await asyncio.wait(
                 pending, return_when=asyncio.FIRST_COMPLETED
             )
             for task in done:
-                try:
-                    pg_num, data = task.result()
-                except Exception as exc:
-                    logger.error("VerbynDich page parse failed", exc_info=True)
-                    raise ProviderError(f"VerbynDich page parse failed: {exc}") from exc
-
+                pg, data = task.result()
                 pages.append(data)
 
-                response_model = VerbynDichResponse.from_dict(data)
-                if not response_model.valid:
-                    continue
+                # parse via factory
+                response = VerbynDichFactory.parse_response(data)
+                if response and response.valid:
+                    offers.append(response.to_offer(self.name))
 
-                offers.append(response_model.to_offer(self.name))
-
-                if response_model.last or pg_num >= MAX_PAGES:
-                    for p in pending:
-                        p.cancel()
+                # stop conditions
+                if not response or response.last or pg + 1 >= MAX_PAGES:
+                    for t in pending:
+                        t.cancel()
                     pending.clear()
                     break
 
-                # schedule next page
-                page_idx += 1
-                pending.add(asyncio.create_task(_one(page_idx)))
+                # queue next
+                pending.add(asyncio.create_task(_one(next_page)))
+                next_page += 1
 
-        # Write raw JSON pages to disk
-        with open("verbyndich_response.json", "w", encoding="utf-8") as f:
+        # persist raw pages for debugging
+        os.makedirs("logs", exist_ok=True)
+        with open("logs/verbyndich_response.json", "w", encoding="utf-8") as f:
             json.dump(pages, f, indent=2, ensure_ascii=False)
 
-        logger.info(f"VerbynDichProvider: returning {len(offers)} offers")
+        logger.info(f"VerbynDichProvider → returning {len(offers)} offers")
         return offers

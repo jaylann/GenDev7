@@ -1,23 +1,15 @@
 # app/providers/pingperfect.py
 from __future__ import annotations
 
-import json
-import os
-import time
-from typing import Dict, Any
-from typing import List
+from typing import List, Dict, Any
 
 from loguru import logger
 
-from app.utils.hmac_sign import sign
+from app.core.config import get_settings
+from app.models import Address, Offer
 from .base import ProviderBase, ProviderError
-from ..core.config import get_settings
-from ..models import Address
-from ..models import Offer
-from ..models.providers.ping_perfect_request import PingPerfectRequest
-from ..models.providers.pingperfect_response import PingPerfectResponse
+from ..factories.pingperfect_factory import PingPerfectFactory
 
-# Settings import and instance
 settings = get_settings()
 
 
@@ -25,54 +17,34 @@ class PingPerfectProvider(ProviderBase):
     name = "Ping Perfect"
 
     async def fetch(self, address: Address) -> List[Offer]:
+        """
+        Fetch available offers for the given address from PingPerfect.
+        """
         logger.info(f"PingPerfectProvider.fetch – address={address}")
 
-        # 1. Build request model
-        req = PingPerfectRequest(
-            street=address.street,
-            houseNumber=address.house_number,
-            plz=address.plz,
-            city=address.city,
-        )
-        # dump to dict then to compact JSON
-        payload_dict: Dict[str, Any] = req.model_dump(by_alias=True)
-        payload_json: str = json.dumps(payload_dict, separators=(",", ":"))
+        payload_json, headers = PingPerfectFactory.build_payload(address)
 
-        ts: str = str(int(time.time()))
-        signature: str = sign(req, ts, settings.pingperfect_secret)
-
-        headers: Dict[str, str] = {
-            "X-Client-Id": settings.pingperfect_client_id,
-            "X-Timestamp": ts,
-            "X-Signature": signature,
-            "Content-Type": "application/json",
-        }
-        logger.debug(f"Ping Perfect request body={payload_json}")
-
-        # 2. Call API
         try:
             resp = await self.client.post(
-                settings.pingperfect_endpoint,
+                url=settings.pingperfect_endpoint,
                 content=payload_json,
                 headers=headers,
                 timeout=10,
             )
             resp.raise_for_status()
-            raw_items: list[dict] = resp.json()
+            raw_items: List[Dict[str, Any]] = resp.json()
             logger.info(
-                f"Ping Perfect → HTTP {resp.status_code}, {len(raw_items)} offers"
+                f"PingPerfectProvider → HTTP {resp.status_code}, got {len(raw_items)} items"
             )
         except Exception as exc:
-            logger.error(f"Ping Perfect request failed: {exc}", exc_info=True)
+            logger.error(f"PingPerfectProvider → request failed: {exc}", exc_info=True)
             raise ProviderError(f"Ping Perfect failed: {exc}") from exc
 
-        # 3. Transform → Offer
-        offers: list[Offer] = []
-        for item in raw_items:
-            response_model = PingPerfectResponse.from_item(item)
-            if not response_model:
-                continue
-            offers.append(response_model.to_offer(self.name))
+        # Get the validated response models…
+        responses = PingPerfectFactory.parse_responses(raw_items)
+        logger.debug(f"Parsed {len(responses)} PingPerfectResponse models")
 
+        # …and convert them to Offer here
+        offers = [r.to_offer(self.name) for r in responses]
         logger.info(f"PingPerfectProvider → returning {len(offers)} offers")
         return offers

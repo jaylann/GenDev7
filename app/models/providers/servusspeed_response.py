@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Any, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -21,28 +21,6 @@ class ServusSpeedResponse(BaseModel):
     voucher_type: Optional[VoucherKind]
     voucher_value_cents: Optional[int]
     max_age: Optional[int]
-
-    @classmethod
-    def from_json(cls, pid: str, payload: Dict[str, Any]) -> "ServusSpeedResponse":
-        prod = payload["servusSpeedProduct"]
-        info = prod["productInfo"]
-        price = prod["pricingDetails"]
-        discount = int(prod.get("discount") or 0)
-        return cls(
-            provider_name=prod["providerName"],
-            product_id=pid,
-            speed_down_mbit=int(info["speed"]),
-            data_cap_gb=info.get("limitFrom"),
-            connection_type=info["connectionType"],
-            price_cents_month=int(price["monthlyCostInCent"]),
-            contract_duration_months=int(info["contractDurationInMonths"]),
-            installation_service_included=bool(price.get("installationService", False)),
-            tv_included=bool(info.get("tv")),
-            tv_package_name=info.get("tv"),
-            voucher_type=VoucherKind.ABSOLUTE if discount else None,
-            voucher_value_cents=discount or None,
-            max_age=info.get("maxAge"),
-        )
 
     def to_offer(self, provider_name: str) -> Offer:
         return Offer(
