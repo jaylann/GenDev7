@@ -4,18 +4,10 @@ import abc
 from typing import List
 
 import httpx
-from tenacity import (
-    retry,
-    wait_exponential,
-    stop_after_attempt,
-    retry_if_exception_type,
-)
+from tenacity import (retry, wait_exponential, stop_after_attempt, retry_if_exception_type, )
 
+from app.exceptions.provider_error import ProviderError
 from app.models import Address, Offer
-
-
-class ProviderError(Exception):
-    """Raised when a provider call or parse fails."""
 
 
 class ProviderBase(abc.ABC):
@@ -31,12 +23,8 @@ class ProviderBase(abc.ABC):
         self.client = client
 
     # Tenacity: 3 attempts, exponential back-off (½ s → 4 s)
-    @retry(
-        reraise=True,
-        wait=wait_exponential(multiplier=0.5, min=0.5, max=4),
-        stop=stop_after_attempt(3),
-        retry=retry_if_exception_type(ProviderError),
-    )
+    @retry(reraise=True, wait=wait_exponential(multiplier=0.5, min=0.5, max=4), stop=stop_after_attempt(3),
+        retry=retry_if_exception_type(ProviderError), )
     async def __call__(self, address: Address) -> List[Offer]:
         """Entry-point called by aggregator; wraps `fetch` with retries."""
         return await self.fetch(address)

@@ -1,4 +1,8 @@
+import os
+
 import httpx
+from dotenv import load_dotenv
+load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -13,7 +17,7 @@ def create_app() -> FastAPI:
         redoc_url="/redoc", )
 
     # ---------- shared httpx client (injected via compare.router import) ----
-    client = httpx.AsyncClient(timeout=httpx.Timeout(10.0))
+    client = httpx.AsyncClient(timeout=httpx.Timeout(30.0))
 
     @app.on_event("shutdown")
     async def _close_httpx():
