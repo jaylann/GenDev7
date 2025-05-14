@@ -35,6 +35,9 @@ class Address(BaseModel):
     )
     country_code: Literal["DE"] = Field(..., description="Country code (ISO 3166-1 alpha-2)", examples=["DE"])
 
+    class Config:
+        frozen = True
+
     @field_validator("*", mode="before")
     @classmethod
     def strip_whitespace(cls, v):

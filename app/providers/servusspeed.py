@@ -5,7 +5,34 @@ import os
 from typing import List, Tuple
 from typing import Optional, Dict, Any
 
+import functools
+import time
+
+from aiocache import Cache, cached
+
+
+def ttl_cache(ttl: float):
+    """Simple TTL cache decorator for async methods keyed by PID."""
+    cache: Dict[str, Tuple[Any, float]] = {}
+
+    def decorator(func):
+        @functools.wraps(func)
+        async def wrapper(self, pid: str) -> Optional[Offer]:
+            now = time.monotonic()
+            if pid in cache:
+                result, expiry = cache[pid]
+                if now < expiry:
+                    return result
+            result = await func(self, pid)
+            cache[pid] = (result, now + ttl)
+            return result
+
+        return wrapper
+
+    return decorator
+
 import httpx
+from httpx import HTTPStatusError
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 
 from app.utils.logger import logger
@@ -32,13 +59,13 @@ if not (SS_BASE and SS_USER and SS_PASS):
 AVAILABLE_EP: str = f"{SS_BASE}/api/external/available-products"
 DETAILS_EP: str = f"{SS_BASE}/api/external/product-details"
 
-MAX_PARALLEL: int = 1  # Reduced concurrency due to API slowness
-DETAIL_READ_SECS: float = 20.0  # Timeout for a single detail request attempt
+MAX_PARALLEL: int = 15  # Reduced concurrency due to API slowness
+DETAIL_READ_SECS: float = 50.0  # Timeout for a single detail request attempt
 DETAIL_CONNECT_SECS: float = 5.0
 
 _sem: asyncio.Semaphore = asyncio.Semaphore(MAX_PARALLEL)
 
-AVAILABLE_PRODUCTS_TIMEOUT_CONFIG: httpx.Timeout = httpx.Timeout(20.0, connect=5.0)
+AVAILABLE_PRODUCTS_TIMEOUT_CONFIG: httpx.Timeout = httpx.Timeout(30.0, connect=5.0)
 PRODUCT_DETAILS_TIMEOUT_CONFIG: httpx.Timeout = httpx.Timeout(
     timeout=DETAIL_READ_SECS, connect=DETAIL_CONNECT_SECS
 )
@@ -80,12 +107,15 @@ async def _post_json(
             f"Timeout ({type(e).__name__}) during POST to {url}. Payload (first 100): {str(payload)[:100]}... Error details: {repr(e)}"
         )
         raise
-    except httpx.RequestError as e:
+    except (HTTPStatusError, httpx.RequestError) as e:
+        # Treat HTTP status errors and other request errors as provider errors to trigger retry
+        status = getattr(e, "response", None)
+        status_code = status.status_code if status is not None else "N/A"
         logger.error(
-            f"RequestError during POST to {url}. Payload (first 100): {str(payload)[:100]}... Error: {repr(e)}"
+            f"HTTP error ({status_code}) during POST to {url}. Payload (first 100): {str(payload)[:100]}... Error: {repr(e)}"
         )
         raise ProviderError(
-            f"Network error connecting to ServusSpeed API at {url}: {repr(e)}"
+            f"ServusSpeed API error ({status_code}) for url {url}: {repr(e)}"
         ) from e
 
 
@@ -98,6 +128,7 @@ class ServusSpeedProvider(ProviderBase):
     # Minimum time allocated for detail fetching after getting product IDs.
     MIN_TIME_FOR_DETAILS: float = 5.0
 
+    @cached(ttl=43200, cache=Cache.MEMORY, key_builder=lambda f, self, address: address)
     @retry(
         stop=stop_after_attempt(2),
         wait=wait_fixed(1),
@@ -127,6 +158,9 @@ class ServusSpeedProvider(ProviderBase):
         )
         body = ServusSpeedRequest(address=request_addr).model_dump()
         auth = (SS_USER, SS_PASS)
+        # Store request context to allow pid-only signature for details caching
+        self._servus_body = body
+        self._servus_auth = auth
 
         try:
             logger.debug("ServusSpeedProvider: Fetching available product IDs...")
@@ -170,7 +204,7 @@ class ServusSpeedProvider(ProviderBase):
         )
 
         tasks: List[asyncio.Task[Optional[Offer]]] = [
-            asyncio.create_task(self._fetch_one_product_details(pid, body, auth))
+            asyncio.create_task(self._fetch_one_product_details(pid))
             for pid in product_ids
         ]
 
@@ -225,13 +259,13 @@ class ServusSpeedProvider(ProviderBase):
         )
         return valid_offers
 
-    async def _fetch_one_product_details(
-        self, pid: str, body: Dict[str, Any], auth: Tuple[str, str]
-    ) -> Optional[Offer]:
+    @cached(ttl=43200, cache=Cache.MEMORY,
+            key_builder=lambda f, self, pid: pid)
+    async def _fetch_one_product_details(self, pid: str) -> Optional[Offer]:
         async with _sem:  # Controls concurrency: MAX_PARALLEL = 5
             try:
                 # _fetch_details_with_retry: 1 attempt, 20s read timeout (PRODUCT_DETAILS_TIMEOUT_CONFIG)
-                offer = await self._fetch_details_with_retry(pid, body, auth)
+                offer = await self._fetch_details_with_retry(pid, self._servus_body, self._servus_auth)
                 return offer
             except (
                 httpx.TimeoutException,

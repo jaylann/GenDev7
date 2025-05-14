@@ -3,7 +3,14 @@ import time
 from typing import List, Optional, Dict, Tuple, Any
 
 import httpx
-from fastapi import (APIRouter, Depends, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect)
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    BackgroundTasks,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from pydantic import BaseModel, ValidationError
 
 from app.api.dependencies import get_providers
@@ -20,16 +27,24 @@ from app.utils.slug import encode, decode
 router = APIRouter()
 
 # --- Shared HTTP Client and Cache ---
-_limits = httpx.Limits(max_connections=20, max_keepalive_connections=10, keepalive_expiry=30.0)
-_shared_client = httpx.AsyncClient(headers={"User-Agent": "CHECK24ChallengeApp/1.0"}, limits=_limits,
-    timeout=httpx.Timeout(65.0), http2=False, )
+_limits = httpx.Limits(
+    max_connections=20, max_keepalive_connections=10, keepalive_expiry=30.0
+)
+_shared_client = httpx.AsyncClient(
+    headers={"User-Agent": "CHECK24ChallengeApp/1.0"},
+    limits=_limits,
+    timeout=httpx.Timeout(65.0),
+    http2=False,
+)
 _cache: Dict[str, Tuple[float, List[Offer]]] = {}  # slug -> (expires_ts, List[Offer])
 
 
 async def _cache_set(slug: str, offers: List[Offer], ttl_seconds: int) -> None:
     """Sets offers in the cache with a given TTL."""
     _cache[slug] = (time.monotonic() + ttl_seconds, offers)
-    logger.debug(f"Cache set for slug: {slug} with {len(offers)} offers, TTL: {ttl_seconds}s")
+    logger.debug(
+        f"Cache set for slug: {slug} with {len(offers)} offers, TTL: {ttl_seconds}s"
+    )
 
 
 def _cache_get(slug: str) -> Optional[List[Offer]]:
@@ -70,21 +85,25 @@ class CompareResponse(BaseModel):
 PROVIDER_EXECUTION_BUDGET_SECONDS = 90.0
 
 
-async def _execute_provider_fetch(provider: ProviderBase, address: Address, client: httpx.AsyncClient) -> Tuple[
-    str, List[Offer], bool]:
+async def _execute_provider_fetch(
+    provider: ProviderBase, address: Address, client: httpx.AsyncClient
+) -> Tuple[str, List[Offer], bool]:
+    """
+    Runs the full Tenacity‐wrapped provider call, unbounded except by the provider's own retry_config.
+    """
     provider.client = client
-    success = False
-    offers_list: List[Offer] = []
     try:
-        logger.debug(f"Executing fetch for provider: {provider.name}")
-        offers_list = await asyncio.wait_for(provider.fetch(address), timeout=PROVIDER_EXECUTION_BUDGET_SECONDS)
-        logger.info(f"Provider {provider.name} returned {len(offers_list)} offers.")
-        success = True
-    except asyncio.TimeoutError:
-        logger.warning(f"Provider {provider.name} timed out after {PROVIDER_EXECUTION_BUDGET_SECONDS}s.")
-    except Exception as e:
-        logger.exception(f"Provider {provider.name} failed: {repr(e)}")
-    return provider.name, offers_list, success
+        logger.debug(f"Starting full retry loop for provider: {provider.name}")
+        offers = await provider(
+            address
+        )  # <-- invokes ProviderBase.__call__ (with retry)
+        logger.info(f"Provider {provider.name} succeeded with {len(offers)} offers")
+        return provider.name, offers, True
+    except Exception as exc:
+        logger.error(
+            f"Provider {provider.name} ultimately failed after retries: {exc!r}"
+        )
+        return provider.name, [], False
 
 
 # --- New WebSocket Endpoint ---
@@ -96,10 +115,16 @@ async def compare_websocket(websocket: WebSocket):
     try:
         address_payload = await websocket.receive_json()
         address = WsCompareAddressRequest(**address_payload)
-        logger.info(f"WebSocket: Accepted. Address: {address.model_dump_json(indent=2)}")
+        logger.info(
+            f"WebSocket: Accepted. Address: {address.model_dump_json(indent=2)}"
+        )
     except ValidationError as e:
         logger.error(f"WebSocket: Invalid address: {address_payload}. Error: {e}")
-        await websocket.send_json(WebSocketMessage(type="ERROR", message=f"Invalid address: {e.errors()}").model_dump())
+        await websocket.send_json(
+            WebSocketMessage(
+                type="ERROR", message=f"Invalid address: {e.errors()}"
+            ).model_dump()
+        )
         await websocket.close(code=1003)
         return
     except WebSocketDisconnect:
@@ -107,14 +132,22 @@ async def compare_websocket(websocket: WebSocket):
         return
     except Exception as e:
         logger.exception(f"WebSocket: Error receiving address: {e}")
-        await websocket.send_json(WebSocketMessage(type="ERROR", message="Error processing request.").model_dump())
+        await websocket.send_json(
+            WebSocketMessage(
+                type="ERROR", message="Error processing request."
+            ).model_dump()
+        )
         await websocket.close(code=1008)
         return
 
     all_provider_instances = await get_providers()
     if not all_provider_instances:
         logger.warning("WebSocket: No providers. Sending error.")
-        await websocket.send_json(WebSocketMessage(type="ERROR", message="No providers available.").model_dump())
+        await websocket.send_json(
+            WebSocketMessage(
+                type="ERROR", message="No providers available."
+            ).model_dump()
+        )
         await websocket.close()
         return
 
@@ -126,101 +159,114 @@ async def compare_websocket(websocket: WebSocket):
         else:
             fast_providers.append(p)
 
-    # --- Phase 1: Initial "Speed" Results ---
-    PHASE_1_TIMEOUT_SECONDS = 15.0
+    # Phase 1: kickoff all fast providers under their own retry & bound by 15 s
+    PHASE_1_TIMEOUT = 15.0
+    # map name→(provider, task)
+    phase1_tasks: Dict[str, Tuple[ProviderBase, asyncio.Task]] = {
+        p.name: (
+            p,
+            asyncio.create_task(_execute_provider_fetch(p, address, _shared_client)),
+        )
+        for p in fast_providers
+    }
+
+    # wait up to PHASE_1_TIMEOUT for them to finish
+    done, pending = await asyncio.wait(
+        [t for _, t in phase1_tasks.values()],
+        timeout=PHASE_1_TIMEOUT,
+        return_when=asyncio.ALL_COMPLETED,
+    )
+
+    # build initial results from done tasks
     collected_offers_phase1: Dict[str, List[Offer]] = {}
-    providers_for_phase2_retry: List[ProviderBase] = []
-    slug_initial: Optional[str] = None  # Initialize slug for initial offers
+    for name, (prov, task) in phase1_tasks.items():
+        if task in done:
+            _, offers, success = task.result()
+            if success:
+                collected_offers_phase1[name] = offers
 
-    if fast_providers:
-        logger.info(
-            f"WebSocket: Phase 1 for {len(fast_providers)} fast providers (timeout: {PHASE_1_TIMEOUT_SECONDS}s).")
-        phase1_tasks = [asyncio.create_task(_execute_provider_fetch(p, address, _shared_client)) for p in
-            fast_providers]
-        done_in_phase1, pending_in_phase1 = await asyncio.wait(phase1_tasks, timeout=PHASE_1_TIMEOUT_SECONDS,
-            return_when=asyncio.ALL_COMPLETED)
+    # providers still “in flight” after 15 s
+    pending_providers = [
+        prov for name, (prov, task) in phase1_tasks.items() if task in pending
+    ]
 
-        for task in done_in_phase1:
-            try:
-                p_name, p_offers, p_success = task.result()
-                if p_success:
-                    collected_offers_phase1[p_name] = p_offers
-                else:
-                    original_provider = next((p for p in fast_providers if p.name == p_name), None)
-                    if original_provider: providers_for_phase2_retry.append(original_provider)
-            except Exception as e:
-                logger.exception(f"WebSocket: Error processing Phase 1 task result: {e}")
-
-        # Rebuild providers_for_phase2_retry for clarity and correctness
-        providers_for_phase2_retry.clear()
-        succeeded_fast_provider_names_phase1 = set(collected_offers_phase1.keys())
-        for p in fast_providers:
-            if p.name not in succeeded_fast_provider_names_phase1:
-                logger.debug(f"WebSocket: Fast provider {p.name} for Phase 2 retry.")
-                providers_for_phase2_retry.append(p)
-
-        for task in pending_in_phase1:  # Cancel tasks that timed out overall
-            task.cancel()
-
-        initial_merged_offers_flat: List[Offer] = [o for ol in collected_offers_phase1.values() for o in ol]
-        merged_initial_offers = merge_offers(initial_merged_offers_flat)
-
-        if merged_initial_offers:  # Only create and send slug if there are initial offers
-            slug_initial_payload = {"addr": address.model_dump(), "ts": time.monotonic(), "phase": "initial"}
-            slug_initial = encode(slug_initial_payload)
-            asyncio.create_task(_cache_set(slug_initial, merged_initial_offers, settings_dependency.cache_ttl_seconds))
-            logger.info(
-                f"WebSocket: Phase 1 done. Sending {len(merged_initial_offers)} initial offers. Slug_initial: {slug_initial}")
-        else:
-            logger.info("WebSocket: Phase 1 done. No initial offers from fast providers.")
-
-        await websocket.send_json(
-            WebSocketMessage(type="INITIAL_OFFERS", offers=merged_initial_offers, slug=slug_initial,
-                             is_complete=False).model_dump(exclude_none=True))
-    else:
-        logger.info("WebSocket: No 'fast' providers. Skipping Phase 1.")
-        await websocket.send_json(
-            WebSocketMessage(type="STATUS_UPDATE", message="No fast providers for initial results.", slug=None,
-                             is_complete=False).model_dump(exclude_none=True))
-
-    # --- Phase 2: Comprehensive "Deep" Results ---
-    logger.info(
-        f"WebSocket: Phase 2. ServusSpeed: {'Yes' if servus_provider_instance else 'No'}. Retrying {len(providers_for_phase2_retry)} fast providers.")
-    phase2_provider_tasks_to_run: List[ProviderBase] = []
-    if servus_provider_instance: phase2_provider_tasks_to_run.append(servus_provider_instance)
-    phase2_provider_tasks_to_run.extend(providers_for_phase2_retry)
-
-    final_collected_offers: Dict[str, List[Offer]] = dict(collected_offers_phase1)
-
-    if phase2_provider_tasks_to_run:
-        phase2_tasks = [asyncio.create_task(_execute_provider_fetch(p, address, _shared_client)) for p in
-            phase2_provider_tasks_to_run]
-        results_phase2 = await asyncio.gather(*phase2_tasks, return_exceptions=False)
-        for p_name, p_offers, p_success in results_phase2:
-            if p_success:  # Only update/add if Phase 2 was successful for this provider
-                final_collected_offers[p_name] = p_offers
-
-    final_merged_offers_flat: List[Offer] = [o for ol in final_collected_offers.values() for o in ol]
-    merged_final_offers = merge_offers(final_merged_offers_flat)
-
-    # Generate slug for final offers, potentially overwriting initial if no new data
-    slug_final_payload = {"addr": address.model_dump(), "ts": time.monotonic(), "phase": "final"}
-    slug_final = encode(slug_final_payload)
-
-    # Cache the final results. If merged_final_offers is empty, still cache it with the slug.
-    asyncio.create_task(_cache_set(slug_final, merged_final_offers, settings_dependency.cache_ttl_seconds))
-
-    logger.info(f"WebSocket: Phase 2 done. Sending {len(merged_final_offers)} final offers. Slug_final: {slug_final}")
+    # send INITIAL_OFFERS
+    merged_initial = merge_offers(
+        [o for sub in collected_offers_phase1.values() for o in sub]
+    )
+    slug_initial = None
+    if merged_initial:
+        slug_initial = encode(
+            {"addr": address.model_dump(), "ts": time.monotonic(), "phase": "initial"}
+        )
+        asyncio.create_task(
+            _cache_set(
+                slug_initial, merged_initial, settings_dependency.cache_ttl_seconds
+            )
+        )
     await websocket.send_json(
-        WebSocketMessage(type="FINAL_OFFERS", offers=merged_final_offers, slug=slug_final, is_complete=True).model_dump(
-            exclude_none=True))
-    logger.debug("WebSocket: All data sent.")
+        WebSocketMessage(
+            type="INITIAL_OFFERS",
+            offers=merged_initial,
+            slug=slug_initial,
+            is_complete=False,
+        ).model_dump(exclude_none=True)
+    )
+
+    # Phase 2: wait for remaining Phase 1 providers + Servus
+    phase2_tasks: List[asyncio.Task] = []
+
+    # gather the pending ones
+    for prov in pending_providers:
+        _, task = phase1_tasks[prov.name]
+        phase2_tasks.append(task)
+
+    # also run Servus (if any)
+    if servus_provider_instance:
+        phase2_tasks.append(
+            asyncio.create_task(
+                _execute_provider_fetch(
+                    servus_provider_instance, address, _shared_client
+                )
+            )
+        )
+
+    # now wait on all of them
+    results2 = await asyncio.gather(*phase2_tasks, return_exceptions=False)
+
+    # merge into final collection
+    final_offers_map = {**collected_offers_phase1}
+    for name, offers, success in results2:
+        if success:
+            final_offers_map[name] = offers
+
+    merged_final = merge_offers([o for sub in final_offers_map.values() for o in sub])
+    slug_final = encode(
+        {"addr": address.model_dump(), "ts": time.monotonic(), "phase": "final"}
+    )
+    asyncio.create_task(
+        _cache_set(slug_final, merged_final, settings_dependency.cache_ttl_seconds)
+    )
+
+    await websocket.send_json(
+        WebSocketMessage(
+            type="FINAL_OFFERS", offers=merged_final, slug=slug_final, is_complete=True
+        ).model_dump(exclude_none=True)
+    )
 
 
 # --- Deprecated HTTP Endpoint (for reference or gradual phase-out) ---
-@router.post("/compare", response_model=CompareResponse, deprecated=True, summary="Use WebSocket /ws/compare instead")
-async def compare_fresh_http(address_payload: Dict[str, Any], background: BackgroundTasks,
-        settings: Settings = Depends(get_settings), ):
+@router.post(
+    "/compare",
+    response_model=CompareResponse,
+    deprecated=True,
+    summary="Use WebSocket /ws/compare instead",
+)
+async def compare_fresh_http(
+    address_payload: Dict[str, Any],
+    background: BackgroundTasks,
+    settings: Settings = Depends(get_settings),
+):
     try:
         address = WsCompareAddressRequest(**address_payload)
     except ValidationError as e:
@@ -233,14 +279,25 @@ async def compare_fresh_http(address_payload: Dict[str, Any], background: Backgr
         logger.warning("HTTP /compare: No providers.")
         return CompareResponse(slug="no-providers", offers=[], address=address)
 
-    tasks = [_execute_provider_fetch(p, address, _shared_client) for p in all_provider_instances]
+    tasks = [
+        _execute_provider_fetch(p, address, _shared_client)
+        for p in all_provider_instances
+    ]
     results_http = await asyncio.gather(*tasks, return_exceptions=False)
 
-    offers_flat: List[Offer] = [o for _p_name, p_offers, p_success in results_http if p_success for o in p_offers]
+    offers_flat: List[Offer] = [
+        o
+        for _p_name, p_offers, p_success in results_http
+        if p_success
+        for o in p_offers
+    ]
     merged = merge_offers(offers_flat)
 
-    slug_payload = {"addr": address.model_dump(), "ts": time.monotonic(),
-                    "phase": "http_deprecated"}  # Differentiate slug
+    slug_payload = {
+        "addr": address.model_dump(),
+        "ts": time.monotonic(),
+        "phase": "http_deprecated",
+    }  # Differentiate slug
     slug = encode(slug_payload)
     logger.debug(f"HTTP /compare: Generated slug: {slug}")
     background.add_task(_cache_set, slug, merged, settings.cache_ttl_seconds)
@@ -253,7 +310,9 @@ async def compare_by_slug(slug: str):
     offers = _cache_get(slug)
     if offers is None:
         logger.warning(f"Cache miss for slug: {slug}")
-        raise HTTPException(status_code=404, detail="Comparison data expired or slug unknown.")
+        raise HTTPException(
+            status_code=404, detail="Comparison data expired or slug unknown."
+        )
     logger.info(f"Cache hit for slug: {slug}, returning {len(offers)} offers")
     decoded_slug = decode(slug)
     address_slug = Address(**decoded_slug["addr"] if "addr" in decoded_slug else {})

@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.13"
 dependencies = [
+    "aiocache>=0.12.3",
     "async-lru>=2.0.5",
     "black>=25.1.0",
     "fastapi>=0.115.12",
