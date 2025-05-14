@@ -9,7 +9,7 @@ from loguru import logger
 
 from app.models import Address, Offer
 from app.exceptions.provider_error import ProviderError
-from app.providers.retry_config import RetryConfig
+from app.core.retry_config import RetryConfig
 
 
 class ProviderBase(abc.ABC):

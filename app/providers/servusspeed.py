@@ -2,16 +2,19 @@ from __future__ import annotations
 
 import asyncio
 import os
-from typing import List, Tuple, Dict, Any, Optional, cast
+from typing import List, Tuple
+from typing import Optional, Dict, Any
 
 import httpx
-from pydantic import BaseModel
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 
 from app.utils.logger import logger
 from .base import ProviderBase, ProviderError
-from ..models import Address, Offer
-from ..models.base.offer import VoucherKind
+from ..models import Address
+from ..models import Offer
+from ..models.providers.servus_speed_address import ServusSpeedAddress
+from ..models.providers.servus_speed_request import ServusSpeedRequest
+from ..models.providers.servusspeed_response import ServusSpeedResponse
 
 # ─────────────────────────────  config  ────────────────────────────────────
 SS_BASE: str = os.getenv("SERVUSSPEED_BASE", "").rstrip("/")
@@ -39,19 +42,6 @@ AVAILABLE_PRODUCTS_TIMEOUT_CONFIG: httpx.Timeout = httpx.Timeout(20.0, connect=5
 PRODUCT_DETAILS_TIMEOUT_CONFIG: httpx.Timeout = httpx.Timeout(
     timeout=DETAIL_READ_SECS, connect=DETAIL_CONNECT_SECS
 )
-
-
-# ─────────────────────────────  models  ────────────────────────────────────
-class RequestAddress(BaseModel):
-    strasse: str
-    hausnummer: str
-    postleitzahl: str
-    stadt: str
-    land: str
-
-
-class ServusSpeedRequestBody(BaseModel):
-    address: RequestAddress
 
 
 # ───────────────────────  low-level one-shot helper  ───────────────────────
@@ -128,14 +118,14 @@ class ServusSpeedProvider(ProviderBase):
             f"ServusSpeedProvider: Starting fetch for {address.street}, {address.plz} {address.city}"
         )
 
-        request_addr = RequestAddress(
+        request_addr = ServusSpeedAddress(
             strasse=address.street,
             hausnummer=address.house_number,
             postleitzahl=address.plz,
             stadt=address.city,
             land=address.country_code,
         )
-        body = ServusSpeedRequestBody(address=request_addr).model_dump()
+        body = ServusSpeedRequest(address=request_addr).model_dump()
         auth = (SS_USER, SS_PASS)
 
         try:
@@ -291,41 +281,6 @@ class ServusSpeedProvider(ProviderBase):
             PRODUCT_DETAILS_TIMEOUT_CONFIG,
         )
 
-        try:
-            payload = resp_detail.json()
-            prod = cast(Dict[str, Any], payload["servusSpeedProduct"])
-        except (KeyError, ValueError) as exc:
-            raise ProviderError(
-                f"ServusSpeed product {pid}: unexpected JSON structure"
-            ) from exc
-
-        info: Dict[str, Any] = prod["productInfo"]
-        price: Dict[str, Any] = prod["pricingDetails"]
-        discount: int = int(prod.get("discount") or 0)  # cent, absolute
-
-        # ─── Build the Offer ────────────────────────────────────────────────────
-        return Offer(
-            # Identification
-            provider=self.name,  # “Servus Speed”
-            plan_name=prod["providerName"],  # e.g. “Servus Basic 50”
-            product_id=pid,
-            # Performance
-            speed_down_mbit=int(info["speed"]),
-            # Upstream not provided
-            data_cap_gb=info.get("limitFrom"),
-            connection_type=info["connectionType"],
-            # Commercials
-            price_cents_month_intro=int(price["monthlyCostInCent"]),
-            price_cents_month_regular=int(price["monthlyCostInCent"]),
-            contract_duration_months=int(info["contractDurationInMonths"]),
-            installation_service_included=bool(price.get("installationService", False)),
-            # one-off setup fee not present in this API
-            installation_cost_cents=None,
-            # TV
-            tv_included=bool(info.get("tv")),
-            tv_package_name=info.get("tv"),
-            # Promotions
-            voucher_type=(VoucherKind.ABSOLUTE if discount else None),
-            voucher_value_cents=discount or None,
-            max_age=info.get("maxAge"),  # youth tariff boundary
-        )
+        payload = resp_detail.json()
+        response_model = ServusSpeedResponse.from_json(pid, payload)
+        return response_model.to_offer(self.name)

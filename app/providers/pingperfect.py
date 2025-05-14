@@ -4,35 +4,21 @@ from __future__ import annotations
 import json
 import os
 import time
-import uuid
-from typing import Any, Dict
+from typing import Dict, Any
 from typing import List
 
 from loguru import logger
-from pydantic import BaseModel, Field, ConfigDict
 
 from app.utils.hmac_sign import sign
 from .base import ProviderBase, ProviderError
-from ..models import Address, Offer
+from ..models import Address
+from ..models import Offer
+from ..models.providers.ping_perfect_request import PingPerfectRequest
+from ..models.providers.pingperfect_response import PingPerfectResponse
 
 PP_ENDPOINT = os.getenv("PINGPERFECT_ENDPOINT")
 PP_CLIENT_ID = os.getenv("PINGPERFECT_CLIENT_ID", "REPLACE_ME")
 PP_SECRET = os.getenv("PINGPERFECT_SECRET", "REPLACE_ME")
-
-
-class PingPerfectRequest(BaseModel):
-    """
-    Typed model for the Ping Perfect API request payload.
-    """
-
-    street: str
-    houseNumber: str = Field()
-    plz: str
-    city: str
-    wantsFiber: bool = Field(default=False)
-
-    # allow initialization with either snake_case or the JSON-style alias
-    model_config = ConfigDict(populate_by_name=True)
 
 
 class PingPerfectProvider(ProviderBase):
@@ -83,49 +69,10 @@ class PingPerfectProvider(ProviderBase):
         # 3. Transform → Offer
         offers: list[Offer] = []
         for item in raw_items:
-            if item.get("productInfo") is None or item.get("pricingDetails") is None:
+            response_model = PingPerfectResponse.from_item(item)
+            if not response_model:
                 continue
-            info = item["productInfo"]
-            price = item["pricingDetails"]
-            provider_name = item.get("providerName", "")
-            speed_val = info.get("speed")
-            term_val = info.get("contractDurationInMonths")
-            monthly_cents = price.get("monthlyCostInCent")
-            limit_from = info.get("limitFrom")
-            max_age_val = info.get("maxAge")
-
-            product_uuid = uuid.uuid5(
-                uuid.NAMESPACE_DNS,
-                f"{provider_name}-{speed_val}-{term_val}",
-            ).hex
-
-            installation_included = str(
-                price.get("installationService", "")
-            ).strip().lower() in {"yes", "included", "true"}
-
-            offers.append(
-                Offer(
-                    provider=self.name,
-                    plan_name=provider_name,
-                    product_id=product_uuid,
-                    speed_down_mbit=int(speed_val) if speed_val is not None else None,
-                    connection_type=info.get("connectionType") or None,
-                    data_cap_gb=int(limit_from) if limit_from is not None else None,
-                    price_cents_month_intro=(
-                        int(monthly_cents) if monthly_cents else None
-                    ),
-                    price_cents_month_regular=(
-                        int(monthly_cents) if monthly_cents else None
-                    ),
-                    contract_duration_months=(
-                        int(term_val) if term_val is not None else None
-                    ),
-                    installation_service_included=installation_included,
-                    tv_included=bool(info.get("tv")),
-                    tv_package_name=info.get("tv") or None,
-                    max_age=int(max_age_val) if max_age_val is not None else None,
-                )
-            )
+            offers.append(response_model.to_offer(self.name))
 
         logger.info(f"PingPerfectProvider → returning {len(offers)} offers")
         return offers

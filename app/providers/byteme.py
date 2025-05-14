@@ -3,11 +3,15 @@ from __future__ import annotations
 import os
 from io import StringIO
 
+# ───────────────────────────────────────────────────────────────────────────────
+# Response model and helpers for ByteMe
+# ───────────────────────────────────────────────────────────────────────────────
 import pandas as pd
 from loguru import logger
 
 from .base import ProviderBase, ProviderError
 from ..models import Offer, Address
+from ..models.providers.byteme_response import ByteMeResponse
 
 BYTEME_ENDPOINT = os.getenv(
     "BYTEME_ENDPOINT",
@@ -127,32 +131,10 @@ class ByteMeProvider(ProviderBase):
 
         offers: List[Offer] = []
         for row in df.itertuples(index=False):
-            price_intro = row.monthlyCostInCent
-            if pd.isna(price_intro):  # <-- new guard (paranoia mode)
+            resp = ByteMeResponse.from_tuple(row)
+            if not resp:
                 continue
-            offers.append(
-                Offer(
-                    provider=self.name,
-                    plan_name=row.providerName,  # NEW
-                    product_id=str(int(row.productId)),
-                    speed_down_mbit=int(round(row.speed)),
-                    price_cents_month_intro=int(row.monthlyCostInCent),
-                    price_cents_month_regular=int(row.afterTwoYearsMonthlyCost),
-                    contract_duration_months=int(row.durationInMonths),
-                    connection_type=row.connectionType,
-                    installation_service_included=row.installationService,
-                    tv_included=bool(row.tv),
-                    tv_package_name=(
-                        row.tv if isinstance(row.tv, str) and row.tv.strip() else None
-                    ),
-                    data_cap_gb=int(row.limitFrom) if pd.notna(row.limitFrom) else None,
-                    voucher_type=row.voucherType if pd.notna(row.voucherType) else None,
-                    voucher_value_cents=(
-                        int(row.voucherValue) if pd.notna(row.voucherValue) else None
-                    ),
-                    max_age=int(row.maxAge) if pd.notna(row.maxAge) else None,
-                )
-            )
+            offers.append(resp.to_offer(self.name))
 
         logger.info(f"Returning {len(offers)} ByteMe offers")
         return offers

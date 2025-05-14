@@ -3,8 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import re
-from typing import List, Optional
+from typing import List
 
 import httpx
 from async_lru import alru_cache
@@ -17,8 +16,10 @@ from tenacity import (
 )
 
 from .base import ProviderBase, ProviderError
-from ..models import Address, Offer
-from ..models.base.offer import VoucherKind
+from ..models import Address
+from ..models import Offer
+from ..models.providers.verbyndich_request import VerbynDichRequest
+from ..models.providers.verbyndich_response import VerbynDichResponse
 
 # --------------------------------------------------------------------------- #
 # Configuration
@@ -33,18 +34,6 @@ PAGE_TMO: int = 15  # seconds
 PAGE_FETCH_RETRY_ATTEMPTS: int = 3
 PAGE_FETCH_RETRY_EXP_MULTIPLIER: int = 1
 PAGE_FETCH_RETRY_EXP_MAX_WAIT: int = 10
-
-# --------------------------------------------------------------------------- #
-# Regex helpers (pre-compiled once at import time)
-# --------------------------------------------------------------------------- #
-PRICE_MONTH_RE = re.compile(r"für\s*nur\s*(\d+(?:[.,]\d+)?)\s*€\s*im\s*Monat", re.I)
-SPEED_RE = re.compile(r"(\d+)\s*Mbit", re.I)
-DURATION_RE = re.compile(r"Mindestvertragslaufzeit\s*(\d+)\s*Monate?", re.I)
-MAX_AGE_RE = re.compile(r"(?:unter|bis)\s*(\d+)\s*Jahr", re.I)
-VOUCHER_RE = re.compile(r"Rabatt\s+von\s*(\d+)\s*€", re.I)
-CONN_RE = re.compile(r"\b(DSL|Cable|Kabel|Fiber|Glasfaser|Mobile)\b", re.I)
-TV_PKG_RE = re.compile(r"\b([A-Z][A-Za-z0-9+]*TV\+?)\b")
-DATA_CAP_RE = re.compile(r"Ab\s*(\d+)\s*GB", re.I)
 
 
 # --------------------------------------------------------------------------- #
@@ -71,96 +60,7 @@ async def _page(client: httpx.AsyncClient, body: str, pg: int, api: str) -> dict
         timeout=PAGE_TMO,
     )
     r.raise_for_status()
-    # Keep one page on disk for debugging – last write wins.
-
-    logger.debug("VerbynDichProvider: saved raw JSON → verbyndich_response.json")
     return r.json()
-
-
-# --------------------------------------------------------------------------- #
-# Description parser → Offer
-# --------------------------------------------------------------------------- #
-def _parse(data: dict) -> Offer:
-    """
-    Converts a VerbynDich JSON object into an `Offer`.
-
-    The API gives us only *one* string field with free-text German prose –
-    we therefore extract all commercial details with regexes.
-    """
-    desc: str = data.get("description", "")
-    product_raw: str = data.get("product", "UNKNOWN")
-
-    # ------------------------------------------------------------------- #
-    # Helper extractors
-    # ------------------------------------------------------------------- #
-    def _match_rgx(rgx: re.Pattern[str]) -> Optional[str]:
-        m = rgx.search(desc)
-        return m.group(1) if m else None
-
-    # price (4600 cents for "46 €")
-    price_eur = _match_rgx(PRICE_MONTH_RE)
-    price_cents = int(float(price_eur.replace(",", ".")) * 100) if price_eur else 0
-
-    # downstream speed
-    speed = int(_match_rgx(SPEED_RE) or 16)
-
-    # min. contract term
-    duration = int(_match_rgx(DURATION_RE) or 24)
-
-    # age cap
-    max_age = int(_match_rgx(MAX_AGE_RE)) if _match_rgx(MAX_AGE_RE) else None
-
-    # voucher
-    voucher_eur = _match_rgx(VOUCHER_RE)
-    voucher_value_cents = int(voucher_eur) * 100 if voucher_eur else None
-    voucher_type = VoucherKind.ABSOLUTE if voucher_value_cents else None
-
-    # connection medium
-    conn = _match_rgx(CONN_RE)
-    conn_map = {
-        "dsl": "DSL",
-        "cable": "Cable",
-        "kabel": "Cable",
-        "fiber": "Fiber",
-        "glasfaser": "Fiber",
-        "mobile": "Mobile",
-    }
-    connection_type = conn_map.get(conn.lower(), "DSL") if conn else "DSL"
-
-    # TV package
-    tv_pkg = _match_rgx(TV_PKG_RE)
-    tv_included = bool(tv_pkg)
-
-    # data cap in GB
-    data_cap_str = _match_rgx(DATA_CAP_RE)
-    data_cap_gb = int(data_cap_str) if data_cap_str else None
-
-    # plan name (strip "VerbynDich " prefix, keep remainder)
-    plan_name = product_raw
-    if plan_name.lower().startswith("verbyndich"):
-        plan_name = plan_name.split(" ", 1)[1].strip()
-
-    # ------------------------------------------------------------------- #
-    # Build Offer
-    # ------------------------------------------------------------------- #
-    return Offer(
-        provider=VerbynDichProvider.name,
-        plan_name=plan_name,
-        product_id=product_raw,  # the API does not expose a numeric ID
-        speed_down_mbit=speed,
-        connection_type=connection_type,
-        price_cents_month_intro=price_cents,
-        price_cents_month_regular=price_cents,  # price stays the same after promo
-        contract_duration_months=duration,
-        installation_service_included=False,
-        installation_cost_cents=None,
-        tv_included=tv_included,
-        tv_package_name=tv_pkg,
-        data_cap_gb=data_cap_gb,
-        voucher_type=voucher_type,
-        voucher_value_cents=voucher_value_cents,
-        max_age=max_age,
-    )
 
 
 # --------------------------------------------------------------------------- #
@@ -179,7 +79,13 @@ class VerbynDichProvider(ProviderBase):
         • Run up to ``PARALLEL`` requests concurrently.
         • Stop when the API says ``"last": true`` or after ``MAX_PAGES``.
         """
-        body = f"{address.street};{address.house_number};{address.city};{address.plz}"
+        request = VerbynDichRequest(
+            street=address.street,
+            house_number=address.house_number,
+            city=address.city,
+            plz=address.plz,
+        )
+        body = request.to_body()
         sem = asyncio.Semaphore(PARALLEL)
         offers: List[Offer] = []
         pages: List[dict] = []
@@ -204,12 +110,13 @@ class VerbynDichProvider(ProviderBase):
 
                 pages.append(data)
 
-                if not data.get("valid", False):
+                response_model = VerbynDichResponse.from_dict(data)
+                if not response_model.valid:
                     continue
 
-                offers.append(_parse(data))
+                offers.append(response_model.to_offer(self.name))
 
-                if data.get("last", False) or pg_num >= MAX_PAGES:
+                if response_model.last or pg_num >= MAX_PAGES:
                     for p in pending:
                         p.cancel()
                     pending.clear()
