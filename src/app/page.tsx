@@ -109,6 +109,11 @@ export default function ComparePage(): JSX.Element {
     const { recentSearches, addRecentSearch, clearRecentSearches } =
         useRecentSearches();
 
+    // Ref to ensure we only add INITIAL slug once per search session
+    const hasAddedInitialRef = useRef(false);
+    // Ref to store the session ID immediately for history operations
+    const sessionIdRef = useRef<string | null>(null);
+
     // ---------------------------------------------------------------------------
     // Compare-page initialiser (slug in query-string)
     // ---------------------------------------------------------------------------
@@ -157,25 +162,26 @@ export default function ComparePage(): JSX.Element {
 
             setActiveShareableSlug(slug);
 
-            if (slugType === 'INITIAL' && !currentDisplaySlug) {
-                setCurrentDisplaySlug(slug);
+            if (slugType === 'INITIAL' && !hasAddedInitialRef.current) {
+                    hasAddedInitialRef.current = true;
+                    setCurrentDisplaySlug(slug);
 
-                // -------- Add (or overwrite) history row **once** – only for INITIAL ----
-                if (
-                    currentSessionId &&
-                    !currentSessionId.startsWith('shared-') &&
-                    searchInitiatedWithAddress
-                ) {
-                    const url = buildUrl(slug, sortOption, filters);
-                    if (url) {
-                        addRecentSearch({
-                            url,
-                            label: searchInitiatedWithAddress,
-                            sessionId: currentSessionId,
-                        });
-                    }
-                }
-            } else if (slugType === 'FINAL') {
+                        // -------- Add (or overwrite) history row **once** – only for INITIAL ----
+                            if (
+                            sessionIdRef.current &&
+                            !sessionIdRef.current.startsWith('shared-') &&
+                            searchInitiatedWithAddress
+                        ) {
+                            const url = buildUrl(slug, sortOption, filters);
+                            if (url) {
+                                    addRecentSearch({
+                                            url,
+                                            label: searchInitiatedWithAddress,
+                                            sessionId: sessionIdRef.current,
+                                        });
+                                }
+                        }
+                } else if (slugType === 'FINAL') {
                 setCurrentDisplaySlug(slug);
             }
         },
@@ -239,9 +245,11 @@ export default function ComparePage(): JSX.Element {
     );
 
     const handleSearchClick = useCallback(() => {
-        setCurrentSessionId(
-            searchInitiatedWithAddress ?? `session-${Date.now()}`,
-        );
+        hasAddedInitialRef.current = false;
+        // Generate and stash the new session ID synchronously
+        const newSessionId = searchInitiatedWithAddress ?? `session-${Date.now()}`;
+        sessionIdRef.current = newSessionId;
+        setCurrentSessionId(newSessionId);
 
         setOriginalOffers([]);
         setPendingOffers(null);
