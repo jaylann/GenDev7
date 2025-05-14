@@ -38,7 +38,7 @@ class ProviderBase(abc.ABC):
         Entry point that wraps `self.fetch` in a Tenacity retry loop.
         """
         settings = self.retry_config.model_dump()
-        logger.debug("Provider %s retry settings: %s", self.name, settings)
+        logger.debug(f"Provider {self.name} retry settings: {settings}")
 
         retryer = AsyncRetrying(
             stop=self.retry_config.stop,

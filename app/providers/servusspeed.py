@@ -10,6 +10,8 @@ import time
 
 from aiocache import Cache, cached
 
+from ..core.config import get_settings
+
 
 def ttl_cache(ttl: float):
     """Simple TTL cache decorator for async methods keyed by PID."""
@@ -36,6 +38,7 @@ from httpx import HTTPStatusError
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 
 from app.utils.logger import logger
+settings = get_settings()
 from .base import ProviderBase, ProviderError
 from ..models import Address
 from ..models import Offer
@@ -43,21 +46,6 @@ from ..models.providers.servus_speed_address import ServusSpeedAddress
 from ..models.providers.servus_speed_request import ServusSpeedRequest
 from ..models.providers.servusspeed_response import ServusSpeedResponse
 
-# ─────────────────────────────  config  ────────────────────────────────────
-SS_BASE: str = os.getenv("SERVUSSPEED_BASE", "").rstrip("/")
-SS_USER: Optional[str] = os.getenv("SERVUSSPEED_USERNAME")
-SS_PASS: Optional[str] = os.getenv("SERVUSSPEED_PASSWORD")
-
-if not (SS_BASE and SS_USER and SS_PASS):
-    logger.error(
-        "SERVUSSPEED_BASE, SERVUSSPEED_USERNAME, or SERVUSSPEED_PASSWORD env-vars missing."
-    )
-    raise RuntimeError(
-        "ServusSpeedProvider: Credentials missing. Provider will be unavailable."
-    )
-
-AVAILABLE_EP: str = f"{SS_BASE}/api/external/available-products"
-DETAILS_EP: str = f"{SS_BASE}/api/external/product-details"
 
 MAX_PARALLEL: int = 15  # Reduced concurrency due to API slowness
 DETAIL_READ_SECS: float = 50.0  # Timeout for a single detail request attempt
@@ -139,7 +127,7 @@ class ServusSpeedProvider(ProviderBase):
         loop = asyncio.get_event_loop()
         fetch_start_time: float = loop.time()
 
-        if not SS_USER or not SS_PASS:
+        if not settings.servusspeed_username or not settings.servusspeed_password:
             logger.critical(
                 "ServusSpeedProvider cannot fetch: Credentials not configured properly."
             )
@@ -157,7 +145,7 @@ class ServusSpeedProvider(ProviderBase):
             land=address.country_code,
         )
         body = ServusSpeedRequest(address=request_addr).model_dump()
-        auth = (SS_USER, SS_PASS)
+        auth = (settings.servusspeed_username, settings.servusspeed_password)
         # Store request context to allow pid-only signature for details caching
         self._servus_body = body
         self._servus_auth = auth
@@ -165,7 +153,11 @@ class ServusSpeedProvider(ProviderBase):
         try:
             logger.debug("ServusSpeedProvider: Fetching available product IDs...")
             resp_available = await _post_json(
-                self.client, AVAILABLE_EP, body, auth, AVAILABLE_PRODUCTS_TIMEOUT_CONFIG
+                self.client,
+                f"{settings.servusspeed_base.rstrip('/')}/api/external/available-products",
+                body,
+                auth,
+                AVAILABLE_PRODUCTS_TIMEOUT_CONFIG,
             )
             product_ids: List[str] = resp_available.json().get("availableProducts", [])
             logger.debug(f"ServusSpeedProvider: Found {len(product_ids)} product IDs.")
@@ -309,7 +301,7 @@ class ServusSpeedProvider(ProviderBase):
 
         resp_detail = await _post_json(
             self.client,
-            f"{DETAILS_EP}/{pid}",
+            f"{settings.servusspeed_base.rstrip('/')}/api/external/product-details/{pid}",
             body,
             auth,
             PRODUCT_DETAILS_TIMEOUT_CONFIG,

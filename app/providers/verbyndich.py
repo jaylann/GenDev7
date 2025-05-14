@@ -16,16 +16,16 @@ from tenacity import (
 )
 
 from .base import ProviderBase, ProviderError
+from ..core.config import get_settings
 from ..models import Address
 from ..models import Offer
 from ..models.providers.verbyndich_request import VerbynDichRequest
 from ..models.providers.verbyndich_response import VerbynDichResponse
 
 # --------------------------------------------------------------------------- #
-# Configuration
+# Settings
 # --------------------------------------------------------------------------- #
-VB_BASE: str = os.getenv("VERBYNDICH_BASE", "https://api.verbyn­dich.example/v1/deals")
-VB_API_KEY: str = os.getenv("VERBYNDICH_API_KEY", "REPLACE_ME")
+settings = get_settings()
 
 MAX_PAGES: int = 10  # hard cap – safety against runaway pagination
 PARALLEL: int = 5  # pages in flight
@@ -55,7 +55,7 @@ async def _page(client: httpx.AsyncClient, body: str, pg: int, api: str) -> dict
     """
     r = await client.post(
         api,
-        params={"apiKey": VB_API_KEY, "page": pg},
+        params={"apiKey": settings.verbyndich_api_key, "page": pg},
         content=body,
         timeout=PAGE_TMO,
     )
@@ -92,7 +92,7 @@ class VerbynDichProvider(ProviderBase):
 
         async def _one(pg: int):
             async with sem:
-                return pg, await _page(self.client, body, pg, VB_BASE)
+                return pg, await _page(self.client, body, pg, settings.verbyndich_base)
 
         page_idx = 0
         pending = {asyncio.create_task(_one(i)) for i in range(PARALLEL)}

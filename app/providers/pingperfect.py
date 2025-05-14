@@ -11,14 +11,14 @@ from loguru import logger
 
 from app.utils.hmac_sign import sign
 from .base import ProviderBase, ProviderError
+from ..core.config import get_settings
 from ..models import Address
 from ..models import Offer
 from ..models.providers.ping_perfect_request import PingPerfectRequest
 from ..models.providers.pingperfect_response import PingPerfectResponse
 
-PP_ENDPOINT = os.getenv("PINGPERFECT_ENDPOINT")
-PP_CLIENT_ID = os.getenv("PINGPERFECT_CLIENT_ID", "REPLACE_ME")
-PP_SECRET = os.getenv("PINGPERFECT_SECRET", "REPLACE_ME")
+# Settings import and instance
+settings = get_settings()
 
 
 class PingPerfectProvider(ProviderBase):
@@ -39,10 +39,10 @@ class PingPerfectProvider(ProviderBase):
         payload_json: str = json.dumps(payload_dict, separators=(",", ":"))
 
         ts: str = str(int(time.time()))
-        signature: str = sign(req, ts, PP_SECRET)
+        signature: str = sign(req, ts, settings.pingperfect_secret)
 
         headers: Dict[str, str] = {
-            "X-Client-Id": PP_CLIENT_ID,
+            "X-Client-Id": settings.pingperfect_client_id,
             "X-Timestamp": ts,
             "X-Signature": signature,
             "Content-Type": "application/json",
@@ -52,7 +52,7 @@ class PingPerfectProvider(ProviderBase):
         # 2. Call API
         try:
             resp = await self.client.post(
-                PP_ENDPOINT,
+                settings.pingperfect_endpoint,
                 content=payload_json,
                 headers=headers,
                 timeout=10,
@@ -63,7 +63,7 @@ class PingPerfectProvider(ProviderBase):
                 f"Ping Perfect → HTTP {resp.status_code}, {len(raw_items)} offers"
             )
         except Exception as exc:
-            logger.error("Ping Perfect request failed: %s", exc, exc_info=True)
+            logger.error(f"Ping Perfect request failed: {exc}", exc_info=True)
             raise ProviderError(f"Ping Perfect failed: {exc}") from exc
 
         # 3. Transform → Offer

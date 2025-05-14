@@ -1,24 +1,17 @@
 from __future__ import annotations
 
-import os
 from io import StringIO
 
 import pandas as pd
 from loguru import logger
 
 from .base import ProviderBase, ProviderError
+from ..core.config import get_settings
 from ..models import Offer, Address
 from ..models.providers.byteme_request import ByteMeRequest
 from ..models.providers.byteme_response import ByteMeResponse
 
-BYTEME_ENDPOINT = os.getenv(
-    "BYTEME_ENDPOINT",
-    "https://byteme.gendev7.check24.fun/app/api/products/data",
-)
-BYTEME_API_KEY = os.getenv("BYTEME_API_KEY", "REPLACE_ME")
-# ───────────────────────────────────────────────────────────────────────────────
-# cleaning helpers
-# ───────────────────────────────────────────────────────────────────────────────
+settings = get_settings()
 from typing import Final, List
 
 ESSENTIAL_NUMERIC: Final[List[str]] = [
@@ -103,11 +96,11 @@ class ByteMeProvider(ProviderBase):
             plz=address.plz,
         )
         params = request.model_dump()
-        headers = {"X-Api-Key": BYTEME_API_KEY}
+        headers = {"X-Api-Key": settings.byteme_api_key}
 
         try:
             resp = await self.client.get(
-                BYTEME_ENDPOINT,
+                settings.byteme_endpoint,
                 params=params,
                 headers=headers,
                 timeout=10,

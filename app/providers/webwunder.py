@@ -7,17 +7,16 @@ from typing import List
 
 from httpx import Response
 
+from ..core.config import get_settings
+
+settings = get_settings()
+
 from app.models import Offer, Address  # ← import your new enum
 from app.utils.logger import logger
 from .base import ProviderBase, ProviderError
 from ..models.providers.webwunder_request import WebWunderRequest
 from ..models.providers.webwunder_response import WebWunderProduct
 
-SOAP_EP = os.getenv(
-    "WEBWUNDER_ENDPOINT",
-    "https://webwunder.gendev7.check24.fun/endpunkte/soap/ws",
-)
-WEBWUNDER_API_KEY = os.getenv("WEBWUNDER_API_KEY")
 
 
 class WebWunderProvider(ProviderBase):
@@ -66,13 +65,13 @@ class WebWunderProvider(ProviderBase):
         xml_request = self._build_xml(address)
         headers = {
             "Content-Type": "text/xml; charset=utf-8",
-            "X-Api-Key": WEBWUNDER_API_KEY,
+            "X-Api-Key": settings.webwunder_api_key,
             "SOAPAction": "legacyGetInternetOffers",
         }
 
         start = time.perf_counter()
         response = await self.client.post(
-            SOAP_EP,
+            settings.webwunder_wsdl,
             content=xml_request,
             headers=headers,
             timeout=10,
