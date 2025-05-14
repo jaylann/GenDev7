@@ -1,13 +1,24 @@
-// app/compare/hooks/useComparePageInitializer.ts
-import { Offer } from "@/types/offer";
-import { SortOptionKey } from "@/types/sort-option-key";
-import { FiltersState } from "@/types/filters-state";
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
-import { deserializeFiltersFromURL } from "@/utils/url";
-import { API_BASE_URL, DEFAULT_FILTERS, SORT_OPTIONS } from "@/config/constants";
 
-interface UseComparePageInitializerProps {
+import { API_BASE_URL, DEFAULT_FILTERS, SORT_OPTIONS } from "@/config/constants";
+import { deserializeFiltersFromURL } from "@/utils/url";
+
+import type { Offer } from "@/types/offer";
+import type { Address } from "@/types/address";
+import type { SortOptionKey } from "@/types/sort-option-key";
+import type { FiltersState } from "@/types/filters-state";
+
+interface SharedOffersResponse {
+    slug: string;
+    offers: Offer[];
+    address?: Address;
+}
+
+/**
+ * Props expected by {@link useComparePageInitializer}
+ */
+export interface UseComparePageInitializerProps {
     setOriginalOffers: (offers: Offer[]) => void;
     setSlug: (slug: string | null) => void;
     setSortOption: (sort: SortOptionKey) => void;
@@ -15,14 +26,21 @@ interface UseComparePageInitializerProps {
     setStatus: (message: string) => void;
     setLoading: (loading: boolean) => void;
     setIsLoadingFromSlug: (loading: boolean) => void;
-    /** Optional: Callback to set an address label derived from slug data, if available. */
+
+    /**
+     *  If the consumer needs the _pre-validated_ address for the UI,
+     *  supply a setter here (optional for backward-compat).
+     */
+    setParsedAddress?: (addr: Address | null) => void;
+
+    /**  Optional pre-fill text if geocoding fails or is skipped. */
     setInitialAddressLabel?: (label: string) => void;
 }
 
 /**
- * Custom hook to initialize page state from URL parameters (slug, sort, filters).
- * Fetches shared offers if a slug is present. Re-runs if searchParams change.
- * @param props - Callbacks to update parent component state.
+ * Reads `slug`, `sort`, and filter params from the URL and initialises page state.
+ * – If `slug` is present it fetches the shared comparison and derived address.
+ * – All setters are **stable** (`useState`) so they are safe to leave out of deps.
  */
 export const useComparePageInitializer = ({
                                               setOriginalOffers,
@@ -32,81 +50,102 @@ export const useComparePageInitializer = ({
                                               setStatus,
                                               setLoading,
                                               setIsLoadingFromSlug,
+                                              setParsedAddress,
                                               setInitialAddressLabel,
                                           }: UseComparePageInitializerProps): void => {
     const searchParams = useSearchParams();
 
     useEffect(() => {
-        const slugFromUrl = searchParams.get('slug');
-        const sortFromUrl = searchParams.get('sort') as SortOptionKey | null;
+        const slugFromUrl = searchParams.get("slug");
+        const sortFromUrl = searchParams.get("sort") as SortOptionKey | null;
         const filtersFromUrl = deserializeFiltersFromURL(searchParams);
 
+        /** Apply sort & filter params that live in the URL */
         const applyUrlParams = (): void => {
-            if (sortFromUrl && SORT_OPTIONS.some(s => s.key === sortFromUrl)) {
+            if (sortFromUrl && SORT_OPTIONS.some((s) => s.key === sortFromUrl)) {
                 setSortOption(sortFromUrl);
-            } else {
-                // If no sort option in URL or invalid, reset to default or retain existing
-                // For simplicity, let's ensure it's set, perhaps to default if not specified.
-                // setSortOption('recommended'); // Or handle as per your app's logic
             }
-            // Apply filters from URL, merging with defaults
-            const newFilters = { ...DEFAULT_FILTERS, ...filtersFromUrl };
-            setFilters(newFilters);
+            setFilters({ ...DEFAULT_FILTERS, ...filtersFromUrl });
         };
 
-        setIsLoadingFromSlug(true); // Indicate that we are now processing based on URL params (potentially a slug)
-        setLoading(true); // General loading state
+        // ---------------------------------------------------------------------
+        // 1.  Global “I’m loading” flags
+        // ---------------------------------------------------------------------
+        setIsLoadingFromSlug(!!slugFromUrl);
+        setLoading(true);
 
+        // ---------------------------------------------------------------------
+        // 2.  Process “shared link” or plain page
+        // ---------------------------------------------------------------------
         if (slugFromUrl) {
-            setStatus(`Loading shared comparison (slug: ${slugFromUrl.substring(0,20)}...)...`);
+            setStatus(`Loading shared comparison (slug: ${slugFromUrl.slice(0, 20)}…)…`);
 
-            const fetchSharedOffers = async (): Promise<void> => {
+            (async () => {
                 try {
-                    const response = await fetch(`/api/get-shared-offers?slug=${slugFromUrl}`);
-                    if (!response.ok) {
-                        const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
-                        throw new Error(errorData.error || `Failed to fetch shared offers: ${response.statusText}`);
+                    const res = await fetch(`${API_BASE_URL}/compare/${slugFromUrl}`, {
+                        headers: { Accept: "application/json" },
+                        cache: "no-store",
+                    });
+
+                    if (!res.ok) {
+                        // Try to surface backend error payload if any
+                        const { detail } = (await res.json().catch(() => ({}))) as { detail?: string };
+                        throw new Error(detail ?? `Backend returned ${res.status}`);
                     }
 
-                    // Assuming backend might return address info with the slug
-                    const data: { offers: Offer[]; slug: string; addressLabel?: string } = await response.json();
+                    const data: SharedOffersResponse = await res.json();
 
+                    // ---------------- results ----------------
                     setOriginalOffers(data.offers);
-                    setSlug(data.slug); // Set slug from fetched data
-                    if (data.addressLabel && setInitialAddressLabel) {
-                        setInitialAddressLabel(data.addressLabel);
-                    } else if (setInitialAddressLabel) {
-                        // Fallback label if address not in slug data
-                        const slugDisplay = data.slug.length > 20 ? data.slug.substring(0, 17) + "..." : data.slug;
-                        setInitialAddressLabel(`Shared Search: ${slugDisplay}`);
+                    setSlug(data.slug);
+
+                    // full typed address (for the autocomplete input)
+                    if (data.address) {
+                        setParsedAddress?.(data.address);
+
+                        // Fallback text for the rare case geocoding fails
+                        setInitialAddressLabel?.(
+                            `${data.address.street} ${data.address.house_number}, ` +
+                            `${data.address.plz} ${data.address.city}`
+                        );
+                    } else {
+                        // fallback if backend stored no address on this slug
+                        const shortSlug = data.slug.length > 20 ? data.slug.slice(0, 17) + "…" : data.slug;
+                        setInitialAddressLabel?.(`Shared Search: ${shortSlug}`);
+                        setParsedAddress?.(null);
                     }
+
                     setStatus(`Loaded ${data.offers.length} shared offers.`);
-                    applyUrlParams(); // Apply sort/filters AFTER offers are loaded
-                } catch (error: any) {
-                    console.error("Error loading shared offers:", error);
-                    setStatus(`Error: Could not load shared comparison. ${error.message}. Link may be invalid or expired.`);
+                    applyUrlParams();
+                } catch (err: any) {
+                    console.error("Error loading shared offers:", err);
+                    setStatus(
+                        `Error: Could not load shared comparison. ${err.message}. ` +
+                        `Link may be invalid or expired.`
+                    );
+
+                    // Clean-up state so UI returns to an empty page
                     setOriginalOffers([]);
                     setSlug(null);
-                    // Still apply other URL params like filters if they exist, even if slug fails
+                    setParsedAddress?.(null);
                     applyUrlParams();
                 } finally {
                     setLoading(false);
                     setIsLoadingFromSlug(false);
                 }
-            };
-            fetchSharedOffers();
+            })();
         } else {
-            // No slug, just apply other params and clear any existing offers/slug
+            //--------------------------------------------------------------------
+            //  No slug → just normal page initialisation
+            //--------------------------------------------------------------------
             setOriginalOffers([]);
             setSlug(null);
+            setParsedAddress?.(null);
             applyUrlParams();
-            setStatus('Enter an address to compare internet plans.');
+            setStatus("Enter an address to compare internet plans.");
             setLoading(false);
             setIsLoadingFromSlug(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchParams]); // Key change: Hook now re-runs when searchParams change.
-    // ESLint might ask for other dependencies (setters). They are stable from useState,
-    // but you can add them if your ESLint config requires it:
-    // }, [searchParams, setOriginalOffers, setSlug, setSortOption, setFilters, setStatus, setLoading, setIsLoadingFromSlug, setInitialAddressLabel]);
+    }, [searchParams]);
 };

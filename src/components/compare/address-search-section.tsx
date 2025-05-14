@@ -4,13 +4,14 @@ import { Search as SearchIcon, Timer } from 'lucide-react';
 import {
     AddressAutocompleteInput,
     ParsedAddress as AutocompleteParsedAddress,
+    ParsedAddress,
 } from '@/components/address-autocomplete-input';
-import { ParsedAddress } from '@/types/offer'; // Assuming ParsedAddress might be centrally defined
 import { cn } from '@/lib/utils';
 import { GOOGLE_MAPS_API_KEY_FROM_ENV } from "@/config/constants";
 
 interface AddressSearchSectionProps {
-    initialSearchQuery: string; // New prop for prefilling the input
+    parsedAddress?: ParsedAddress;
+    defaultAddressText?: string;
     onAddressSelect: (address: ParsedAddress | null, fullText: string) => void;
     onSearchClick: () => void;
     isSearchDisabled: boolean;
@@ -30,7 +31,8 @@ interface AddressSearchSectionProps {
  * @param currentSlug - The current slug, if any.
  */
 export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
-                                                                        initialSearchQuery,
+                                                                        parsedAddress,
+                                                                        defaultAddressText,
                                                                         onAddressSelect,
                                                                         onSearchClick,
                                                                         isSearchDisabled,
@@ -51,8 +53,9 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
         <section className="max-w-2xl mx-auto">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
                 <AddressAutocompleteInput
-                    key={initialSearchQuery} // Force re-mount and re-init when initialSearchQuery changes
-                    initialValue={initialSearchQuery}
+                    key={defaultAddressText} // Force re-mount and re-init when defaultAddressText changes
+                    parsedAddress={parsedAddress}
+                    initialValue={defaultAddressText || ''}
                     onAddressSelect={handleInternalAddressSelect}
                     inputClassName="bg-slate-800/50 border-slate-700 placeholder:text-slate-400 rounded-lg text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     containerClassName="flex-grow"

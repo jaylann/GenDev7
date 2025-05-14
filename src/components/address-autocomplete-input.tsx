@@ -1,60 +1,72 @@
 // components/address-autocomplete-input.tsx
 'use client';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import Script from 'next/script';
 import usePlacesAutocomplete, { getGeocode } from 'use-places-autocomplete';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { Address } from '@/types/address';
+
+export type ParsedAddress = Address;
 
 // -----------------------------------------------------------------------------
-// Environment guard
+//  ENV guard
 // -----------------------------------------------------------------------------
 const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 if (!apiKey) {
-    console.error('❌ PRE-CHECK: Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY – check .env.local. Autocomplete will be disabled.');
+  console.error(
+    '❌ PRE-CHECK: Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY – autocomplete disabled.'
+  );
 }
 
 // -----------------------------------------------------------------------------
-// Google Maps loader
+//  Google-Maps script loader
 // -----------------------------------------------------------------------------
-export const GoogleMapsLoader: React.FC = () => {
-    if (!apiKey) {
-        console.warn("GoogleMapsLoader: API key missing, Google Maps script not loaded.");
-        return null; // Don't render script tag if no API key
-    }
-    return (
-        <Script
-            id="google-maps-sdk"
-            src={`https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`}
-            strategy="afterInteractive"
-            async
-            onLoad={() => console.log('Google Maps SDK loaded successfully via <Script>.')}
-            onError={(e) => console.error('Failed to load Google Maps SDK via <Script>:', e)}
-        />
-    );
-};
+export const GoogleMapsLoader: React.FC = () =>
+  apiKey ? (
+    <Script
+      id="google-maps-sdk"
+      src={`https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`}
+      strategy="afterInteractive"
+      async
+      onLoad={() => console.log('Google Maps SDK loaded')}
+      onError={(e) => console.error('Failed to load Google Maps SDK', e)}
+    />
+  ) : null;
 
 // -----------------------------------------------------------------------------
-// Domain types
+//  Props
 // -----------------------------------------------------------------------------
-export interface ParsedAddress {
-    street: string;
-    house_number: string;
-    city: string;
-    plz: string;
-    country_code: 'DE';
-}
-
 export interface AddressAutocompleteInputProps {
-    initialValue?: string; // Making initialValue truly optional
-    onAddressSelect: (address: ParsedAddress | null, fullAddressText: string) => void;
-    inputClassName?: string;
-    containerClassName?: string;
+  /** Free-text that should appear instantly (no geocoder) */
+  initialValue?: string;
+
+  /**
+   * Fully validated address (street, house_number, plz, …).
+   * When present we *re-geocode* it once to obtain Google’s
+   * canonical “formatted_address” and put that into the input.
+   */
+  parsedAddress?: ParsedAddress;     // ← validated address from slug
+
+  /**
+   * Fallback string if geocoding fails. Treated the same as `initialValue`,
+   * but with lower priority.
+   */
+  defaultAddressText?: string;
+
+  onAddressSelect: (addr: ParsedAddress | null, full: string) => void;
+  inputClassName?: string;
+  containerClassName?: string;
 }
 
 // -----------------------------------------------------------------------------
-// Helpers
+//  Helpers (unchanged)
 // -----------------------------------------------------------------------------
 const extractAddressComponent = (
     comps: google.maps.GeocoderAddressComponent[],
@@ -63,7 +75,7 @@ const extractAddressComponent = (
 ): string | undefined =>
     comps.find((c) => c.types.includes(type))?.[short ? 'short_name' : 'long_name'];
 
-const parseGeocodeResult = (results: google.maps.GeocoderResult[]): ParsedAddress | null => {
+const parseGeocodeResult = (results: google.maps.GeocoderResult[]): Address | null => {
     if (!results.length) {
         console.debug('[ParseGeocode] No results');
         return null;
@@ -98,14 +110,16 @@ const parseGeocodeResult = (results: google.maps.GeocoderResult[]): ParsedAddres
 };
 
 // -----------------------------------------------------------------------------
-// Component
+//  Component
 // -----------------------------------------------------------------------------
 export const AddressAutocompleteInput: React.FC<AddressAutocompleteInputProps> = ({
-                                                                                      initialValue, // Keep it potentially undefined
-                                                                                      onAddressSelect,
-                                                                                      inputClassName,
-                                                                                      containerClassName,
-                                                                                  }) => {
+    initialValue,
+    parsedAddress,
+    defaultAddressText,
+    onAddressSelect,
+    inputClassName,
+    containerClassName,
+}) => {
     const {
         ready,
         value, // This value from the hook should always be a string
@@ -147,24 +161,36 @@ export const AddressAutocompleteInput: React.FC<AddressAutocompleteInputProps> =
         return () => { cancelled = true; };
     }, [init, isManuallyInitialized]); // Removed apiKey from deps, it's module-level
 
-    // Pre-fill and ensure `value` is controlled
+    // -----------------------------------------------------------------------------
+    //  1️⃣  Handle **parsedAddress from slug** → pre-fill & emit selection
+    // -----------------------------------------------------------------------------
     useEffect(() => {
-        // `ready` from the hook indicates init() has run and hook is functional.
-        // `sdkReady` indicates the Google script is loaded.
-        // Both should be true.
-        if (ready && sdkReady) {
-            // Only set initialValue if the current `value` from the hook is empty
-            // and initialValue is provided. This prevents overwriting user input
-            // or a value set by suggestion selection.
-            if (initialValue !== undefined && value === "") {
-                setValue(initialValue, false);
-            } else if (value === undefined) {
-                // This case should ideally not happen if usePlacesAutocomplete works correctly.
-                // Forcing it to be an empty string if it ever becomes undefined.
-                setValue("", false);
-            }
-        }
-    }, [ready, sdkReady, initialValue, setValue, value]);
+      if (!(ready && sdkReady)) return;
+
+      if (parsedAddress) {
+        (async () => {
+          const raw = `${parsedAddress.street} ${parsedAddress.house_number}, ` +
+                      `${parsedAddress.plz} ${parsedAddress.city}`;
+          let formatted = raw;
+          try {
+            const res = await getGeocode({ address: raw });
+            formatted = res[0]?.formatted_address ?? raw;
+          } catch (err) {
+            console.error('Geocode failed for parsedAddress:', err);
+          }
+
+          // Put canonical text into the input (no suggestion dropdown)
+          setValue(formatted, false);
+
+          // 👉 **NEW:** tell parent that a valid address is selected
+          onAddressSelect(parsedAddress, formatted);
+        })();
+      } else if (value === '') {
+        // If slug cleared, also clear parent selection
+        onAddressSelect(null, '');
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [parsedAddress, ready, sdkReady]);
 
 
     const geocodeAndEmit = useCallback(

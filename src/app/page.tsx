@@ -11,6 +11,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useOfferProcessing } from '@/hooks/use-offer-processing';
 import { Offer } from '@/types/offer';
 import { ParsedAddress } from '@/components/address-autocomplete-input';
+import type { Address } from '@/types/address';
 import {
     OfferListControls,
     ViewMode,
@@ -73,6 +74,8 @@ export default function ComparePage(): JSX.Element {
         useState<ParsedAddress | null>(null);
     const [searchInitiatedWithAddress, setSearchInitiatedWithAddress] =
         useState<string | null>(null);
+    const [parsedAddressFromSlug, setParsedAddressFromSlug] = useState<Address | null>(null);
+    const [initialAddressLabel, setInitialAddressLabel] = useState<string>('');
 
     const [statusMessage, setStatusMessage] = useState<string>('Initializing…');
 
@@ -129,8 +132,10 @@ export default function ComparePage(): JSX.Element {
         setStatus: setStatusMessage,
         setLoading: setIsLoadingFromUrl,
         setIsLoadingFromSlug: setIsLoadingFromUrl,
-        setInitialAddressLabel: setSearchInitiatedWithAddress,
+        setParsedAddress: setParsedAddressFromSlug,
+        setInitialAddressLabel: setInitialAddressLabel,
     });
+    console.log("ADRESS:" + searchInitiatedWithAddress)
 
     // ---------------------------------------------------------------------------
     // Offer processing (client-side sort / filters)
@@ -413,6 +418,8 @@ export default function ComparePage(): JSX.Element {
                 />
 
                 <AddressSearchSection
+                    parsedAddress={parsedAddressFromSlug ?? undefined}
+                    defaultAddressText={initialAddressLabel}
                     onAddressSelect={handleAddressSelected}
                     onSearchClick={handleSearchClick}
                     isSearchDisabled={isSearchButtonDisabled}
