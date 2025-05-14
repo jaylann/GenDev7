@@ -1,20 +1,35 @@
-# app/providers/pingperfect.py
 from __future__ import annotations
 
 from typing import List, Dict, Any
 
+import httpx
 from loguru import logger
 
-from app.core.config import get_settings
+from app.core.config import get_settings, Settings
 from app.models import Address, Offer
 from .base import ProviderBase, ProviderError
+from ..core.retry_config import RetryConfig
 from ..factories.pingperfect_factory import PingPerfectFactory
+from ..models.providers.pingperfect_response import PingPerfectResponse
 
-settings = get_settings()
+settings: Settings = get_settings()
 
 
 class PingPerfectProvider(ProviderBase):
-    name = "Ping Perfect"
+    name: str = "Ping Perfect"
+
+    def __init__(
+        self,
+        client: httpx.AsyncClient,
+        *,
+        retry_config: RetryConfig | None = None,
+        wants_fiber: bool = False,
+    ) -> None:
+        """
+        Initialize the PingPerfectProvider with an HTTP client and optional fiber preference.
+        """
+        super().__init__(client, retry_config=retry_config)
+        self.wants_fiber: bool = wants_fiber
 
     async def fetch(self, address: Address) -> List[Offer]:
         """
@@ -22,7 +37,11 @@ class PingPerfectProvider(ProviderBase):
         """
         logger.info(f"PingPerfectProvider.fetch – address={address}")
 
-        payload_json, headers = PingPerfectFactory.build_payload(address)
+        payload_json, headers = PingPerfectFactory.build_payload(
+            address, self.wants_fiber
+        )
+        payload_json: str  # JSON payload string
+        headers: Dict[str, Any]
 
         try:
             resp = await self.client.post(
@@ -31,6 +50,7 @@ class PingPerfectProvider(ProviderBase):
                 headers=headers,
                 timeout=10,
             )
+            resp: httpx.Response
             resp.raise_for_status()
             raw_items: List[Dict[str, Any]] = resp.json()
             logger.info(
@@ -41,10 +61,12 @@ class PingPerfectProvider(ProviderBase):
             raise ProviderError(f"Ping Perfect failed: {exc}") from exc
 
         # Get the validated response models…
-        responses = PingPerfectFactory.parse_responses(raw_items)
+        responses: List[PingPerfectResponse] = PingPerfectFactory.parse_responses(
+            raw_items
+        )
         logger.debug(f"Parsed {len(responses)} PingPerfectResponse models")
 
         # …and convert them to Offer here
-        offers = [r.to_offer(self.name) for r in responses]
+        offers: List[Offer] = [r.to_offer(self.name) for r in responses]
         logger.info(f"PingPerfectProvider → returning {len(offers)} offers")
         return offers

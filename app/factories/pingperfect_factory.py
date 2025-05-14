@@ -8,13 +8,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from loguru import logger
 
-from app.core.config import get_settings
+from app.core.config import get_settings, Settings
 from app.models import Address
 from app.models.providers.ping_perfect_request import PingPerfectRequest
 from app.models.providers.pingperfect_response import PingPerfectResponse
 from app.utils.hmac_sign import sign
 
-settings = get_settings()
+settings: Settings = get_settings()
 
 
 class PingPerfectFactory:
@@ -23,24 +23,25 @@ class PingPerfectFactory:
     """
 
     @staticmethod
-    def build_payload(address: Address) -> Tuple[str, Dict[str, str]]:
+    def build_payload(address: Address, wants_fiber: bool = False) -> Tuple[str, Dict[str, str]]:
         """
         Build the JSON payload and HTTP headers for a PingPerfect availability request.
         """
-        req = PingPerfectRequest(
+        req: PingPerfectRequest = PingPerfectRequest(
             street=address.street,
             houseNumber=address.house_number,
             plz=address.plz,
             city=address.city,
+            wantsFiber=wants_fiber,
         )
-        payload_dict = req.model_dump(by_alias=True)
-        payload_json = json.dumps(payload_dict, separators=(",", ":"))
+        payload_dict: Dict[str, Any] = req.model_dump(by_alias=True)
+        payload_json: str = json.dumps(payload_dict, separators=(",", ":"))
         logger.debug(f"PingPerfectFactory.build_payload → {payload_json}")
 
-        ts = str(int(time.time()))
-        signature = sign(req, ts, settings.pingperfect_secret)
+        ts: str = str(int(time.time()))
+        signature: str = sign(req, ts, settings.pingperfect_secret)
 
-        headers = {
+        headers: Dict[str, str] = {
             "X-Client-Id": settings.pingperfect_client_id,
             "X-Timestamp": ts,
             "X-Signature": signature,
@@ -53,21 +54,21 @@ class PingPerfectFactory:
         """
         Parse a single JSON item into a PingPerfectResponse, or return None if invalid.
         """
-        info = item.get("productInfo")
-        price = item.get("pricingDetails")
+        info: Optional[Dict[str, Any]] = item.get("productInfo")
+        price: Optional[Dict[str, Any]] = item.get("pricingDetails")
         if info is None or price is None:
             return None
 
-        provider_name = item.get("providerName", "")
-        speed_val = info.get("speed")
-        term_val = info.get("contractDurationInMonths")
-        product_uuid = uuid.uuid5(
+        provider_name: str = item.get("providerName", "")
+        speed_val: Any = info.get("speed")
+        term_val: Any = info.get("contractDurationInMonths")
+        product_uuid: str = uuid.uuid5(
             uuid.NAMESPACE_DNS,
             f"{provider_name}-{speed_val}-{term_val}",
         ).hex
 
-        installation_raw = str(price.get("installationService", "")).strip().lower()
-        installation_included = installation_raw in {"yes", "included", "true"}
+        installation_raw: str = str(price.get("installationService", "")).strip().lower()
+        installation_included: bool = installation_raw in {"yes", "included", "true"}
 
         return PingPerfectResponse(
             provider_name=provider_name,
@@ -100,7 +101,7 @@ class PingPerfectFactory:
         """
         responses: List[PingPerfectResponse] = []
         for item in raw_items:
-            resp = PingPerfectFactory.parse_response(item)
+            resp: Optional[PingPerfectResponse] = PingPerfectFactory.parse_response(item)
             if resp:
                 responses.append(resp)
             else:

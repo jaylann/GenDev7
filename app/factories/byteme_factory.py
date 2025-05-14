@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List, Optional, Final
 
 import pandas as pd
+from pandas import Series, DataFrame
 from loguru import logger
 
 from ..models import Offer
@@ -26,7 +27,7 @@ BOOL_COLS: Final[List[str]] = ["installationService", "tv"]
 
 class ByteMeOfferFactory:
     @classmethod
-    def from_tuple(cls, row) -> Optional[ByteMeResponse]:
+    def from_tuple(cls, row: pd.Series) -> Optional[ByteMeResponse]:
         """
         Convert a pandas namedtuple row into a ByteMeResponse via the existing ByteMeResponse.from_tuple.
         """
@@ -66,6 +67,7 @@ class ByteMeOfferFactory:
         """
         # Boolean columns
         for col in BOOL_COLS:
+            mapped: pd.Series
             mapped = (
                 df[col]
                 .astype(str)
@@ -77,24 +79,28 @@ class ByteMeOfferFactory:
 
         # Numerics
         for col in ESSENTIAL_NUMERIC + OPTIONAL_NUMERIC:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
+            numeric_col: pd.Series
+            numeric_col = pd.to_numeric(df[col], errors="coerce")
+            df[col] = numeric_col
 
         # Discard malformed
-        cond_missing = df[ESSENTIAL_NUMERIC].isna().any(axis=1)
-        cond_zero_or_neg = (df[["speed", "monthlyCostInCent"]] <= 0).any(axis=1)
-        cond_speed_too_low = df["speed"] < 1
-        before_count = len(df)
-        df = df[~(cond_missing | cond_zero_or_neg | cond_speed_too_low)]
+        before_count: int = len(df)
+        cond_missing: pd.Series = df[ESSENTIAL_NUMERIC].isna().any(axis=1)
+        cond_zero_or_neg: pd.Series = (df[["speed", "monthlyCostInCent"]] <= 0).any(axis=1)
+        cond_speed_too_low: pd.Series = df["speed"] < 1
+        df: pd.DataFrame = df[~(cond_missing | cond_zero_or_neg | cond_speed_too_low)]
         logger.debug(
             f"ByteMeOfferFactory.clean_df – dropped {before_count - len(df)} malformed rows (kept {len(df)})"
         )
 
         # Deduplicate: keep cheapest
-        df = (
+        deduped: pd.DataFrame
+        deduped = (
             df.sort_values("monthlyCostInCent")
             .drop_duplicates(subset="productId", keep="first")
             .reset_index(drop=True)
         )
+        df: pd.DataFrame = deduped
 
         return df
 

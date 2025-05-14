@@ -21,14 +21,15 @@ class ServusSpeedFactory:
         """
         Build the JSON body for the 'available-products' endpoint.
         """
-        s_addr = ServusSpeedAddress(
+        s_addr: ServusSpeedAddress = ServusSpeedAddress(
             strasse=address.street,
             hausnummer=address.house_number,
             postleitzahl=address.plz,
             stadt=address.city,
             land=address.country_code,
         )
-        return ServusSpeedRequest(address=s_addr).model_dump()
+        body: Dict[str, Any] = ServusSpeedRequest(address=s_addr).model_dump()
+        return body
 
     @staticmethod
     def parse_detail_response(pid: str, payload: Dict[str, Any]) -> ServusSpeedResponse:
@@ -36,12 +37,12 @@ class ServusSpeedFactory:
         Inline the logic formerly in ServusSpeedResponse.from_json:
         parse one product-detail payload into a ServusSpeedResponse.
         """
-        prod = payload["servusSpeedProduct"]
-        info = prod["productInfo"]
-        price = prod["pricingDetails"]
-        discount = int(prod.get("discount") or 0)
+        prod: Dict[str, Any] = payload["servusSpeedProduct"]
+        info: Dict[str, Any] = prod["productInfo"]
+        price: Dict[str, Any] = prod["pricingDetails"]
+        discount: int = int(prod.get("discount") or 0)
 
-        return ServusSpeedResponse(
+        response: ServusSpeedResponse = ServusSpeedResponse(
             provider_name=prod["providerName"],
             product_id=pid,
             speed_down_mbit=int(info["speed"]),
@@ -56,3 +57,4 @@ class ServusSpeedFactory:
             voucher_value_cents=discount or None,
             max_age=info.get("maxAge"),
         )
+        return response

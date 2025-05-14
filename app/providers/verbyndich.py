@@ -1,10 +1,9 @@
-# app/providers/verbyndich.py
 from __future__ import annotations
 
 import asyncio
 import json
 import os
-from typing import List
+from typing import Any, Dict, List, Tuple
 
 import httpx
 from async_lru import alru_cache
@@ -16,12 +15,12 @@ from tenacity import (
     wait_exponential,
 )
 
-from app.core.config import get_settings
+from app.core.config import get_settings, Settings
 from app.models import Address, Offer
 from .base import ProviderBase
 from ..factories.verbyndich_factory import VerbynDichFactory
 
-settings = get_settings()
+settings: Settings = get_settings()
 
 # Pagination/cache constants
 MAX_PAGES = 10
@@ -54,7 +53,7 @@ async def _fetch_page(client: httpx.AsyncClient, body: str, page: int) -> dict:
 
 
 class VerbynDichProvider(ProviderBase):
-    name = "VerbynDich"
+    name: str = "VerbynDich"
 
     async def fetch(self, address: Address) -> List[Offer]:
         """
@@ -63,18 +62,20 @@ class VerbynDichProvider(ProviderBase):
         • Parse each item via the factory.
         • Convert valid responses to Offer.
         """
-        body = VerbynDichFactory.build_body(address)
-        sem = asyncio.Semaphore(PARALLEL)
-        pages: List[dict] = []
+        body: str = VerbynDichFactory.build_body(address)
+        sem: asyncio.Semaphore = asyncio.Semaphore(PARALLEL)
+        pages: List[Dict[str, Any]] = []
         offers: List[Offer] = []
 
-        async def _one(pg: int):
+        async def _one(pg: int) -> Tuple[int, Dict[str, Any]]:
             async with sem:
                 return pg, await _fetch_page(self.client, body, pg)
 
         # start initial batch
-        pending = {asyncio.create_task(_one(i)) for i in range(PARALLEL)}
-        next_page = PARALLEL
+        pending: set[asyncio.Task[Tuple[int, Dict[str, Any]]]] = {
+            asyncio.create_task(_one(i)) for i in range(PARALLEL)
+        }
+        next_page: int = PARALLEL
 
         while pending:
             done, pending = await asyncio.wait(

@@ -63,7 +63,8 @@ def _cache_get(slug: str) -> Optional[List[Offer]]:
 
 # --- Pydantic Models for API and WebSocket ---
 class WsCompareAddressRequest(Address):
-    pass
+    providers: Optional[List[str]] = None
+    wants_fiber: Optional[bool] = False
 
 
 class WebSocketMessage(BaseModel):
@@ -140,7 +141,7 @@ async def compare_websocket(websocket: WebSocket):
         await websocket.close(code=1008)
         return
 
-    all_provider_instances = await get_providers()
+    all_provider_instances = await get_providers(address.providers, wants_fiber=address.wants_fiber)
     if not all_provider_instances:
         logger.warning("WebSocket: No providers. Sending error.")
         await websocket.send_json(

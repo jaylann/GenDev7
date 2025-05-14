@@ -1,7 +1,7 @@
 # app/providers/base.py
 from __future__ import annotations
 import abc
-from typing import List
+from typing import List, Dict, Any
 
 import httpx
 from tenacity import AsyncRetrying
@@ -37,10 +37,10 @@ class ProviderBase(abc.ABC):
         """
         Entry point that wraps `self.fetch` in a Tenacity retry loop.
         """
-        settings = self.retry_config.model_dump()
+        settings: Dict[str, Any] = self.retry_config.model_dump()
         logger.debug(f"Provider {self.name} retry settings: {settings}")
 
-        retryer = AsyncRetrying(
+        retryer: AsyncRetrying = AsyncRetrying(
             stop=self.retry_config.stop,
             wait=self.retry_config.wait,
             retry=self.retry_config.retry,

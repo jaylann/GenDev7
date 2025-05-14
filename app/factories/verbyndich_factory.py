@@ -31,7 +31,7 @@ class VerbynDichFactory:
         """
         Build the JSON/XML (whichever) body for the VerbynDichRequest.
         """
-        req = VerbynDichRequest(
+        req: VerbynDichRequest = VerbynDichRequest(
             street=address.street,
             house_number=address.house_number,
             city=address.city,
@@ -44,15 +44,16 @@ class VerbynDichFactory:
         """
         Parse one raw item dict into a VerbynDichResponse, or None if invalid.
         """
-        desc = data.get("description", "")
-        raw_product = data.get("product", "")
+        desc: str = data.get("description", "")
+        raw_product: str = data.get("product", "")
 
         def _match(rgx: re.Pattern[str]) -> Optional[str]:
             m = rgx.search(desc)
             return m.group(1) if m else None
 
         # price
-        price_eur = _match(_PRICE_MONTH_RE)
+        price_eur: Optional[str] = _match(_PRICE_MONTH_RE)
+        price_cents: int
         try:
             price_cents = (
                 int(float(price_eur.replace(",", ".")) * 100) if price_eur else 0
@@ -61,18 +62,18 @@ class VerbynDichFactory:
             price_cents = 0
 
         # speed, duration, max_age
-        speed = int(_match(_SPEED_RE) or 16)
-        duration = int(_match(_DURATION_RE) or 24)
-        max_age = int(_match(_MAX_AGE_RE)) if _match(_MAX_AGE_RE) else None
+        speed: int = int(_match(_SPEED_RE) or 16)
+        duration: int = int(_match(_DURATION_RE) or 24)
+        max_age: Optional[int] = int(_match(_MAX_AGE_RE)) if _match(_MAX_AGE_RE) else None
 
         # voucher
-        voucher_eur = _match(_VOUCHER_RE)
-        voucher_value = int(voucher_eur) * 100 if voucher_eur else None
-        voucher_type = VoucherKind.ABSOLUTE if voucher_value else None
+        voucher_eur: Optional[str] = _match(_VOUCHER_RE)
+        voucher_value: Optional[int] = int(voucher_eur) * 100 if voucher_eur else None
+        voucher_type: Optional[VoucherKind] = VoucherKind.ABSOLUTE if voucher_value else None
 
         # connection type
-        conn = _match(_CONN_RE)
-        conn_map = {
+        conn: Optional[str] = _match(_CONN_RE)
+        conn_map: Dict[str, str] = {
             "dsl": "DSL",
             "cable": "Cable",
             "kabel": "Cable",
@@ -80,18 +81,18 @@ class VerbynDichFactory:
             "glasfaser": "Fiber",
             "mobile": "Mobile",
         }
-        connection_type = conn_map.get(conn.lower(), "DSL") if conn else "DSL"
+        connection_type: str = conn_map.get(conn.lower(), "DSL") if conn else "DSL"
 
         # TV
-        tv_pkg = _match(_TV_PKG_RE)
-        tv_included = bool(tv_pkg)
+        tv_pkg: Optional[str] = _match(_TV_PKG_RE)
+        tv_included: bool = bool(tv_pkg)
 
         # data cap
-        data_cap_str = _match(_DATA_CAP_RE)
-        data_cap_gb = int(data_cap_str) if data_cap_str else None
+        data_cap_str: Optional[str] = _match(_DATA_CAP_RE)
+        data_cap_gb: Optional[int] = int(data_cap_str) if data_cap_str else None
 
         # plan name cleanup
-        plan_name = raw_product
+        plan_name: str = raw_product
         if plan_name.lower().startswith("verbyndich"):
             plan_name = plan_name.split(" ", 1)[1].strip()
 
@@ -120,7 +121,7 @@ class VerbynDichFactory:
         """
         responses: List[VerbynDichResponse] = []
         for item in raw_items:
-            resp = VerbynDichFactory.parse_response(item)
+            resp: Optional[VerbynDichResponse] = VerbynDichFactory.parse_response(item)
             if resp is not None:
                 responses.append(resp)
         return responses

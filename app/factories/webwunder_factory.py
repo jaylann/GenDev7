@@ -2,18 +2,18 @@
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from httpx import Response
 from loguru import logger
 
-from app.core.config import get_settings
+from app.core.config import get_settings, Settings
 from app.models import Address
 from app.models.base.offer import VoucherKind
 from app.models.providers.webwunder_request import WebWunderRequest
 from app.models.providers.webwunder_response import WebWunderResponse
 
-settings = get_settings()
+settings: Settings = get_settings()
 
 
 class WebWunderFactory:
@@ -23,14 +23,14 @@ class WebWunderFactory:
 
     @staticmethod
     def build_xml(address: Address) -> str:
-        req = WebWunderRequest(
+        req: WebWunderRequest = WebWunderRequest(
             street=address.street,
             house_number=address.house_number,
             city=address.city,
             plz=address.plz,
             country_code=address.country_code,
         )
-        xml = req.to_xml()
+        xml: str = req.to_xml()
         logger.debug(f"WebWunderFactory.build_xml → {xml}")
         return xml
 
@@ -43,7 +43,7 @@ class WebWunderFactory:
             raise
 
         try:
-            root = ET.fromstring(resp.text)
+            root: ET.Element = ET.fromstring(resp.text)
             return root
         except ET.ParseError as exc:
             logger.error(f"WebWunderFactory XML parse error: {exc}", exc_info=True)
@@ -60,23 +60,23 @@ class WebWunderFactory:
             return node.text.strip() if node is not None and node.text else default
 
         # required fields
-        provider_name = txt("providerName")
-        product_id = txt("productId")
+        provider_name: str = txt("providerName")
+        product_id: str = txt("productId")
         try:
-            speed_down = int(txt("speed", "0"))
-            price_intro = int(txt("monthlyCostInCent", "0"))
-            price_regular = int(txt("monthlyCostInCentFrom25thMonth", "0"))
-            contract_term = int(txt("contractDurationInMonths", "0"))
+            speed_down: int = int(txt("speed", "0"))
+            price_intro: int = int(txt("monthlyCostInCent", "0"))
+            price_regular: int = int(txt("monthlyCostInCentFrom25thMonth", "0"))
+            contract_term: int = int(txt("contractDurationInMonths", "0"))
         except ValueError as exc:
             logger.warning(
                 f"WebWunderFactory.parse_response → invalid numeric value: {exc}"
             )
             return None
 
-        connection_type = txt("connectionType", "DSL")
+        connection_type: str = txt("connectionType", "DSL")
 
         # voucher parsing
-        voucher_elem = elem.find(".//{*}voucher")
+        voucher_elem: Optional[ET.Element] = elem.find(".//{*}voucher")
         voucher_type: Optional[VoucherKind] = None
         voucher_value: Optional[int] = None
         voucher_min_order: Optional[int] = None
@@ -112,10 +112,10 @@ class WebWunderFactory:
     def parse_responses(elems: List[ET.Element]) -> List[WebWunderResponse]:
         responses: List[WebWunderResponse] = []
         for el in elems:
-            resp = WebWunderFactory.parse_response(el)
+            resp: Optional[WebWunderResponse] = WebWunderFactory.parse_response(el)
             if resp is not None:
                 responses.append(resp)
             else:
-                logger.warning(f"WebWunderFactory → skipped invalid element")
+                logger.warning("WebWunderFactory → skipped invalid element")
         logger.debug(f"WebWunderFactory → parsed {len(responses)} total responses")
         return responses

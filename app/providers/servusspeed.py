@@ -1,4 +1,3 @@
-# app/providers/servusspeed.py
 from __future__ import annotations
 
 import asyncio
@@ -9,13 +8,13 @@ from aiocache import Cache, cached
 from httpx import HTTPStatusError
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 
-from app.core.config import get_settings
+from app.core.config import get_settings, Settings
 from app.models import Address, Offer
 from app.utils.logger import logger as util_logger
 from .base import ProviderBase, ProviderError
 from ..factories.servusspeed_factory import ServusSpeedFactory
 
-settings = get_settings()
+settings: Settings = get_settings()
 
 # concurrency & timeout constants
 MAX_PARALLEL = 3
@@ -26,7 +25,7 @@ PRODUCT_DETAILS_TIMEOUT = httpx.Timeout(
     timeout=DETAIL_READ_SECS, connect=DETAIL_CONNECT_SECS
 )
 
-_sem = asyncio.Semaphore(MAX_PARALLEL)
+_sem: asyncio.Semaphore = asyncio.Semaphore(MAX_PARALLEL)
 
 
 async def _post_json(
@@ -63,9 +62,9 @@ async def _post_json(
 
 
 class ServusSpeedProvider(ProviderBase):
-    name = "Servus Speed"
-    INTERNAL_PROVIDER_FETCH_TIMEOUT = 88.0
-    MIN_TIME_FOR_DETAILS = 5.0
+    name: str = "Servus Speed"
+    INTERNAL_PROVIDER_FETCH_TIMEOUT: float = 88.0
+    MIN_TIME_FOR_DETAILS: float = 5.0
 
     @cached(ttl=43200, cache=Cache.MEMORY, key_builder=lambda f, self, address: address)
     @retry(
@@ -75,8 +74,8 @@ class ServusSpeedProvider(ProviderBase):
         reraise=True,
     )
     async def fetch(self, address: Address) -> List[Offer]:
-        loop = asyncio.get_event_loop()
-        start = loop.time()
+        loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+        start: float = loop.time()
 
         if not settings.servusspeed_username or not settings.servusspeed_password:
             util_logger.critical("Credentials not set; skipping Servus Speed")
@@ -85,8 +84,11 @@ class ServusSpeedProvider(ProviderBase):
         util_logger.info(f"ServusSpeedProvider.fetch – {address}")
 
         # build 'available-products' body via factory
-        body = ServusSpeedFactory.build_available_products_body(address)
-        auth = (settings.servusspeed_username, settings.servusspeed_password)
+        body: Dict[str, Any] = ServusSpeedFactory.build_available_products_body(address)
+        auth: Tuple[str, str] = (
+            settings.servusspeed_username,
+            settings.servusspeed_password,
+        )
         self._servus_body = body
         self._servus_auth = auth
 
@@ -99,7 +101,7 @@ class ServusSpeedProvider(ProviderBase):
                 auth,
                 AVAILABLE_PRODUCTS_TIMEOUT,
             )
-            product_ids = resp_avail.json().get("availableProducts", [])
+            product_ids: List[str] = resp_avail.json().get("availableProducts", [])
         except Exception as e:
             util_logger.error(f"Failed fetching available products: {e!r}")
             raise
@@ -108,20 +110,20 @@ class ServusSpeedProvider(ProviderBase):
             util_logger.info("No products available")
             return []
 
-        elapsed = loop.time() - start
-        budget = self.INTERNAL_PROVIDER_FETCH_TIMEOUT - elapsed - 2.0
+        elapsed: float = loop.time() - start
+        budget: float = self.INTERNAL_PROVIDER_FETCH_TIMEOUT - elapsed - 2.0
         if budget < self.MIN_TIME_FOR_DETAILS:
             util_logger.warning("Insufficient time for details; skipping")
             return []
 
         # fetch details in parallel
-        tasks = [
+        tasks: List[asyncio.Task[Optional[Offer]]] = [
             asyncio.create_task(self._fetch_one_product_details(pid))
             for pid in product_ids
         ]
         offers: List[Offer] = []
         try:
-            results = await asyncio.wait_for(
+            results: List[Optional[Offer]] = await asyncio.wait_for(
                 asyncio.gather(*tasks, return_exceptions=False),
                 timeout=budget,
             )
