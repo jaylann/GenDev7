@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import re
 from typing import List, Optional
 
 import httpx
-import json
 from async_lru import alru_cache
 from loguru import logger
 from tenacity import (
@@ -26,9 +26,9 @@ from ..models.base.offer import VoucherKind
 VB_BASE: str = os.getenv("VERBYNDICH_BASE", "https://api.verbyn­dich.example/v1/deals")
 VB_API_KEY: str = os.getenv("VERBYNDICH_API_KEY", "REPLACE_ME")
 
-MAX_PAGES: int = 10     # hard cap – safety against runaway pagination
-PARALLEL: int = 5       # pages in flight
-PAGE_TMO: int = 15      # seconds
+MAX_PAGES: int = 10  # hard cap – safety against runaway pagination
+PARALLEL: int = 5  # pages in flight
+PAGE_TMO: int = 15  # seconds
 
 PAGE_FETCH_RETRY_ATTEMPTS: int = 3
 PAGE_FETCH_RETRY_EXP_MULTIPLIER: int = 1
@@ -37,9 +37,7 @@ PAGE_FETCH_RETRY_EXP_MAX_WAIT: int = 10
 # --------------------------------------------------------------------------- #
 # Regex helpers (pre-compiled once at import time)
 # --------------------------------------------------------------------------- #
-PRICE_MONTH_RE = re.compile(
-    r"für\s*nur\s*(\d+(?:[.,]\d+)?)\s*€\s*im\s*Monat", re.I
-)
+PRICE_MONTH_RE = re.compile(r"für\s*nur\s*(\d+(?:[.,]\d+)?)\s*€\s*im\s*Monat", re.I)
 SPEED_RE = re.compile(r"(\d+)\s*Mbit", re.I)
 DURATION_RE = re.compile(r"Mindestvertragslaufzeit\s*(\d+)\s*Monate?", re.I)
 MAX_AGE_RE = re.compile(r"(?:unter|bis)\s*(\d+)\s*Jahr", re.I)
@@ -47,6 +45,7 @@ VOUCHER_RE = re.compile(r"Rabatt\s+von\s*(\d+)\s*€", re.I)
 CONN_RE = re.compile(r"\b(DSL|Cable|Kabel|Fiber|Glasfaser|Mobile)\b", re.I)
 TV_PKG_RE = re.compile(r"\b([A-Z][A-Za-z0-9+]*TV\+?)\b")
 DATA_CAP_RE = re.compile(r"Ab\s*(\d+)\s*GB", re.I)
+
 
 # --------------------------------------------------------------------------- #
 # Low-level page fetch with retry
@@ -76,6 +75,7 @@ async def _page(client: httpx.AsyncClient, body: str, pg: int, api: str) -> dict
 
     logger.debug("VerbynDichProvider: saved raw JSON → verbyndich_response.json")
     return r.json()
+
 
 # --------------------------------------------------------------------------- #
 # Description parser → Offer
@@ -162,6 +162,7 @@ def _parse(data: dict) -> Offer:
         max_age=max_age,
     )
 
+
 # --------------------------------------------------------------------------- #
 # Provider
 # --------------------------------------------------------------------------- #
@@ -191,7 +192,9 @@ class VerbynDichProvider(ProviderBase):
         pending = {asyncio.create_task(_one(i)) for i in range(PARALLEL)}
 
         while pending:
-            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            done, pending = await asyncio.wait(
+                pending, return_when=asyncio.FIRST_COMPLETED
+            )
             for task in done:
                 try:
                     pg_num, data = task.result()

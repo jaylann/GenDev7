@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 from io import StringIO
-from typing import List
 
 import pandas as pd
 from loguru import logger
@@ -77,7 +76,7 @@ def _clean(df: pd.DataFrame) -> pd.DataFrame:
         "ByteMeProvider.clean – dropped %d malformed rows (kept %d)",
         before - len(df),
         len(df),
-        )
+    )
 
     # 4️⃣  Canonicalise duplicates: cheapest price wins
     df = (
@@ -87,7 +86,6 @@ def _clean(df: pd.DataFrame) -> pd.DataFrame:
     )
 
     return df
-
 
 
 class ByteMeProvider(ProviderBase):
@@ -115,7 +113,9 @@ class ByteMeProvider(ProviderBase):
             # Debug: save raw CSV response
             with open("byteme_response.csv", "wb") as f:
                 f.write(resp.content)
-            logger.debug("ByteMeProvider: Saved raw CSV response to byteme_response.csv")
+            logger.debug(
+                "ByteMeProvider: Saved raw CSV response to byteme_response.csv"
+            )
             logger.info(f"Received HTTP {resp.status_code} from ByteMe endpoint")
         except Exception as exc:
             logger.error("ByteMe download failed", exc_info=True)
@@ -128,25 +128,29 @@ class ByteMeProvider(ProviderBase):
         offers: List[Offer] = []
         for row in df.itertuples(index=False):
             price_intro = row.monthlyCostInCent
-            if pd.isna(price_intro):            # <-- new guard (paranoia mode)
+            if pd.isna(price_intro):  # <-- new guard (paranoia mode)
                 continue
             offers.append(
                 Offer(
-                   provider=self.name,
-                   plan_name=row.providerName,                           # NEW
-                   product_id=str(int(row.productId)),
-                   speed_down_mbit=int(round(row.speed)),
-                   price_cents_month_intro=int(row.monthlyCostInCent),
-                   price_cents_month_regular=int(row.afterTwoYearsMonthlyCost),
-                   contract_duration_months=int(row.durationInMonths),
-                   connection_type=row.connectionType,
-                   installation_service_included=row.installationService,
-                   tv_included=bool(row.tv),
-                   tv_package_name=row.tv if isinstance(row.tv, str) and row.tv.strip() else None,
-                   data_cap_gb=int(row.limitFrom) if pd.notna(row.limitFrom) else None,
-                   voucher_type=row.voucherType if pd.notna(row.voucherType) else None,
-                   voucher_value_cents=int(row.voucherValue) if pd.notna(row.voucherValue) else None,
-                   max_age=int(row.maxAge) if pd.notna(row.maxAge) else None,
+                    provider=self.name,
+                    plan_name=row.providerName,  # NEW
+                    product_id=str(int(row.productId)),
+                    speed_down_mbit=int(round(row.speed)),
+                    price_cents_month_intro=int(row.monthlyCostInCent),
+                    price_cents_month_regular=int(row.afterTwoYearsMonthlyCost),
+                    contract_duration_months=int(row.durationInMonths),
+                    connection_type=row.connectionType,
+                    installation_service_included=row.installationService,
+                    tv_included=bool(row.tv),
+                    tv_package_name=(
+                        row.tv if isinstance(row.tv, str) and row.tv.strip() else None
+                    ),
+                    data_cap_gb=int(row.limitFrom) if pd.notna(row.limitFrom) else None,
+                    voucher_type=row.voucherType if pd.notna(row.voucherType) else None,
+                    voucher_value_cents=(
+                        int(row.voucherValue) if pd.notna(row.voucherValue) else None
+                    ),
+                    max_age=int(row.maxAge) if pd.notna(row.maxAge) else None,
                 )
             )
 

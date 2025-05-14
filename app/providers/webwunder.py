@@ -12,7 +12,10 @@ from app.utils.logger import logger
 from .base import ProviderBase, ProviderError
 from ..models.base.offer import VoucherKind
 
-SOAP_EP = os.getenv("WEBWUNDER_ENDPOINT", "https://webwunder.gendev7.check24.fun/endpunkte/soap/ws", )
+SOAP_EP = os.getenv(
+    "WEBWUNDER_ENDPOINT",
+    "https://webwunder.gendev7.check24.fun/endpunkte/soap/ws",
+)
 WEBWUNDER_API_KEY = os.getenv("WEBWUNDER_API_KEY")
 
 NS = {"gs": "http://webwunder.gendev7.check24.fun/offerservice"}
@@ -22,6 +25,7 @@ class WebWunderProvider(ProviderBase):
     """
     Adapter for the *WebWunder* SOAP interface.
     """
+
     name = "WebWunder"
 
     # --------------------------------------------------------------------- #
@@ -75,17 +79,29 @@ class WebWunderProvider(ProviderBase):
     # Main entry                                                            #
     # --------------------------------------------------------------------- #
     async def fetch(self, address: Address) -> List[Offer]:
-        logger.info(f"WebWunderProvider: fetch for {address.street} {address.house_number}, "
-                    f"{address.plz} {address.city} ({address.country_code})")
+        logger.info(
+            f"WebWunderProvider: fetch for {address.street} {address.house_number}, "
+            f"{address.plz} {address.city} ({address.country_code})"
+        )
 
         xml_request = self._build_xml(address)
-        headers = {"Content-Type": "text/xml; charset=utf-8", "X-Api-Key": WEBWUNDER_API_KEY,
-                   "SOAPAction": "legacyGetInternetOffers", }
+        headers = {
+            "Content-Type": "text/xml; charset=utf-8",
+            "X-Api-Key": WEBWUNDER_API_KEY,
+            "SOAPAction": "legacyGetInternetOffers",
+        }
 
         start = time.perf_counter()
-        response = await self.client.post(SOAP_EP, content=xml_request, headers=headers, timeout=10, )
+        response = await self.client.post(
+            SOAP_EP,
+            content=xml_request,
+            headers=headers,
+            timeout=10,
+        )
         duration = time.perf_counter() - start
-        logger.info(f"WebWunderProvider: HTTP {response.status_code} in {duration:.2f}s")
+        logger.info(
+            f"WebWunderProvider: HTTP {response.status_code} in {duration:.2f}s"
+        )
 
         root = self._postprocess_response(response)
         product_elems = list(root.iterfind(".//{*}products"))
@@ -113,21 +129,39 @@ class WebWunderProvider(ProviderBase):
             voucher_min_order_value_cents: Optional[int] = None
 
             if voucher_elem is not None:
-                raw_type = voucher_elem.attrib.get("{http://www.w3.org/2001/XMLSchema-instance}type")
+                raw_type = voucher_elem.attrib.get(
+                    "{http://www.w3.org/2001/XMLSchema-instance}type"
+                )
                 if raw_type and raw_type.lower().endswith("absolutevoucher"):
                     voucher_type = VoucherKind.ABSOLUTE
                     voucher_value_cents = int(txt(voucher_elem, "discountInCent", "0"))
-                    voucher_min_order_value_cents = int(txt(voucher_elem, "minOrderValueInCent", "0"))
+                    voucher_min_order_value_cents = int(
+                        txt(voucher_elem, "minOrderValueInCent", "0")
+                    )
 
             offers.append(
-                Offer(provider=self.name, plan_name=txt(prod, "providerName"), product_id=txt(prod, "productId"),
-                      speed_down_mbit=speed, speed_up_mbit=None, data_cap_gb=None,
-                      connection_type=txt(prod, "connectionType", "DSL"), price_cents_month_intro=price_intro,
-                      price_cents_month_regular=price_regular, contract_duration_months=contract_term,
-                      installation_service_included=True, installation_cost_cents=None, tv_included=False,
-                      tv_package_name=None, voucher_type=voucher_type, voucher_value_cents=voucher_value_cents,
-                      voucher_min_order_value_cents=voucher_min_order_value_cents, voucher_value_percent=None,
-                      max_age=None, ))
+                Offer(
+                    provider=self.name,
+                    plan_name=txt(prod, "providerName"),
+                    product_id=txt(prod, "productId"),
+                    speed_down_mbit=speed,
+                    speed_up_mbit=None,
+                    data_cap_gb=None,
+                    connection_type=txt(prod, "connectionType", "DSL"),
+                    price_cents_month_intro=price_intro,
+                    price_cents_month_regular=price_regular,
+                    contract_duration_months=contract_term,
+                    installation_service_included=True,
+                    installation_cost_cents=None,
+                    tv_included=False,
+                    tv_package_name=None,
+                    voucher_type=voucher_type,
+                    voucher_value_cents=voucher_value_cents,
+                    voucher_min_order_value_cents=voucher_min_order_value_cents,
+                    voucher_value_percent=None,
+                    max_age=None,
+                )
+            )
 
         logger.info(f"WebWunderProvider: returning {len(offers)} offers")
         return offers

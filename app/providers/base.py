@@ -1,38 +1,62 @@
+# app/providers/base.py
 from __future__ import annotations
-
 import abc
 from typing import List
 
 import httpx
-from tenacity import (retry, wait_exponential, stop_after_attempt, retry_if_exception_type, )
+from tenacity import AsyncRetrying
+from loguru import logger
 
-from app.exceptions.provider_error import ProviderError
 from app.models import Address, Offer
+from app.exceptions.provider_error import ProviderError
+from app.providers.retry_config import RetryConfig
 
 
 class ProviderBase(abc.ABC):
     """
-    All provider adapters must inherit from this class and implement `fetch`.
-    Each adapter receives a shared `httpx.AsyncClient`, injected by the
-    FastAPI dependency layer.
+    Base class for all provider adapters. Subclasses must implement `fetch`.
+    Wraps `fetch` in a Tenacity retry loop using `retry_config`.
     """
 
-    name: str  # e.g. "WebWunder" – override in subclass
+    name: str  # override in subclass, e.g. "WebWunder"
 
-    def __init__(self, client: httpx.AsyncClient) -> None:
+    # default retry settings; can be overridden per-class or per-instance
+    retry_config: RetryConfig = RetryConfig()
+
+    def __init__(
+            self,
+            client: httpx.AsyncClient,
+            *,
+            retry_config: RetryConfig | None = None,
+    ) -> None:
         self.client = client
+        if retry_config is not None:
+            self.retry_config = retry_config
 
-    # Tenacity: 3 attempts, exponential back-off (½ s → 4 s)
-    @retry(reraise=True, wait=wait_exponential(multiplier=0.5, min=0.5, max=4), stop=stop_after_attempt(3),
-        retry=retry_if_exception_type(ProviderError), )
     async def __call__(self, address: Address) -> List[Offer]:
-        """Entry-point called by aggregator; wraps `fetch` with retries."""
-        return await self.fetch(address)
+        """
+        Entry point that wraps `self.fetch` in a Tenacity retry loop.
+        """
+        settings = self.retry_config.model_dump()
+        logger.debug("Provider %s retry settings: %s", self.name, settings)
 
-    # subclasses **must** supply their own implementation.
+        retryer = AsyncRetrying(
+            stop=self.retry_config.stop,
+            wait=self.retry_config.wait,
+            retry=self.retry_config.retry,
+            reraise=self.retry_config.reraise,
+        )
+
+        async for attempt in retryer:
+            with attempt:
+                return await self.fetch(address)
+
+        # if reraise=False, this will be reached
+        raise ProviderError(f"Exhausted retries for {self.name}")
+
     @abc.abstractmethod
     async def fetch(self, address: Address) -> List[Offer]:  # pragma: no cover
         """
-        Convert an Address → list[Offer] or raise ProviderError.
+        Perform provider-specific lookup. Raise ProviderError on failure.
         """
-        raise NotImplementedError
+        ...

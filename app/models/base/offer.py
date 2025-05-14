@@ -87,9 +87,8 @@ class Offer(BaseModel):
         examples=[27])
 
     # -----------------------------------------------------------------------
-    model_config = {"populate_by_name": True,  # allow “old” adapter field names to keep working
-        "extra": "allow",  # ignore unexpected keys → forward compat
-    }
+    class Config:
+        extra = "ignore"
 
     # --- Validators ---------------------------------------------------------
     @field_validator("connection_type", mode="before")
