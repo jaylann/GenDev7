@@ -13,7 +13,7 @@ from app.providers.base import ProviderBase
 from app.providers.servusspeed import ServusSpeedProvider  # To identify it specifically
 from app.services.merge import merge_offers
 from app.utils.logger import logger
-from app.utils.slug import encode
+from app.utils.slug import encode, decode
 
 # Assuming get_all_provider_instances is correctly placed (e.g., in app.providers)
 
@@ -63,6 +63,7 @@ class WebSocketMessage(BaseModel):
 class CompareResponse(BaseModel):
     slug: str
     offers: List[Offer]
+    address: Optional[Address] = None  # Only for HTTP /compare/{slug} endpoint
 
 
 # --- Helper for individual provider calls ---
@@ -230,7 +231,7 @@ async def compare_fresh_http(address_payload: Dict[str, Any], background: Backgr
     all_provider_instances = await get_providers()
     if not all_provider_instances:
         logger.warning("HTTP /compare: No providers.")
-        return CompareResponse(slug="no-providers", offers=[])
+        return CompareResponse(slug="no-providers", offers=[], address=address)
 
     tasks = [_execute_provider_fetch(p, address, _shared_client) for p in all_provider_instances]
     results_http = await asyncio.gather(*tasks, return_exceptions=False)
@@ -243,7 +244,7 @@ async def compare_fresh_http(address_payload: Dict[str, Any], background: Backgr
     slug = encode(slug_payload)
     logger.debug(f"HTTP /compare: Generated slug: {slug}")
     background.add_task(_cache_set, slug, merged, settings.cache_ttl_seconds)
-    return CompareResponse(slug=slug, offers=merged)
+    return CompareResponse(slug=slug, offers=merged, address=address)
 
 
 @router.get("/compare/{slug}", response_model=CompareResponse)
@@ -254,4 +255,6 @@ async def compare_by_slug(slug: str):
         logger.warning(f"Cache miss for slug: {slug}")
         raise HTTPException(status_code=404, detail="Comparison data expired or slug unknown.")
     logger.info(f"Cache hit for slug: {slug}, returning {len(offers)} offers")
-    return CompareResponse(slug=slug, offers=offers)
+    decoded_slug = decode(slug)
+    address_slug = Address(**decoded_slug["addr"] if "addr" in decoded_slug else {})
+    return CompareResponse(slug=slug, offers=offers, address=address_slug)
