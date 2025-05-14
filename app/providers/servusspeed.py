@@ -18,8 +18,8 @@ from ..factories.servusspeed_factory import ServusSpeedFactory
 settings = get_settings()
 
 # concurrency & timeout constants
-MAX_PARALLEL = 15
-DETAIL_READ_SECS = 50.0
+MAX_PARALLEL = 3
+DETAIL_READ_SECS = 30.0
 DETAIL_CONNECT_SECS = 5.0
 AVAILABLE_PRODUCTS_TIMEOUT = httpx.Timeout(30.0, connect=5.0)
 PRODUCT_DETAILS_TIMEOUT = httpx.Timeout(

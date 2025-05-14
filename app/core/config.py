@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     )
     verbyndich_api_key: str
 
-    cache_ttl_seconds: int = 3_600  # one hour
+    cache_ttl_seconds: int = 24*60*60  # one hour
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

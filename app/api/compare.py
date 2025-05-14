@@ -254,56 +254,6 @@ async def compare_websocket(websocket: WebSocket):
         ).model_dump(exclude_none=True)
     )
 
-
-# --- Deprecated HTTP Endpoint (for reference or gradual phase-out) ---
-@router.post(
-    "/compare",
-    response_model=CompareResponse,
-    deprecated=True,
-    summary="Use WebSocket /ws/compare instead",
-)
-async def compare_fresh_http(
-    address_payload: Dict[str, Any],
-    background: BackgroundTasks,
-    settings: Settings = Depends(get_settings),
-):
-    try:
-        address = WsCompareAddressRequest(**address_payload)
-    except ValidationError as e:
-        logger.error(f"HTTP /compare: Invalid address: {address_payload}. Error: {e}")
-        raise HTTPException(status_code=422, detail=e.errors())
-
-    logger.info(f"HTTP /compare (DEPRECATED) for: {address.model_dump_json(indent=2)}")
-    all_provider_instances = await get_providers()
-    if not all_provider_instances:
-        logger.warning("HTTP /compare: No providers.")
-        return CompareResponse(slug="no-providers", offers=[], address=address)
-
-    tasks = [
-        _execute_provider_fetch(p, address, _shared_client)
-        for p in all_provider_instances
-    ]
-    results_http = await asyncio.gather(*tasks, return_exceptions=False)
-
-    offers_flat: List[Offer] = [
-        o
-        for _p_name, p_offers, p_success in results_http
-        if p_success
-        for o in p_offers
-    ]
-    merged = merge_offers(offers_flat)
-
-    slug_payload = {
-        "addr": address.model_dump(),
-        "ts": time.monotonic(),
-        "phase": "http_deprecated",
-    }  # Differentiate slug
-    slug = encode(slug_payload)
-    logger.debug(f"HTTP /compare: Generated slug: {slug}")
-    background.add_task(_cache_set, slug, merged, settings.cache_ttl_seconds)
-    return CompareResponse(slug=slug, offers=merged, address=address)
-
-
 @router.get("/compare/{slug}", response_model=CompareResponse)
 async def compare_by_slug(slug: str):
     logger.info(f"HTTP /compare/{slug} called")

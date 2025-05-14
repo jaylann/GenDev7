@@ -1,9 +1,9 @@
 from typing import Optional
 
 from pydantic import BaseModel, Field, ConfigDict
-from tenacity.retry import retry_base as RetryBase, retry_if_exception_type
-from tenacity.stop import stop_base as StopBase, stop_after_attempt
-from tenacity.wait import wait_base as WaitBase, wait_exponential
+from tenacity.retry import retry_base, retry_if_exception_type
+from tenacity.stop import stop_base, stop_after_attempt
+from tenacity.wait import wait_base, wait_exponential
 
 
 class RetryConfig(BaseModel):
@@ -27,15 +27,15 @@ class RetryConfig(BaseModel):
     # Allow non-Pydantic types (tenacity stops, waits, retries)
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    stop: StopBase = Field(
+    stop: stop_base = Field(
         default_factory=lambda: stop_after_attempt(3),
         description="Stop after this many attempts",
     )
-    wait: WaitBase = Field(
+    wait: wait_base = Field(
         default_factory=lambda: wait_exponential(multiplier=0.5, min=0.5, max=4),
         description="Exponential backoff between retries",
     )
-    retry: RetryBase = Field(
+    retry: retry_base = Field(
         default_factory=lambda: retry_if_exception_type(Exception),
         description="Retry on these exception types",
     )

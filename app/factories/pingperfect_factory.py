@@ -104,5 +104,5 @@ class PingPerfectFactory:
             if resp:
                 responses.append(resp)
             else:
-                logger.warning("PingPerfectFactory → skipped invalid item %r", item)
+                logger.warning(f"PingPerfectFactory → skipped invalid item {item}")
         return responses
