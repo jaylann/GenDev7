@@ -3,14 +3,12 @@ from __future__ import annotations
 import os
 from io import StringIO
 
-# ───────────────────────────────────────────────────────────────────────────────
-# Response model and helpers for ByteMe
-# ───────────────────────────────────────────────────────────────────────────────
 import pandas as pd
 from loguru import logger
 
 from .base import ProviderBase, ProviderError
 from ..models import Offer, Address
+from ..models.providers.byteme_request import ByteMeRequest
 from ..models.providers.byteme_response import ByteMeResponse
 
 BYTEME_ENDPOINT = os.getenv(
@@ -98,12 +96,13 @@ class ByteMeProvider(ProviderBase):
     async def fetch(self, address: Address) -> List[Offer]:
         logger.info(f"ByteMeProvider.fetch for address: {address}")
 
-        params = {
-            "street": address.street,
-            "houseNumber": address.house_number,
-            "city": address.city,
-            "plz": address.plz,
-        }
+        request = ByteMeRequest(
+            street=address.street,
+            houseNumber=address.house_number,
+            city=address.city,
+            plz=address.plz,
+        )
+        params = request.model_dump()
         headers = {"X-Api-Key": BYTEME_API_KEY}
 
         try:
