@@ -28,3 +28,14 @@ export const MAX_SPEED_FALLBACK = 1000; // Fallback max speed for slider if no o
 
 /** Minimum speed for the speed filter slider. */
 export const MIN_SPEED_SLIDER_FLOOR: number = 50;
+
+// -----------------------------------------------------------------------------
+// Provider list available even before an offer search is executed.
+// -----------------------------------------------------------------------------
+export const AVAILABLE_PROVIDER_NAMES = [
+    'WebWunder',
+    'ByteMe',
+    'PingPerfect',
+    'ServusSpeed',
+    'VerbynDich',
+] as const;

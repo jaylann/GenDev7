@@ -112,6 +112,25 @@ export default function ComparePage(): JSX.Element {
     const { recentSearches, addRecentSearch, clearRecentSearches } =
         useRecentSearches();
 
+    // Derived filter helpers for WS
+    const wantsFiber = filters.connectionTypes.some((ct) =>
+        ct.toLowerCase().includes('fiber'),
+    );
+
+    /**
+     * Determines the list of provider names to be sent to the API via WebSocket.
+     * If the user has explicitly selected providers in the filter, those selections are used.
+     * If no providers are selected (i.e., `filters.selectedProviders` is empty),
+     * it defaults to sending all `AVAILABLE_PROVIDER_NAMES`. This ensures that
+     * by default (or when all provider selections are cleared), the search considers all known providers.
+     * @type {ReadonlyArray<string>}
+     */
+    const providersForApi = useMemo(() => {
+        return filters.selectedProviders.length > 0
+            ? filters.selectedProviders
+            : [...AVAILABLE_PROVIDER_NAMES]; // Send all available providers if none are specifically selected
+    }, [filters.selectedProviders]);
+
     // Ref to ensure we only add INITIAL slug once per search session
     const hasAddedInitialRef = useRef(false);
     // Ref to store the session ID immediately for history operations
@@ -135,7 +154,6 @@ export default function ComparePage(): JSX.Element {
         setParsedAddress: setParsedAddressFromSlug,
         setInitialAddressLabel: setInitialAddressLabel,
     });
-    console.log("ADRESS:" + searchInitiatedWithAddress)
 
     // ---------------------------------------------------------------------------
     // Offer processing (client-side sort / filters)
@@ -147,7 +165,7 @@ export default function ComparePage(): JSX.Element {
     );
 
     // ---------------------------------------------------------------------------
-    // Web-Socket callbacks
+    // Web‑Socket callbacks
     // ---------------------------------------------------------------------------
     const handleWebSocketLoadingChange = useCallback(
         (waitingForInitial: boolean) => {
@@ -168,25 +186,24 @@ export default function ComparePage(): JSX.Element {
             setActiveShareableSlug(slug);
 
             if (slugType === 'INITIAL' && !hasAddedInitialRef.current) {
-                    hasAddedInitialRef.current = true;
-                    setCurrentDisplaySlug(slug);
+                hasAddedInitialRef.current = true;
+                setCurrentDisplaySlug(slug);
 
-                        // -------- Add (or overwrite) history row **once** – only for INITIAL ----
-                            if (
-                            sessionIdRef.current &&
-                            !sessionIdRef.current.startsWith('shared-') &&
-                            searchInitiatedWithAddress
-                        ) {
-                            const url = buildUrl(slug, sortOption, filters);
-                            if (url) {
-                                    addRecentSearch({
-                                            url,
-                                            label: searchInitiatedWithAddress,
-                                            sessionId: sessionIdRef.current,
-                                        });
-                                }
-                        }
-                } else if (slugType === 'FINAL') {
+                if (
+                    sessionIdRef.current &&
+                    !sessionIdRef.current.startsWith('shared-') &&
+                    searchInitiatedWithAddress
+                ) {
+                    const url = buildUrl(slug, sortOption, filters);
+                    if (url) {
+                        addRecentSearch({
+                            url,
+                            label: searchInitiatedWithAddress,
+                            sessionId: sessionIdRef.current,
+                        });
+                    }
+                }
+            } else if (slugType === 'FINAL') {
                 setCurrentDisplaySlug(slug);
             }
         },
@@ -203,9 +220,15 @@ export default function ComparePage(): JSX.Element {
     const { connectWebSocket, updateWebSocketOffersRef } = useOfferWebSocket({
         parsedAddress: parsedBackendAddress,
         hasApiKey: !!GOOGLE_MAPS_API_KEY_FROM_ENV,
+        providers: providersForApi, // Use the new providersForApi variable
+        wantsFiber,
         onOffersReceived: (offers, phase) => {
             setOriginalOffers(offers);
-            if (phase === 'INITIAL_OFFERS') setIsRefiningOffers(true);
+            if (phase === 'INITIAL_OFFERS') {
+                setIsRefiningOffers(true);
+            } else if (phase === 'FINAL_OFFERS') {
+                setIsRefiningOffers(false);
+            }
         },
         onWebSocketSlugReceived: handleWebSocketSlugReceived,
         onLoadingChange: handleWebSocketLoadingChange,
@@ -251,7 +274,6 @@ export default function ComparePage(): JSX.Element {
 
     const handleSearchClick = useCallback(() => {
         hasAddedInitialRef.current = false;
-        // Generate and stash the new session ID synchronously
         const newSessionId = searchInitiatedWithAddress ?? `session-${Date.now()}`;
         sessionIdRef.current = newSessionId;
         setCurrentSessionId(newSessionId);
@@ -279,7 +301,6 @@ export default function ComparePage(): JSX.Element {
                 `Displaying updated results (${pendingOffers.length} offers).`,
             );
 
-            // ------ Overwrite SINGLE history entry with FINAL slug -----------------
             if (
                 activeShareableSlug &&
                 currentSessionId &&
@@ -392,6 +413,16 @@ export default function ComparePage(): JSX.Element {
     const areAnyOffersEverLoaded =
         originalOffers.length > 0 || pendingOffers !== null;
 
+    /**
+     * Determines if a search has been performed or is in progress.
+     * True if:
+     * 1. Loading data based on a URL slug (`isLoadingFromUrl`).
+     * 2. A display slug exists (`currentDisplaySlug !== null`).
+     * 3. Waiting for initial offers after a search (`isWaitingInitialOffers`).
+     */
+    const hasSearchBeenPerformed: boolean =
+        isLoadingFromUrl || currentDisplaySlug !== null || isWaitingInitialOffers;
+
     // ---------------------------------------------------------------------------
     // Render
     // ---------------------------------------------------------------------------
@@ -428,23 +459,21 @@ export default function ComparePage(): JSX.Element {
                     currentSlug={currentDisplaySlug}
                 />
 
-                {(areAnyOffersEverLoaded || isBlockingUi) && (
-                    <OfferListControls
-                        sortOption={sortOption}
-                        onSortChange={setSortOption}
-                        viewMode={viewMode}
-                        onViewModeChange={setViewMode}
-                        onShare={handleShare}
-                        isShareDisabled={isShareDisabled}
-                        sharedLinkCopied={sharedLinkCopied}
-                        filters={filters}
-                        onFiltersChange={setFilters}
-                        activeFilterCount={activeFilterCount}
-                        originalOffers={originalOffers}
-                        isLoadingOffers={isBlockingUi}
-                        areAnyOffersLoaded={areAnyOffersEverLoaded}
-                    />
-                )}
+                <OfferListControls
+                    sortOption={sortOption}
+                    onSortChange={setSortOption}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                    onShare={handleShare}
+                    isShareDisabled={isShareDisabled}
+                    sharedLinkCopied={sharedLinkCopied}
+                    filters={filters}
+                    onFiltersChange={setFilters}
+                    activeFilterCount={activeFilterCount}
+                    originalOffers={originalOffers}
+                    isLoadingOffers={isWaitingInitialOffers}
+                    areAnyOffersLoaded={areAnyOffersEverLoaded}
+                />
 
                 <OfferGrid
                     offers={processedOffers}
@@ -454,6 +483,7 @@ export default function ComparePage(): JSX.Element {
                     areOriginalOffersLoaded={originalOffers.length > 0}
                     statusMessage={statusMessage}
                     onResetFilters={resetFilters}
+                    hasSearchBeenPerformed={hasSearchBeenPerformed}
                 />
             </main>
         </div>

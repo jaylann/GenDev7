@@ -1,94 +1,213 @@
-import React, { FC } from "react";
+import React, {FC, JSX} from "react";
 import {
     CalendarClock,
     Database,
-    Download as DownloadIcon, // Aliased for clarity
-    Upload as UploadIcon,     // Added UploadIcon
+    Download as DownloadIcon,
     DownloadCloud,
     Gift,
     ShieldCheck,
     Sparkles,
-    Star,
     Tv2,
     Wifi
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
-import { Card } from "@/components/ui/card";
-import { SortOptionKey } from "@/types/sort-option-key";
-import { Offer } from "@/types/offer"; // Assuming this path is correct
-import { formatEur } from "@/utils/formatters"; // Assuming this path is correct
-import { ProviderLogo } from "@/components/compare/provider-logo"; // Assuming this path is correct
-import { DetailBadgeComponent, DetailBadgeInfo } from "@/components/compare/detail-badge"; // Assuming this path is correct
+import {Badge} from "@/components/ui/badge";
+import {motion} from "framer-motion";
+import {Card} from "@/components/ui/card";
+import {Offer} from "@/types/offer"; // Ensure this path is correct
+// Make sure VoucherKind is imported if you're using it with VoucherKind.ABSOLUTE etc.
+// import { VoucherKind } from "@/types/voucher-kind"; // Or from "@/types/offer" if re-exported
+import {formatEur} from "@/utils/formatters";
+import {ProviderLogo} from "@/components/compare/provider-logo";
+import {DetailBadgeComponent, DetailBadgeInfo} from "@/components/compare/detail-badge";
 
-// Define badge color configurations outside the component for performance and clarity
+// Badge color configurations
 const BADGE_COLORS = {
-    tv: { bg: "bg-purple-600/20", text: "text-purple-300", border: "border-purple-500/50", icon: "text-purple-400" },
-    install: { bg: "bg-sky-600/20", text: "text-sky-300", border: "border-sky-500/50", icon: "text-sky-400" },
-    dataCap: { bg: "bg-amber-600/20", text: "text-amber-300", border: "border-amber-500/50", icon: "text-amber-400" },
-    youth: { bg: "bg-teal-600/20", text: "text-teal-300", border: "border-teal-500/50", icon: "text-teal-400" },
-    discount: { bg: "bg-pink-600/20", text: "text-pink-300", border: "border-pink-500/50", icon: "text-pink-400" },
-    recommend: { bg: "bg-yellow-500/20", text: "text-yellow-300", border: "border-yellow-500/50", icon: "text-yellow-400" },
+    tv: {bg: "bg-purple-600/20", text: "text-purple-300", border: "border-purple-500/50", icon: "text-purple-400"},
+    install: {bg: "bg-sky-600/20", text: "text-sky-300", border: "border-sky-500/50", icon: "text-sky-400"},
+    dataCap: {bg: "bg-amber-600/20", text: "text-amber-300", border: "border-amber-500/50", icon: "text-amber-400"},
+    youth: {bg: "bg-teal-600/20", text: "text-teal-300", border: "border-teal-500/50", icon: "text-teal-400"},
+    discount: {bg: "bg-pink-600/20", text: "text-pink-300", border: "border-pink-500/50", icon: "text-pink-400"},
 };
 
 interface OfferCardProps {
     offer: Offer;
-    currentSortOption: SortOptionKey;
 }
 
-/**
- * OfferCard component displays individual internet service offer details in a card format.
- * It showcases key information like provider, plan name, speeds, pricing, and special features.
- * Animations are handled by Framer Motion for a smooth user experience.
- *
- * @param {OfferCardProps} props - The props for the OfferCard component.
- * @param {Offer} props.offer - The offer data object containing all details of the service.
- * @param {SortOptionKey} props.currentSortOption - The currently active sort option, used to highlight relevant information (e.g., recommendation score).
- * @returns {JSX.Element} The rendered OfferCard component.
- */
-export const OfferCard: FC<OfferCardProps> = ({ offer, currentSortOption }) => {
-    const displayPriceIntro = formatEur(offer.price_cents_month_intro);
-    const displayPriceRegular = offer.price_cents_month_regular != null && offer.price_cents_month_regular !== offer.price_cents_month_intro
-        ? formatEur(offer.price_cents_month_regular)
-        : null;
-    const avgPriceDisplay = offer.effective_price_24_months != null
-        ? formatEur(offer.effective_price_24_months)
-        : 'N/A';
+// --- Helper Functions for Price Calculation ---
 
+/**
+ * Calculates the effective monetary value of a voucher for an offer.
+ * Percentage vouchers apply to `price_cents_month_intro` for each month
+ * of `contract_duration_months`, capped by `voucher_max_value_cents`.
+ * @param {Offer} offer - The offer object.
+ * @returns {number} The calculated total voucher value in cents.
+ */
+const calculateEffectiveVoucherValue = (offer: Offer): number => {
+    let totalVoucherValueApplied = 0;
+
+    if (!offer.voucher_type) {
+        return 0;
+    }
+    // Using string literals as per your current code. If VoucherKind enum is available, prefer that.
+    switch (offer.voucher_type) {
+        case "absolute":
+        case "cashback":
+            totalVoucherValueApplied = offer.voucher_value_cents ?? 0;
+            // Apply cap if business rule dictates it for absolute/cashback too
+            // if (offer.voucher_max_value_cents != null) {
+            //     totalVoucherValueApplied = Math.min(totalVoucherValueApplied, offer.voucher_max_value_cents);
+            // }
+            break;
+
+        case "percentage":
+        case "discount":
+            if (offer.voucher_value_percent != null && offer.voucher_value_percent > 0) {
+                const monthlyIntroPrice = offer.price_cents_month_intro;
+                const introDurationForVoucher = offer.contract_duration_months; // Voucher applies over intro period
+                const percentOff = offer.voucher_value_percent / 100;
+                const maxCap = offer.voucher_max_value_cents ?? Infinity;
+
+                if (monthlyIntroPrice != null && monthlyIntroPrice > 0 && introDurationForVoucher != null && introDurationForVoucher > 0) {
+                    for (let month = 0; month < introDurationForVoucher; month++) {
+                        if (totalVoucherValueApplied >= maxCap) break;
+                        const discountThisMonth = monthlyIntroPrice * percentOff;
+                        const applicableDiscountThisMonth = Math.min(discountThisMonth, maxCap - totalVoucherValueApplied);
+                        totalVoucherValueApplied += applicableDiscountThisMonth;
+                    }
+                }
+            } else if (offer.voucher_type === "discount" && offer.voucher_value_cents != null) {
+                totalVoucherValueApplied = offer.voucher_value_cents;
+                if (offer.voucher_max_value_cents != null) {
+                    totalVoucherValueApplied = Math.min(totalVoucherValueApplied, offer.voucher_max_value_cents);
+                }
+            }
+            break;
+        default:
+            // console.warn(`Unknown voucher type: ${offer.voucher_type}`);
+            break;
+    }
+    return Math.max(0, Math.round(totalVoucherValueApplied));
+};
+
+/**
+ * Calculates the gross total cost of an offer over a dynamic period.
+ * @param {number | null | undefined} introPrice - Price per month during the introductory period (in cents).
+ * @param {number | null | undefined} regularPrice - Regular price per month after intro period (in cents).
+ * @param {number | null | undefined} introDurationMonths - Duration of the introductory price period (in months).
+ * @param {number} calculationPeriodMonths - The total period (in months) over which to calculate the cost.
+ * @returns {number | null} The total gross cost over the calculation period in cents, or null if not enough information.
+ */
+const calculateGrossTotalCostOverDynamicPeriod = (
+    introPrice: number | null | undefined,
+    regularPrice: number | null | undefined,
+    introDurationMonths: number | null | undefined,
+    calculationPeriodMonths: number
+): number | null => {
+    // Scenario 1: Valid intro price and duration for the intro period itself
+    if (introPrice != null && introPrice > 0 && introDurationMonths != null && introDurationMonths > 0) {
+        const effectiveRegularPrice = regularPrice ?? introPrice; // Fallback to intro if regular is not set
+
+        // If the intro period covers or exceeds the entire calculation period
+        if (introDurationMonths >= calculationPeriodMonths) {
+            return introPrice * calculationPeriodMonths;
+        } else {
+            // Cost during intro period + cost during regular period for the remainder
+            return (introPrice * introDurationMonths) + (effectiveRegularPrice * (calculationPeriodMonths - introDurationMonths));
+        }
+    }
+    // Scenario 2: No valid intro period, but regular price exists
+    else if (regularPrice != null && regularPrice > 0) {
+        return regularPrice * calculationPeriodMonths; // Assume flat regular price
+    }
+    // Scenario 3: Only intro price exists (no duration, no regular price) - less ideal
+    else if (introPrice != null && introPrice > 0) {
+        return introPrice * calculationPeriodMonths; // Assume flat intro price
+    }
+
+    return null; // Not enough information
+};
+
+
+export const OfferCard: FC<OfferCardProps> = ({offer}) => {
+    const {
+        price_cents_month_intro,
+        price_cents_month_regular,
+        contract_duration_months, // This is the offer's minimum contract term
+    } = offer;
+
+    // Determine the period for average price calculation
+    // Default to 24, but use contract_duration_months if it's longer.
+    // If contract_duration_months is null/undefined, default to 24.
+    const actualContractDuration = contract_duration_months ?? 0; // Treat null/undefined as 0 for comparison
+    const calculationPeriodMonths = Math.max(24, actualContractDuration);
+
+    let avgPriceDisplay: string = 'N/A';
+    let avgPriceLabel: string = `Avg./mo (${calculationPeriodMonths}m)`;
+
+    const grossTotalCost = calculateGrossTotalCostOverDynamicPeriod(
+        price_cents_month_intro,
+        price_cents_month_regular,
+        contract_duration_months, // The intro period for pricing structure
+        calculationPeriodMonths   // The total period for averaging
+    );
+
+    if (grossTotalCost != null) {
+        const effectiveVoucherValue = calculateEffectiveVoucherValue(offer);
+        const netTotalCost = Math.max(0, grossTotalCost - effectiveVoucherValue);
+        const averageNetMonthlyCost = netTotalCost / calculationPeriodMonths;
+        avgPriceDisplay = formatEur(Math.round(averageNetMonthlyCost));
+    } else {
+        // If gross cost couldn't be calculated, label might be less relevant or could also be 'N/A'
+        avgPriceLabel = 'Avg./mo'; // Or some other fallback
+    }
+
+    // --- Prominent Bonus Text and Detail Badges (Logic remains the same as your provided code) ---
     let prominentBonusText: string | null = null;
-    if ((offer.voucher_type === 'absolute' || offer.voucher_type === 'cashback') && offer.voucher_value_cents != null && offer.voucher_value_cents > 0) {
-        prominentBonusText = `${formatEur(offer.voucher_value_cents)} ${offer.voucher_type === 'cashback' ? 'Cashback' : 'Bonus'}`;
+    if ((offer.voucher_type === "absolute" || offer.voucher_type === "cashback") &&
+        offer.voucher_value_cents != null && offer.voucher_value_cents > 0) {
+        prominentBonusText = `${formatEur(offer.voucher_value_cents)} ${offer.voucher_type === "cashback" ? 'Cashback' : 'Bonus'}`;
     }
 
     const detailBadges: DetailBadgeInfo[] = [];
+    if (offer.tv_included && offer.tv_package_name) {
+        const tvText = `TV (${offer.tv_package_name.length > 10 ? `${offer.tv_package_name.substring(0, 8)}...` : offer.tv_package_name})`;
+        detailBadges.push({key: 'tv', icon: Tv2, text: tvText, colorConfig: BADGE_COLORS.tv});
+    } else if (offer.tv_included) {
+        detailBadges.push({key: 'tv', icon: Tv2, text: "TV Incl.", colorConfig: BADGE_COLORS.tv});
+    }
 
-    if (currentSortOption === 'recommended' && offer.recommendation_score != null) {
+    if (offer.installation_service_included === true) {
         detailBadges.push({
-            key: 'reco',
-            icon: Star,
-            text: `Score: ${offer.recommendation_score.toFixed(2)}`,
-            colorConfig: BADGE_COLORS.recommend,
+            key: 'install',
+            icon: DownloadCloud,
+            text: "Install Incl.",
+            colorConfig: BADGE_COLORS.install
         });
-    }
-
-    if (offer.tv_included) {
-        let tvText = "TV Incl.";
-        if (offer.tv_package_name) {
-            tvText = `TV (${offer.tv_package_name.length > 10 ? `${offer.tv_package_name.substring(0, 8)}...` : offer.tv_package_name})`;
-        }
-        detailBadges.push({ key: 'tv', icon: Tv2, text: tvText, colorConfig: BADGE_COLORS.tv });
-    }
-
-    if (offer.installation_service_included != null) { // Checks for boolean explicitly, not just undefined/null
-        let installText: string;
-        if (offer.installation_service_included) {
-            installText = "Install Incl.";
-        } else if ((offer.installation_cost_cents ?? 0) > 0) {
-            installText = `Install: ${formatEur(offer.installation_cost_cents!)}`; // Non-null assertion as >0 implies value
+    } else if (offer.installation_service_included === false) {
+        if (offer.installation_cost_cents != null && offer.installation_cost_cents > 0) {
+            detailBadges.push({
+                key: 'install',
+                icon: DownloadCloud,
+                text: `Install: ${formatEur(offer.installation_cost_cents)}`,
+                colorConfig: BADGE_COLORS.install
+            });
         } else {
-            installText = "Install Opt.";
+            detailBadges.push({
+                key: 'install',
+                icon: DownloadCloud,
+                text: "Install Opt.",
+                colorConfig: BADGE_COLORS.install
+            });
         }
-        detailBadges.push({ key: 'install', icon: DownloadCloud, text: installText, colorConfig: BADGE_COLORS.install });
+    } else if (offer.installation_service_included == null) {
+        if (offer.installation_cost_cents != null && offer.installation_cost_cents > 0) {
+            detailBadges.push({
+                key: 'install',
+                icon: DownloadCloud,
+                text: `Install: ${formatEur(offer.installation_cost_cents)}`,
+                colorConfig: BADGE_COLORS.install
+            });
+        }
     }
 
     if (offer.data_cap_gb != null) {
@@ -96,6 +215,13 @@ export const OfferCard: FC<OfferCardProps> = ({ offer, currentSortOption }) => {
             key: 'dataCap',
             icon: Database,
             text: `${offer.data_cap_gb} GB Cap`,
+            colorConfig: BADGE_COLORS.dataCap,
+        });
+    } else {
+        detailBadges.push({
+            key: 'dataCap',
+            icon: Database,
+            text: `Unlimited Data`,
             colorConfig: BADGE_COLORS.dataCap,
         });
     }
@@ -109,8 +235,9 @@ export const OfferCard: FC<OfferCardProps> = ({ offer, currentSortOption }) => {
         });
     }
 
-    // Only show percentage discount as a badge if no prominent bonus is already set
-    if (!prominentBonusText && offer.voucher_type === 'percentage' && offer.voucher_value_percent != null && offer.voucher_value_percent > 0) {
+    if (!prominentBonusText &&
+        (offer.voucher_type === "percentage" || (offer.voucher_type === "discount" && offer.voucher_value_percent != null)) &&
+        offer.voucher_value_percent != null && offer.voucher_value_percent > 0) {
         detailBadges.push({
             key: 'discount',
             icon: Gift,
@@ -119,13 +246,52 @@ export const OfferCard: FC<OfferCardProps> = ({ offer, currentSortOption }) => {
         });
     }
 
+    // --- JSX for Price Sections (Logic remains the same as your provided code) ---
+    let introPriceSection: JSX.Element | null = null;
+    if (price_cents_month_intro != null) {
+        const formattedIntroPrice = formatEur(price_cents_month_intro);
+        const durationText = offer.contract_duration_months
+            ? `first ${offer.contract_duration_months} months`
+            : `for introductory period`;
+
+        introPriceSection = (
+            <div>
+                <span className="text-[0.7rem] text-slate-400 block mb-0">Intro Price:</span>
+                <p className="text-xl font-semibold text-white leading-tight">
+                    {formattedIntroPrice} <span className="text-base font-normal text-slate-400">/mo</span>
+                </p>
+                <p className="text-[0.65rem] text-slate-500 leading-tight">
+                    {durationText}
+                </p>
+            </div>
+        );
+    }
+
+    let regularPriceSection: JSX.Element | null = null;
+    if (price_cents_month_regular != null) {
+        if (price_cents_month_intro == null || price_cents_month_regular !== price_cents_month_intro) {
+            const formattedRegularPrice = formatEur(price_cents_month_regular);
+            regularPriceSection = (
+                <div>
+                    <span className="text-[0.7rem] text-slate-400 block mb-0">
+                        {price_cents_month_intro != null ? "Regular:" : "Monthly Price:"}
+                    </span>
+                    <p className="text-lg font-medium text-slate-300 leading-tight">
+                        {formattedRegularPrice} <span className="text-sm font-normal text-slate-400">/mo</span>
+                    </p>
+                </div>
+            );
+        }
+    }
+
+
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, y: 15, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            transition={{ duration: 0.25, ease: "circOut" }}
+            initial={{opacity: 0, y: 15, scale: 0.98}}
+            animate={{opacity: 1, y: 0, scale: 1}}
+            exit={{opacity: 0, y: -10, scale: 0.98}}
+            transition={{duration: 0.25, ease: "circOut"}}
             className="h-full"
         >
             <Card
@@ -149,7 +315,8 @@ export const OfferCard: FC<OfferCardProps> = ({ offer, currentSortOption }) => {
                         </p>
                     </div>
                     <div className="ml-auto text-right">
-                        <p className="text-[0.65rem] text-slate-400">Avg./mo (24m)</p>
+                        {/* MODIFIED: Dynamic average price label */}
+                        <p className="text-[0.65rem] text-slate-400">{avgPriceLabel}</p>
                         <p className="text-sm font-semibold text-indigo-300">{avgPriceDisplay}</p>
                     </div>
                 </div>
@@ -159,57 +326,41 @@ export const OfferCard: FC<OfferCardProps> = ({ offer, currentSortOption }) => {
                     <div>
                         {/* Speed Section */}
                         <div className="text-center mb-3">
-                            {/* Download Speed */}
-                            <div className="flex items-center justify-center text-[0.65rem] text-indigo-300 mb-0.5 font-medium">
-                                <DownloadIcon size={14} className="mr-1 text-indigo-400" /> Download
+                            <div
+                                className="flex items-center justify-center text-[0.65rem] text-indigo-300 mb-0.5 font-medium">
+                                <DownloadIcon size={14} className="mr-1 text-indigo-400"/> Download
                             </div>
-                            <p className="text-4xl font-bold text-white leading-none">{offer.speed_down_mbit}</p>
+                            <p className="text-4xl font-bold text-white leading-none">
+                                {offer.speed_down_mbit != null ? offer.speed_down_mbit : 'N/A'}
+                            </p>
                             <p className="text-xs text-slate-400 mb-1">Mbps</p>
-
-                            {/* Upload Speed (Conditional) */}
-                            {offer.speed_up_mbit != null && (
-                                <div className="mt-1.5">
-                                    <div className="flex items-center justify-center text-[0.6rem] text-indigo-300/80 font-medium">
-                                        <UploadIcon size={12} className="mr-0.5 text-indigo-400/80" /> Upload
-                                    </div>
-                                    <p className="text-2xl font-semibold text-white/90 leading-none">{offer.speed_up_mbit}</p>
-                                    <p className="text-[0.6rem] text-slate-400/90">Mbps</p>
-                                </div>
-                            )}
                         </div>
 
                         {/* Pricing Section */}
                         <div className="space-y-1.5 mb-3">
-                            <div>
-                                <span className="text-[0.7rem] text-slate-400 block mb-0">Intro Price:</span>
-                                <p className="text-xl font-semibold text-white leading-tight">
-                                    {displayPriceIntro} <span className="text-base font-normal text-slate-400">/mo</span>
-                                </p>
-                                <p className="text-[0.65rem] text-slate-500 leading-tight">
-                                    first {offer.contract_duration_months} months
-                                </p>
-                            </div>
-                            {displayPriceRegular && (
-                                <div>
-                                    <span className="text-[0.7rem] text-slate-400 block mb-0">Regular:</span>
-                                    <p className="text-lg font-medium text-slate-300 leading-tight">
-                                        {displayPriceRegular} <span className="text-sm font-normal text-slate-400">/mo</span>
-                                    </p>
-                                </div>
+                            {introPriceSection}
+                            {regularPriceSection}
+                            {/* MODIFIED: Check against grossTotalCost not grossTotalCost24Months */}
+                            {(introPriceSection == null && regularPriceSection == null && grossTotalCost == null) && (
+                                <p className="text-sm text-slate-400 text-center">Price information not available.</p>
                             )}
                         </div>
 
                         {/* Contract Details Section */}
                         <div className="space-y-1 text-xs">
                             <div className="flex items-center gap-1.5">
-                                <CalendarClock size={13} className="text-slate-500 shrink-0" />
+                                <CalendarClock size={13} className="text-slate-500 shrink-0"/>
                                 <span className="text-slate-400">Contract:</span>
-                                <span className="font-medium text-slate-200">{offer.contract_duration_months} months</span>
+                                <span className="font-medium text-slate-200">
+                                    {offer.contract_duration_months != null ? `${offer.contract_duration_months} months` : 'N/A'}
+                                </span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                                <Wifi size={13} className="text-slate-500 shrink-0" />
+                                <Wifi size={13} className="text-slate-500 shrink-0"/>
                                 <span className="text-slate-400">Type:</span>
-                                <span className="font-medium text-slate-200">{offer.connection_type}</span>
+                                <span className="font-medium text-slate-200">
+                                    {offer.connection_type ?? 'N/A'}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -219,18 +370,16 @@ export const OfferCard: FC<OfferCardProps> = ({ offer, currentSortOption }) => {
                         <div className="mt-3 pt-3 border-t border-[#303558]/80 space-y-2">
                             {prominentBonusText && (
                                 <Badge
-                                    variant="default" // Ensure this variant provides the desired styling or adjust as needed
+                                    variant="default"
                                     className="w-full justify-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold py-1.5 rounded-md leading-tight"
                                 >
-                                    <Sparkles size={14} /> {prominentBonusText}
+                                    <Sparkles size={14}/> {prominentBonusText}
                                 </Badge>
                             )}
                             {detailBadges.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5 justify-center">
-                                    {/* React uses the `key` prop from `badgeInfo.key` for reconciliation.
-                                        Spreading `badgeInfo` passes all its properties to `DetailBadgeComponent`. */}
                                     {detailBadges.map(badgeInfo => (
-                                        <DetailBadgeComponent {...badgeInfo} />
+                                        <DetailBadgeComponent key={badgeInfo.key} {...badgeInfo} />
                                     ))}
                                 </div>
                             )}
@@ -241,38 +390,3 @@ export const OfferCard: FC<OfferCardProps> = ({ offer, currentSortOption }) => {
         </motion.div>
     );
 };
-
-// Note: The `Offer` interface provided in the prompt is assumed to be in "@/types/offer".
-// Ensure `ConnectionType` and `VoucherKind` enums/types are also correctly defined and imported where `Offer` is defined.
-// For example, if they were in the same file:
-// export enum ConnectionType { DSL = "DSL", CABLE = "Cable", FIBER = "Fiber", /* ... */ }
-// export enum VoucherKind { ABSOLUTE = "absolute", PERCENTAGE = "percentage", CASHBACK = "cashback", /* ... */ }
-
-/**
- * Represents an internet service offer with all its details.
- * This is a copy of the interface provided in the prompt for context.
- * It should ideally be imported from its actual location (e.g., "@/types/offer").
- */
-// export interface Offer {
-//     provider: string;
-//     plan_name: string;
-//     product_id: string; // Typically not displayed in UI summary cards
-//     speed_down_mbit: number;
-//     speed_up_mbit?: number | null;
-//     price_cents_month_intro: number;
-//     price_cents_month_regular?: number | null;
-//     contract_duration_months: number;
-//     connection_type: ConnectionType; // Assumed to be an enum or string literal type
-//     voucher_type?: VoucherKind | null; // Assumed to be an enum or string literal type
-//     voucher_value_cents?: number | null;
-//     voucher_value_percent?: number | null;
-//     installation_service_included?: boolean; // Can be true (included), false (not included explicitly), or undefined (info not available)
-//     installation_cost_cents?: number | null;
-//     tv_included?: boolean;
-//     tv_package_name?: string | null;
-//     data_cap_gb?: number | null;
-//     max_age?: number | null; // For youth tariffs
-//     // Calculated fields, likely added server-side or in a data transformation step
-//     effective_price_24_months?: number;
-//     recommendation_score?: number;
-// }
