@@ -16,7 +16,7 @@ settings: Settings = get_settings()
 
 
 class PingPerfectProvider(ProviderBase):
-    name: str = "Ping Perfect"
+    name: str = "PingPerfect"
 
     def __init__(
         self,

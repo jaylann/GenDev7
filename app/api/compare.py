@@ -160,6 +160,37 @@ async def compare_websocket(websocket: WebSocket):
         else:
             fast_providers.append(p)
 
+    # If only ServusSpeed provider, fetch directly without phases
+    if servus_provider_instance and not fast_providers:
+        # execute the full fetch for ServusSpeed directly
+        name, offers, success = await _execute_provider_fetch(
+            servus_provider_instance, address, _shared_client
+        )
+        # merge offers if successful
+        merged = merge_offers(offers) if success else []
+        # generate slug if there are offers
+        slug = None
+        if merged:
+            slug = encode(
+                {"addr": address.model_dump(), "ts": time.monotonic(), "phase": "final"}
+            )
+            # cache the results
+            asyncio.create_task(
+                _cache_set(
+                    slug, merged, settings_dependency.cache_ttl_seconds
+                )
+            )
+        # send final offers and finish
+        await websocket.send_json(
+            WebSocketMessage(
+                type="FINAL_OFFERS",
+                offers=merged,
+                slug=slug,
+                is_complete=True
+            ).model_dump(exclude_none=True)
+        )
+        return
+
     # Phase 1: kickoff all fast providers under their own retry & bound by 15 s
     PHASE_1_TIMEOUT = 15.0
     # map name→(provider, task)

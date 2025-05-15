@@ -54,6 +54,7 @@ class PingPerfectFactory:
         """
         Parse a single JSON item into a PingPerfectResponse, or return None if invalid.
         """
+        logger.info(f"PingPerfectFactory.parse_response → {item}")
         info: Optional[Dict[str, Any]] = item.get("productInfo")
         price: Optional[Dict[str, Any]] = item.get("pricingDetails")
         if info is None or price is None:

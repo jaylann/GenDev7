@@ -1,4 +1,3 @@
-# app/providers/webwunder_factory.py
 from __future__ import annotations
 
 import xml.etree.ElementTree as ET
@@ -9,7 +8,7 @@ from loguru import logger
 
 from app.core.config import get_settings, Settings
 from app.models import Address
-from app.models.base.offer import VoucherKind
+from app.models.base.offer import VoucherKind, Offer
 from app.models.providers.webwunder_request import WebWunderRequest
 from app.models.providers.webwunder_response import WebWunderResponse
 
@@ -19,6 +18,7 @@ settings: Settings = get_settings()
 class WebWunderFactory:
     """
     Factory for building WebWunder SOAP requests and parsing responses into WebWunderResponse models.
+    Parses additional voucher fields (percentage, max discount) and populates into the Offer.
     """
 
     @staticmethod
@@ -52,8 +52,13 @@ class WebWunderFactory:
     @staticmethod
     def parse_response(elem: ET.Element) -> Optional[WebWunderResponse]:
         """
-        Inline all of the logic formerly in WebWunderResponse.from_element.
+        Parse a single <products> element into a WebWunderResponse, extracting:
+          - provider_name, product_id, speed, costs
+          - contract term, connection type
+          - voucher: absolute, percentage, cashback (value, percent, max)
         """
+        xml_str = ET.tostring(elem, encoding="unicode")
+        logger.info(f"WebWunderFactory.parse_response: {xml_str}")
 
         def txt(tag: str, default: str = "") -> str:
             node = elem.find(f".//{{*}}{tag}")
@@ -75,24 +80,43 @@ class WebWunderFactory:
 
         connection_type: str = txt("connectionType", "DSL")
 
-        # voucher parsing
-        voucher_elem: Optional[ET.Element] = elem.find(".//{*}voucher")
+        # initialize voucher fields
         voucher_type: Optional[VoucherKind] = None
-        voucher_value: Optional[int] = None
+        voucher_value_cents: Optional[int] = None
+        voucher_value_percent: Optional[float] = None
         voucher_min_order: Optional[int] = None
+        voucher_max_value: Optional[int] = None
 
+        voucher_elem: Optional[ET.Element] = elem.find(".//{*}voucher")
         if voucher_elem is not None:
-            raw_type = voucher_elem.attrib.get(
+            xsi_type = voucher_elem.attrib.get(
                 "{http://www.w3.org/2001/XMLSchema-instance}type", ""
-            )
-            if raw_type.lower().endswith("absolutevoucher"):
+            ).lower()
+            if "absolutevoucher" in xsi_type:
                 voucher_type = VoucherKind.ABSOLUTE
                 try:
-                    voucher_value = int(txt("discountInCent", "0"))
+                    voucher_value_cents = int(txt("discountInCent", "0"))
                     voucher_min_order = int(txt("minOrderValueInCent", "0"))
                 except ValueError as exc:
                     logger.warning(
                         f"WebWunderFactory.parse_response → invalid voucher numeric: {exc}"
+                    )
+            elif "percentagevoucher" in xsi_type:
+                voucher_type = VoucherKind.PERCENTAGE
+                try:
+                    voucher_value_percent = float(txt("percentage", "0"))
+                    voucher_max_value = int(txt("maxDiscountInCent", "0"))
+                except ValueError as exc:
+                    logger.warning(
+                        f"WebWunderFactory.parse_response → invalid voucher numeric: {exc}"
+                    )
+            elif "cashbackvoucher" in xsi_type:
+                voucher_type = VoucherKind.CASHBACK
+                try:
+                    voucher_value_cents = int(txt("cashbackInCent", "0"))
+                except ValueError as exc:
+                    logger.warning(
+                        f"WebWunderFactory.parse_response → invalid cashback numeric: {exc}"
                     )
 
         return WebWunderResponse(
@@ -104,16 +128,18 @@ class WebWunderFactory:
             contract_duration_months=contract_term,
             connection_type=connection_type,
             voucher_type=voucher_type,
-            voucher_value_cents=voucher_value,
+            voucher_value_cents=voucher_value_cents,
+            voucher_value_percent=voucher_value_percent,
             voucher_min_order_value_cents=voucher_min_order,
+            voucher_max_value_cents=voucher_max_value,
         )
 
     @staticmethod
     def parse_responses(elems: List[ET.Element]) -> List[WebWunderResponse]:
         responses: List[WebWunderResponse] = []
         for el in elems:
-            resp: Optional[WebWunderResponse] = WebWunderFactory.parse_response(el)
-            if resp is not None:
+            resp = WebWunderFactory.parse_response(el)
+            if resp:
                 responses.append(resp)
             else:
                 logger.warning("WebWunderFactory → skipped invalid element")

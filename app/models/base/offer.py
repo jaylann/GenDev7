@@ -40,7 +40,6 @@ class Offer(BaseModel):
         description="Advertised downstream rate (Mbit/s)",
         examples=[70]
     )
-    speed_up_mbit: Optional[PositiveInt] = Field(None, description="Advertised upstream rate (Mbit/s)", examples=[20])
 
     data_cap_gb: Optional[int] = Field(None, description="Monthly data cap in GB (None == flat rate)", examples=[300])
 
@@ -63,6 +62,11 @@ class Offer(BaseModel):
         description="Minimum term",
         examples=[12, 24]
     )
+    contract_regular_months: Optional[PositiveInt] = Field(
+        12,
+        description="Regular contract duration (after promo period)",
+        examples=[12, 24]
+    )
 
     installation_service_included: Optional[bool] = Field(..., description="True if an on-site technician is free")
     installation_cost_cents: Optional[PositiveInt] = Field(None,
@@ -81,6 +85,11 @@ class Offer(BaseModel):
         None,
         description="Minimum order value in cents required to use the voucher",
         examples=[763],
+    )
+    voucher_max_value_cents: Optional[PositiveInt] = Field(
+        None,
+        description="Maximum value of the voucher in cents",
+        examples=[1000],
     )
 
     max_age: Optional[int] = Field(None, description="Upper age limit for special youth / student tariffs",

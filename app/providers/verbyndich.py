@@ -23,7 +23,7 @@ from ..factories.verbyndich_factory import VerbynDichFactory
 settings: Settings = get_settings()
 
 # Pagination/cache constants
-MAX_PAGES = 10
+MAX_PAGES = 20
 PARALLEL = 5
 PAGE_TMO = 15
 PAGE_FETCH_RETRY_ATTEMPTS = 3

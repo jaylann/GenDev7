@@ -26,32 +26,8 @@ class ByteMeResponse(BaseModel):
     data_cap_gb: Optional[int]
     voucher_type: Optional[str]
     voucher_value_cents: Optional[int]
+    voucher_value_percent: Optional[float]
     max_age: Optional[int]
-
-    @classmethod
-    def from_tuple(cls, row) -> Optional["ByteMeResponse"]:
-        # skip rows without a valid intro price
-        if pd.isna(row.monthlyCostInCent):
-            return None
-        tv_pkg = row.tv if isinstance(row.tv, str) and row.tv.strip() else None
-        return cls(
-            provider_name=row.providerName,
-            product_id=str(int(row.productId)),
-            speed_down_mbit=int(round(row.speed)),
-            price_cents_month_intro=int(row.monthlyCostInCent),
-            price_cents_month_regular=int(row.afterTwoYearsMonthlyCost),
-            contract_duration_months=int(row.durationInMonths),
-            connection_type=row.connectionType,
-            installation_service_included=row.installationService,
-            tv_included=bool(row.tv),
-            tv_package_name=tv_pkg,
-            data_cap_gb=int(row.limitFrom) if pd.notna(row.limitFrom) else None,
-            voucher_type=row.voucherType if pd.notna(row.voucherType) else None,
-            voucher_value_cents=(
-                int(row.voucherValue) if pd.notna(row.voucherValue) else None
-            ),
-            max_age=int(row.maxAge) if pd.notna(row.maxAge) else None,
-        )
 
     def to_offer(self, provider_name: str) -> Offer:
         return Offer(
@@ -70,5 +46,6 @@ class ByteMeResponse(BaseModel):
             data_cap_gb=self.data_cap_gb,
             voucher_type=self.voucher_type,
             voucher_value_cents=self.voucher_value_cents,
+            voucher_value_percent=self.voucher_value_percent,
             max_age=self.max_age,
         )

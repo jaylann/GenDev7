@@ -8,6 +8,7 @@ from app.models.base.offer import VoucherKind
 from ..models.providers.servus_speed_address import ServusSpeedAddress
 from ..models.providers.servus_speed_request import ServusSpeedRequest
 from ..models.providers.servusspeed_response import ServusSpeedResponse
+from ..utils.logger import logger
 
 
 class ServusSpeedFactory:
@@ -37,6 +38,7 @@ class ServusSpeedFactory:
         Inline the logic formerly in ServusSpeedResponse.from_json:
         parse one product-detail payload into a ServusSpeedResponse.
         """
+        logger.info(payload)
         prod: Dict[str, Any] = payload["servusSpeedProduct"]
         info: Dict[str, Any] = prod["productInfo"]
         price: Dict[str, Any] = prod["pricingDetails"]

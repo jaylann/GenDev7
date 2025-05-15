@@ -62,11 +62,17 @@ async def _post_json(
 
 
 class ServusSpeedProvider(ProviderBase):
-    name: str = "Servus Speed"
+    name: str = "ServusSpeed"
     INTERNAL_PROVIDER_FETCH_TIMEOUT: float = 88.0
     MIN_TIME_FOR_DETAILS: float = 5.0
 
-    @cached(ttl=43200, cache=Cache.MEMORY, key_builder=lambda f, self, address: address)
+    @cached(
+        ttl=43200,
+        cache=Cache.MEMORY,
+        key_builder=lambda f, self, address: (
+            f"servusspeed:{address.street}:{address.house_number}:{address.city}:{address.plz}:{address.country_code}"
+        ),
+    )
     @retry(
         stop=stop_after_attempt(2),
         wait=wait_fixed(1),
