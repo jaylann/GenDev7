@@ -2,11 +2,6 @@ from __future__ import annotations
 
 from typing import Optional
 
-import pandas as pd
-
-# ───────────────────────────────────────────────────────────────────────────────
-# Response model and helpers for ByteMe
-# ───────────────────────────────────────────────────────────────────────────────
 from pydantic import BaseModel
 
 from app.models import Offer
@@ -38,6 +33,7 @@ class ByteMeResponse(BaseModel):
             price_cents_month_intro=self.price_cents_month_intro,
             price_cents_month_regular=self.price_cents_month_regular,
             contract_duration_months=self.contract_duration_months,
+            contract_regular_months=24,
             connection_type=self.connection_type,
             installation_service_included=self.installation_service_included,
             installation_cost_cents=None,

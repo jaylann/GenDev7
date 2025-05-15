@@ -67,9 +67,23 @@ class ByteMeOfferFactory:
         """
         # Essential fields like 'monthlyCostInCent' are guaranteed by clean_df.
 
-        # Process providerName: truncate at the first comma
-        provider_name_full: str = str(getattr(row, cls._PROVIDER_NAME_COL, "")).strip()
-        processed_provider_name: str = provider_name_full.split(',', 1)[0].strip()
+        # Process providerName: handle None or NaN and truncate at the first comma
+        raw_provider_name = getattr(row, cls._PROVIDER_NAME_COL, None)
+        # Treat pandas NaN or Python None as missing
+        if raw_provider_name is None or (isinstance(raw_provider_name, float) and pd.isna(raw_provider_name)):
+            provider_name_full = None
+        else:
+            provider_name_full = str(raw_provider_name).strip()
+        # If no name, keep None; otherwise split at comma and strip
+        processed_provider_name = (
+            provider_name_full.split(',', 1)[0].strip()
+            if isinstance(provider_name_full, str) and provider_name_full
+            else None
+        )
+
+        # If no provider name, skip this offer
+        if processed_provider_name is None:
+            return None
 
         # TV data:
         # cls._TV_SOURCE_COL ('tv') column holds the package name (str or None) after clean_df.
@@ -229,6 +243,16 @@ class ByteMeOfferFactory:
             else: # Ensure they are string type, handling NaNs
                 cleaned_df[col_name] = cleaned_df[col_name].astype(object).where(pd.notna(cleaned_df[col_name]), None)
 
+        # Normalize empty (or whitespace-only) strings to None for all object (string) columns
+        for col_name in cleaned_df.select_dtypes(include=['object']).columns:
+            # Strip whitespace on strings
+            cleaned_df[col_name] = cleaned_df[col_name].apply(lambda x: x.strip() if isinstance(x, str) else x)
+            # Replace empty strings with None
+            cleaned_df[col_name] = cleaned_df[col_name].replace("", None)
+
+        for col_name in cls._ESSENTIAL_STRING_COLS:
+            if col_name in cleaned_df.columns:
+                cleaned_df[col_name] = cleaned_df[col_name].replace("", None)
 
         # 4. Discard malformed rows
         initial_row_count: int = len(cleaned_df)
