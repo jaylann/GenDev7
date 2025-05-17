@@ -57,7 +57,7 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
         setDraftFilters(appliedFilters);
     }, [appliedFilters]);
 
-    const controlsDisabled = isLoadingOffers; // Only lock while loading
+    const controlsDisabled = isLoadingOffers && originalOffers.length === 0;
 
     const handleDraftFilterChange = <K extends keyof FiltersState>(
         key: K,
@@ -111,6 +111,7 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                 <Button
                     variant="ghost"
                     className="text-slate-300 hover:text-white hover:bg-slate-700/50 px-3 py-1.5 relative"
+                    disabled={controlsDisabled}
                 >
                     <SlidersHorizontal className="mr-2 size-4" /> Filters
                     {activeFilterCount > 0 && (

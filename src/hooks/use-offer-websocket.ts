@@ -166,8 +166,19 @@ export const useOfferWebSocket = ({
         };
 
         sock.onclose = (e) => {
-            if (!e.wasClean && e.code !== 1000) {
-                onStatusUpdate('Connection lost – results may be incomplete.');
+            // Ignore the *expected* clean closes (code 1000) that we ourselves trigger
+            if (e.wasClean || e.code === 1000) return;
+
+            // 1.  Un-block the UI: we are no longer “waiting for initial offers”
+            onLoadingChange(false);
+
+            // 2.  Decide what to tell the user
+            if (offersRef.current.length === 0) {
+                // Nothing ever arrived – treat as “no offers found / error”
+                onConnectionError('Connection lost before any offers were received.');
+            } else {
+                // We did get some offers, so show them and warn about incompleteness
+                onStatusUpdate('Connection lost – displaying partial results.');
             }
         };
     }, [
