@@ -140,15 +140,14 @@ export function useComparePageState(): ComparePageState {
     /* ───────────── initialisation from slug ───────────── */
     useComparePageInitializer({
         setOriginalOffers,
-        setSlug: (slug, label) => {
+        // now only takes slug
+        setSlug: (slug: string | null) => {
             setCurrentDisplaySlug(slug);
             setActiveShareableSlug(slug);
             if (slug) {
                 setHasSearchBeenPerformed(true);
-                const sid = `shared-${slug}`;
-                sessionIdRef.current = sid;
+                sessionIdRef.current = `shared-${slug}`;
             }
-            if (label) setInitialAddressLabel(label);
         },
         setSortOption,
         setFilters,
@@ -156,7 +155,8 @@ export function useComparePageState(): ComparePageState {
         setLoading: setIsLoadingFromUrl,
         setIsLoadingFromSlug: setIsLoadingFromUrl,
         setParsedAddress: setParsedAddressFromSlug,
-        setInitialAddressLabel,
+        // now label is handled here, separately
+        setInitialAddressLabel: (label: string) => setInitialAddressLabel(label),
     });
 
     /* ───────────── process offers client-side ───────────── */
@@ -320,9 +320,10 @@ export function useComparePageState(): ComparePageState {
             }
             await navigator.clipboard.writeText(`${window.location.origin}${url}`);
             setStatusMessage(`Link for ${offer.plan_name} copied!`);
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error('Share single offer error', e);
-            setStatusMessage(e?.message ?? 'Could not share offer. Please try again.');
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            setStatusMessage(errorMessage || 'Could not share offer. Please try again.');
         }
     }, [activeShareableSlug],);
 

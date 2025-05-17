@@ -38,7 +38,6 @@ export const useOfferWebSocket = ({
                                       onConnectionError,
                                       onPendingOffersUpdate,
                                       onPromptOpenChange,
-                                      initialLoadingState,
                                   }: UseOfferWebSocketProps) => {
     const ws = useRef<WebSocket | null>(null);
     const offersRef = useRef<Offer[]>([]);

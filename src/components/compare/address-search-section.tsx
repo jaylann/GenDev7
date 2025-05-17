@@ -1,16 +1,15 @@
 import React, {FC} from 'react';
 import {Button} from '@/components/ui/button';
 import {LoaderCircle, Search as SearchIcon} from 'lucide-react';
-import {
-    AddressAutocompleteInput, ParsedAddress as AutocompleteParsedAddress, ParsedAddress,
-} from '@/components/compare/address-autocomplete-input';
+import {AddressAutocompleteInput} from '@/components/compare/address-autocomplete-input';
 import {cn} from '@/lib/utils';
 import {GOOGLE_MAPS_API_KEY_FROM_ENV} from "@/config/constants";
+import {Address} from "@/types/address";
 
 interface AddressSearchSectionProps {
-    parsedAddress?: ParsedAddress;
+    parsedAddress?: Address;
     defaultAddressText?: string;
-    onAddressSelect: (address: ParsedAddress | null, fullText: string) => void;
+    onAddressSelect: (address: Address | null, fullText: string) => void;
     onSearchClick: () => void;
     isSearchDisabled: boolean;
     isLoading: boolean; // General loading state for the search button (e.g. "Searching...")
@@ -54,29 +53,29 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
         return <><SearchIcon className="size-5 mr-2"/>Search</>;
     };
 
-    const handleInternalAddressSelect = (address: AutocompleteParsedAddress | null, fullText: string): void => {
-        onAddressSelect(address as ParsedAddress | null, fullText);
+    const handleInternalAddressSelect = (address: Address | null, fullText: string): void => {
+        onAddressSelect(address, fullText);
     };
 
     return (<section className="max-w-2xl mx-auto">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
-                <AddressAutocompleteInput
-                    key={defaultAddressText} // Force re-mount and re-init when defaultAddressText changes
-                    parsedAddress={parsedAddress}
-                    initialValue={defaultAddressText || ''}
-                    onAddressSelect={handleInternalAddressSelect}
-                    inputClassName="bg-slate-800/50 border-slate-700 placeholder:text-slate-400 rounded-lg text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                    containerClassName="flex-grow"
-                    disabled={inputDisabled} // Also disable if normal search is loading
-                />
-                <Button
-                    onClick={onSearchClick}
-                    disabled={isSearchDisabled || !hasApiKey}
-                    className={cn("bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 rounded-lg w-full sm:w-auto text-base shrink-0 h-12")}
-                    size="lg"
-                >
-                    {renderButtonContent()}
-                </Button>
-            </div>
-        </section>);
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+            <AddressAutocompleteInput
+                key={defaultAddressText} // Force re-mount and re-init when defaultAddressText changes
+                parsedAddress={parsedAddress}
+                initialValue={defaultAddressText || ''}
+                onAddressSelect={handleInternalAddressSelect}
+                inputClassName="bg-slate-800/50 border-slate-700 placeholder:text-slate-400 rounded-lg text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                containerClassName="flex-grow"
+                disabled={inputDisabled} // Also disable if normal search is loading
+            />
+            <Button
+                onClick={onSearchClick}
+                disabled={isSearchDisabled || !hasApiKey}
+                className={cn("bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 rounded-lg w-full sm:w-auto text-base shrink-0 h-12")}
+                size="lg"
+            >
+                {renderButtonContent()}
+            </Button>
+        </div>
+    </section>);
 };

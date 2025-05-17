@@ -1,4 +1,3 @@
-// app/compare/components/RecentSearchesDropdown.tsx
 import React, {FC} from 'react';
 import {useRouter} from 'next/navigation';
 import {Button} from '@/components/ui/button';
@@ -34,48 +33,48 @@ export const RecentSearchesDropdown: FC<RecentSearchesDropdownProps> = ({searche
     }
 
     return (<div className={cn(className)}>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button
-                        variant="ghost" // Changed variant
-                        size="icon"
-                        className={cn("rounded-full size-10 text-slate-400 hover:text-indigo-300 hover:bg-slate-700/70", // Adjusted styling
-                            "focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900" // Focus styling
-                        )}
-                    >
-                        <History className="h-5 w-5"/>
-                        <span className="sr-only">View Recent Searches</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                    className="w-72 bg-slate-800/95 backdrop-blur-sm border-slate-700 text-slate-200 shadow-2xl" // Added backdrop-blur for style
-                    align="end"
-                    sideOffset={10}
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    variant="ghost" // Changed variant
+                    size="icon"
+                    className={cn("rounded-full size-10 text-slate-400 hover:text-indigo-300 hover:bg-slate-700/70", // Adjusted styling
+                        "focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900" // Focus styling
+                    )}
                 >
-                    <DropdownMenuLabel className="text-slate-100 font-semibold px-3 py-2">Recent
-                        Searches</DropdownMenuLabel>
+                    <History className="h-5 w-5"/>
+                    <span className="sr-only">View Recent Searches</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                className="w-72 bg-slate-800/95 backdrop-blur-sm border-slate-700 text-slate-200 shadow-2xl" // Added backdrop-blur for style
+                align="end"
+                sideOffset={10}
+            >
+                <DropdownMenuLabel className="text-slate-100 font-semibold px-3 py-2">Recent
+                    Searches</DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-slate-700/80"/>
+                {searches.map((search) => (<DropdownMenuItem
+                    key={search.id}
+                    onClick={() => handleSelectSearch(search.url)}
+                    className="focus:bg-indigo-600/30 focus:text-indigo-200 text-sm cursor-pointer px-3 py-2"
+                >
+                    <span className="truncate block" title={search.label}>{search.label}</span>
+                </DropdownMenuItem>))}
+                {searches.length > 0 && (<>
                     <DropdownMenuSeparator className="bg-slate-700/80"/>
-                    {searches.map((search) => (<DropdownMenuItem
-                            key={search.id}
-                            onClick={() => handleSelectSearch(search.url)}
-                            className="focus:bg-indigo-600/30 focus:text-indigo-200 text-sm cursor-pointer px-3 py-2"
-                        >
-                            <span className="truncate block" title={search.label}>{search.label}</span>
-                        </DropdownMenuItem>))}
-                    {searches.length > 0 && (<>
-                            <DropdownMenuSeparator className="bg-slate-700/80"/>
-                            <DropdownMenuItem
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onClear();
-                                }}
-                                className="text-red-400 hover:!text-red-300 focus:!bg-red-500/30 focus:!text-red-300 text-xs px-3 py-2"
-                            >
-                                <Trash2 className="mr-2 h-3.5 w-3.5"/>
-                                Clear History
-                            </DropdownMenuItem>
-                        </>)}
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </div>);
+                    <DropdownMenuItem
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onClear();
+                        }}
+                        className="text-red-400 hover:!text-red-300 focus:!bg-red-500/30 focus:!text-red-300 text-xs px-3 py-2"
+                    >
+                        <Trash2 className="mr-2 h-3.5 w-3.5"/>
+                        Clear History
+                    </DropdownMenuItem>
+                </>)}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    </div>);
 };

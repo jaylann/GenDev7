@@ -1,4 +1,3 @@
-// components/address-autocomplete-input.tsx
 'use client';
 import React, {useEffect, useRef} from 'react';
 import {useAddressAutocomplete} from '@/hooks/use-address-autocomplete';
@@ -100,45 +99,45 @@ export const AddressAutocompleteInput: React.FC<AddressAutocompleteInputProps> =
 
     if (!apiKey) {
         return (<div className={cn('relative w-full', containerClassName)}>
-                <Input
-                    type="text"
-                    placeholder="Address service disabled (No API Key)"
-                    className={cn('h-12 text-red-400 placeholder:text-red-700/80 bg-red-900/30 border-red-700', inputClassName,)}
-                    disabled
-                />
-            </div>);
+            <Input
+                type="text"
+                placeholder="Address service disabled (No API Key)"
+                className={cn('h-12 text-red-400 placeholder:text-red-700/80 bg-red-900/30 border-red-700', inputClassName,)}
+                disabled
+            />
+        </div>);
     }
 
     return (<div className={cn('relative w-full', containerClassName)}>
-            <Input
-                ref={inputRef}
-                type="text"
-                value={value}
-                onChange={handleInputChange}
-                onKeyDown={handleKeyDown}
-                onFocus={() => {
-                    if (value.trim()) setShowSuggestions(true);
-                }}
-                placeholder="Street 123, 12345 City"
-                className={cn('h-12', inputClassName)}
-                disabled={disabled || !ready}
-                autoComplete="off"
-                aria-autocomplete="list"
-                aria-expanded={showSuggestions && suggestions.status === 'OK' && suggestions.data.length > 0}
-            />
-            {!ready && (<Loader2
-                    className="absolute right-3 top-1/2 -translate-y-1/2 size-5 animate-spin text-slate-400"
-                />)}
+        <Input
+            ref={inputRef}
+            type="text"
+            value={value}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => {
+                if (value.trim()) setShowSuggestions(true);
+            }}
+            placeholder="Street 123, 12345 City"
+            className={cn('h-12', inputClassName)}
+            disabled={disabled || !ready}
+            autoComplete="off"
+            aria-autocomplete="list"
+            aria-expanded={showSuggestions && suggestions.status === 'OK' && suggestions.data.length > 0}
+        />
+        {!ready && (<Loader2
+            className="absolute right-3 top-1/2 -translate-y-1/2 size-5 animate-spin text-slate-400"
+        />)}
 
-            <div ref={listRef}>
-                <AddressSuggestionsList
-                    show={showSuggestions}
-                    suggestions={suggestions}
-                    onSelect={async (d) => {
-                        await handleSelect(d);
-                        setShowSuggestions(false);
-                    }}
-                />
-            </div>
-        </div>);
+        <div ref={listRef}>
+            <AddressSuggestionsList
+                show={showSuggestions}
+                suggestions={suggestions}
+                onSelect={async (d) => {
+                    await handleSelect(d);
+                    setShowSuggestions(false);
+                }}
+            />
+        </div>
+    </div>);
 };

@@ -32,10 +32,4 @@ export const MIN_SPEED_SLIDER_FLOOR: number = 50;
 // -----------------------------------------------------------------------------
 // Provider list available even before an offer search is executed.
 // -----------------------------------------------------------------------------
-export const AVAILABLE_PROVIDER_NAMES = [
-    'WebWunder',
-    'ByteMe',
-    'PingPerfect',
-    'ServusSpeed',
-    'VerbynDich',
-] as const;
+export const AVAILABLE_PROVIDER_NAMES = ['WebWunder', 'ByteMe', 'PingPerfect', 'ServusSpeed', 'VerbynDich',] as const;

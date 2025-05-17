@@ -113,9 +113,10 @@ export const useComparePageInitializer = ({
 
                     setStatus(`Loaded ${data.offers.length} shared offers.`);
                     applyUrlParams();
-                } catch (err: any) {
+                } catch (err: unknown) {
+                    const errorMessage = err instanceof Error ? err.message : String(err);
                     console.error("Error loading shared offers:", err);
-                    setStatus(`Error: Could not load shared comparison. ${err.message}. ` + `Link may be invalid or expired.`);
+                    setStatus(`Error: Could not load shared comparison. ${errorMessage}. Link may be invalid or expired.`);
 
                     // Clean-up state so UI returns to an empty page
                     setOriginalOffers([]);
