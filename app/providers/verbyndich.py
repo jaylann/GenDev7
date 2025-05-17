@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import httpx
 from async_lru import alru_cache
@@ -24,7 +24,7 @@ settings: Settings = get_settings()
 
 # Pagination/cache constants
 MAX_PAGES = 20
-PARALLEL = 5
+PARALLEL = 10
 PAGE_TMO = 15
 PAGE_FETCH_RETRY_ATTEMPTS = 3
 PAGE_FETCH_RETRY_EXP_MULTIPLIER = 1
@@ -55,56 +55,87 @@ async def _fetch_page(client: httpx.AsyncClient, body: str, page: int) -> dict:
 class VerbynDichProvider(ProviderBase):
     name: str = "VerbynDich"
 
-    async def fetch(self, address: Address) -> List[Offer]:
+    async def fetch(self, address: Address) -> list[Offer]:
         """
-        • Build the request body via the factory.
-        • Fetch up to MAX_PAGES pages in parallel with retries.
-        • Parse each item via the factory.
-        • Convert valid responses to Offer.
+        Fetch all VerbynDich offers available at *address*.
+
+        The algorithm
+
+        1.  Builds the request body with :pyclass:`VerbynDichFactory`.
+        2.  Starts ``PARALLEL`` page-fetch tasks.
+        3.  As pages return, parses them into :pyclass:`Offer` objects.
+        4.  **Immediately cancels every still-running task after the first
+            response whose ``last`` flag is *True*.**
+        5.  Persists the raw JSON for observability.
+
+        Returns
+        -------
+        list[Offer]
+            All successfully parsed offers.
         """
         body: str = VerbynDichFactory.build_body(address)
-        sem: asyncio.Semaphore = asyncio.Semaphore(PARALLEL)
-        pages: List[Dict[str, Any]] = []
-        offers: List[Offer] = []
+        semaphore = asyncio.Semaphore(PARALLEL)
+        offers: list[Offer] = []
+        raw_pages: list[dict[str, Any]] = []
 
-        async def _one(pg: int) -> Tuple[int, Dict[str, Any]]:
-            async with sem:
-                return pg, await _fetch_page(self.client, body, pg)
+        async def _one(page: int) -> tuple[int, dict[str, Any]]:
+            async with semaphore:
+                return page, await _fetch_page(self.client, body, page)
 
-        # start initial batch
-        pending: set[asyncio.Task[Tuple[int, Dict[str, Any]]]] = {
+        # Fire off the first batch
+        pending: set[asyncio.Task[tuple[int, dict[str, Any]]]] = {
             asyncio.create_task(_one(i)) for i in range(PARALLEL)
         }
         next_page: int = PARALLEL
+        last_page_seen = False
 
         while pending:
             done, pending = await asyncio.wait(
                 pending, return_when=asyncio.FIRST_COMPLETED
             )
+
+            # --- Parse finished tasks -------------------------------------------------
             for task in done:
-                pg, data = task.result()
-                pages.append(data)
+                try:
+                    page_no, data = task.result()
+                except asyncio.CancelledError:  # pragma: no cover
+                    continue  # Task was cancelled after last page appeared.
+                except Exception as exc:  # pragma: no cover
+                    logger.error("VerbynDichProvider → page task failed: {}", exc)
+                    continue
 
-                # parse via factory
-                response = VerbynDichFactory.parse_response(data)
-                if response and response.valid:
-                    offers.append(response.to_offer(self.name))
+                raw_pages.append(data)
+                resp = VerbynDichFactory.parse_response(data)
+                if resp and resp.valid:
+                    offers.append(resp.to_offer(self.name))
 
-                # stop conditions
-                if not response or response.last or pg + 1 >= MAX_PAGES:
-                    for t in pending:
-                        t.cancel()
-                    pending.clear()
-                    break
+                if resp and resp.last:
+                    last_page_seen = True
+                    logger.debug(
+                        "VerbynDichProvider → last page ({}) encountered; "
+                        "cancelling remaining tasks",
+                        page_no,
+                    )
 
-                # queue next
+            # --- Early exit? ----------------------------------------------------------
+            if last_page_seen:
+                # stop waiting for anything that is still in flight
+                for task in pending:
+                    task.cancel()
+                # gather ensures we silence cancellation exceptions
+                await asyncio.gather(*pending, return_exceptions=True)
+                break
+
+            # --- Queue the next page --------------------------------------------------
+            if next_page < MAX_PAGES:
                 pending.add(asyncio.create_task(_one(next_page)))
                 next_page += 1
 
-        # persist raw pages for debugging
+        # -----------------------------------------------------------------------------
+        # Diagnostics
         os.makedirs("logs", exist_ok=True)
-        with open("logs/verbyndich_response.json", "w", encoding="utf-8") as f:
-            json.dump(pages, f, indent=2, ensure_ascii=False)
+        with open("logs/verbyndich_response.json", "w", encoding="utf-8") as fh:
+            json.dump(raw_pages, fh, indent=2, ensure_ascii=False)
 
-        logger.info(f"VerbynDichProvider → returning {len(offers)} offers")
+        logger.info("VerbynDichProvider → returning {} offers", len(offers))
         return offers

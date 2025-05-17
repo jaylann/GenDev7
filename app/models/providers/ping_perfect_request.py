@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, constr
 
 
 class PingPerfectRequest(BaseModel):
@@ -6,12 +6,8 @@ class PingPerfectRequest(BaseModel):
     Typed model for the Ping Perfect API request payload.
     """
 
-    street: str
-    houseNumber: str = Field()
-    plz: str
-    city: str
+    street: constr(strip_whitespace=True, min_length=1)
+    houseNumber: constr(strip_whitespace=True, min_length=1)
+    plz: constr(strip_whitespace=True, min_length=1)
+    city: constr(strip_whitespace=True, min_length=1)
     wantsFiber: bool = Field(default=False)
-
-    # allow initialization with either snake_case or the JSON-style alias
-    class Config:
-        populate_by_name = True

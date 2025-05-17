@@ -1,15 +1,16 @@
 # app/providers/base.py
 from __future__ import annotations
+
 import abc
 from typing import List, Dict, Any
 
 import httpx
-from tenacity import AsyncRetrying
 from loguru import logger
+from tenacity import AsyncRetrying
 
-from app.models import Address, Offer
-from app.exceptions.provider_error import ProviderError
 from app.core.retry_config import RetryConfig
+from app.exceptions.provider_error import ProviderError
+from app.models import Address, Offer
 
 
 class ProviderBase(abc.ABC):
@@ -24,10 +25,10 @@ class ProviderBase(abc.ABC):
     retry_config: RetryConfig = RetryConfig()
 
     def __init__(
-            self,
-            client: httpx.AsyncClient,
-            *,
-            retry_config: RetryConfig | None = None,
+        self,
+        client: httpx.AsyncClient,
+        *,
+        retry_config: RetryConfig | None = None,
     ) -> None:
         self.client = client
         if retry_config is not None:

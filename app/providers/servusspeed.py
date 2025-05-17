@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from typing import List, Tuple, Optional, Dict, Any
 
 import httpx
@@ -47,9 +48,7 @@ async def _post_json(
             location = resp.headers.get("location")
             raise ProviderError(f"Redirected from {url} to {location}")
         resp.raise_for_status()
-        with open("servusspeed_response.json", "wb") as f:
-            f.write(resp.content)
-        util_logger.debug(f"Saved raw JSON from {url}")
+        util_logger.debug(f"Received JSON from {url}")
         return resp
     except httpx.TimeoutException as e:
         util_logger.error(f"Timeout on POST to {url}: {e!r}")
@@ -180,6 +179,22 @@ class ServusSpeedProvider(ProviderBase):
             PRODUCT_DETAILS_TIMEOUT,
         )
         payload = resp.json()
+        file_path = "servusspeed_response.json"
+        try:
+            with open(file_path, "r+", encoding="utf-8") as f:
+                try:
+                    data = json.load(f)
+                    if not isinstance(data, list):
+                        data = [data]
+                except json.JSONDecodeError:
+                    data = []
+                data.append(payload)
+                f.seek(0)
+                json.dump(data, f, ensure_ascii=False, indent=2)
+                f.truncate()
+        except FileNotFoundError:
+            with open(file_path, "w", encoding="utf-8") as f:
+                json.dump([payload], f, ensure_ascii=False, indent=2)
         # parse detail via factory
         resp_model = ServusSpeedFactory.parse_detail_response(pid, payload)
         return resp_model.to_offer(self.name)

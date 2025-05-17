@@ -48,6 +48,14 @@ class WebWunderProvider(ProviderBase):
         duration: float = time.perf_counter() - start
         logger.info(f"WebWunderProvider HTTP {resp.status_code} in {duration:.2f}s")
 
+        # Append raw XML response to webwunder.xml
+        try:
+            with open("webwunder.xml", "a", encoding="utf-8") as f:
+                f.write(resp.text)
+                f.write("\n")
+        except Exception as exc:
+            logger.error(f"Failed to write WebWunder response to webwunder.xml: {exc}")
+
         # parse XML and extract <products> nodes
         root: Any = WebWunderFactory.postprocess_response(resp)
         product_elems: List[Any] = list(root.iterfind(".//{*}products"))

@@ -1,27 +1,80 @@
 from __future__ import annotations
 
-import uuid
-from typing import Any, Dict, Optional
+from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, PositiveInt, constr, field_validator
 
 from app.models.base.offer import VoucherKind, Offer
 
 
 class PingPerfectResponse(BaseModel):
-    provider_name: str
-    product_id: str
-    speed_down_mbit: Optional[int]
-    connection_type: Optional[str]
-    data_cap_gb: Optional[int]
-    price_cents_month: Optional[int]
-    contract_duration_months: Optional[int]
+    provider_name: constr(strip_whitespace=True, min_length=1)
+    product_id: constr(strip_whitespace=True, min_length=1)
+    speed_down_mbit: PositiveInt
+    connection_type: constr(strip_whitespace=True, min_length=1)
+    data_cap_gb: Optional[PositiveInt]
+    price_cents_month: Optional[PositiveInt]
+    contract_duration_months: PositiveInt
     installation_service_included: bool
     tv_included: bool
-    tv_package_name: Optional[str]
+    tv_package_name: Optional[constr(strip_whitespace=True, min_length=1)]
     voucher_type: Optional[VoucherKind]
-    voucher_value_cents: Optional[int]
-    max_age: Optional[int]
+    voucher_value_cents: Optional[PositiveInt]
+    max_age: Optional[PositiveInt]
+
+    @field_validator("provider_name", "product_id", "connection_type", mode="before")
+    def must_not_be_blank(cls, v):
+        s = str(v).strip()
+        if not s:
+            raise ValueError("must contain at least one non-whitespace character")
+        return s
+
+    @field_validator("connection_type", "tv_package_name", mode="before")
+    def empty_string_to_none(cls, v):
+        if v == "":
+            return None
+        return v
+
+    @field_validator("speed_down_mbit", mode="before")
+    def validate_speed_down_mbit(cls, v):
+        """
+        Ensure speed_down_mbit is a positive integer.
+        """
+        if v is None:
+            return None
+        try:
+            int_v = int(round(float(v)))
+        except (TypeError, ValueError):
+            return None
+        if int_v <= 0:
+            return None
+        return int_v
+
+    @field_validator(
+        "price_cents_month",
+        "contract_duration_months",
+        "voucher_value_cents",
+        "max_age",
+        "data_cap_gb",
+        mode="before",
+    )
+    def validate_positive_int_fields(cls, v, info):
+        """
+        Ensure positive integer fields are positive. If not, set to None to avoid validation error.
+        """
+        if v is None:
+            return None
+        try:
+            int_v = int(v)
+        except (TypeError, ValueError):
+            # if that fails, try float→int
+            try:
+                int_v = int(float(v))
+            except (TypeError, ValueError):
+                return None
+        if int_v <= 0:
+            return None
+        return int_v
 
     def to_offer(self, provider_name: str) -> Offer:
         return Offer(
@@ -29,14 +82,12 @@ class PingPerfectResponse(BaseModel):
             plan_name=self.provider_name,
             product_id=self.product_id,
             speed_down_mbit=self.speed_down_mbit,
-            speed_up_mbit=None,
             data_cap_gb=self.data_cap_gb,
             connection_type=self.connection_type,
             price_cents_month_intro=self.price_cents_month,
             price_cents_month_regular=self.price_cents_month,
             contract_duration_months=self.contract_duration_months,
             installation_service_included=self.installation_service_included,
-            installation_cost_cents=None,
             tv_included=self.tv_included,
             tv_package_name=self.tv_package_name,
             voucher_type=self.voucher_type,

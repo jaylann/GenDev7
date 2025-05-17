@@ -1,12 +1,12 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, constr
 
 
 class WebWunderRequest(BaseModel):
-    street: str
-    house_number: str
-    city: str
-    plz: str
-    country_code: str
+    street: constr(strip_whitespace=True, min_length=1)
+    house_number: constr(strip_whitespace=True, min_length=1)
+    city: constr(strip_whitespace=True, min_length=1)
+    plz: constr(strip_whitespace=True, min_length=1)
+    country_code: constr(strip_whitespace=True, min_length=1)
 
     def to_xml(self) -> str:
         return f"""

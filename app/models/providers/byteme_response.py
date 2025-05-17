@@ -2,27 +2,90 @@ from __future__ import annotations
 
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import (
+    BaseModel,
+    PositiveInt,
+    NonNegativeFloat,
+    Field,
+    constr,
+    field_validator,
+)
 
 from app.models import Offer
+from app.models.base.offer import VoucherKind
 
 
 class ByteMeResponse(BaseModel):
-    provider_name: str
-    product_id: str
-    speed_down_mbit: int
-    price_cents_month_intro: int
-    price_cents_month_regular: int
-    contract_duration_months: int
-    connection_type: str
-    installation_service_included: bool
-    tv_included: bool
-    tv_package_name: Optional[str]
-    data_cap_gb: Optional[int]
-    voucher_type: Optional[str]
-    voucher_value_cents: Optional[int]
-    voucher_value_percent: Optional[float]
-    max_age: Optional[int]
+    provider_name: constr(strip_whitespace=True, min_length=1)
+    product_id: constr(strip_whitespace=True, min_length=1)
+    speed_down_mbit: PositiveInt
+    price_cents_month_intro: Optional[PositiveInt] = Field(default=None)
+    price_cents_month_regular: Optional[PositiveInt] = Field(default=None)
+    contract_duration_months: PositiveInt
+    connection_type: constr(strip_whitespace=True, min_length=1)
+    installation_service_included: bool = False
+    tv_included: bool = False
+    tv_package_name: Optional[constr(strip_whitespace=True, min_length=1)]
+    data_cap_gb: Optional[PositiveInt]
+    voucher_type: Optional[VoucherKind]
+    voucher_value_cents: Optional[PositiveInt]
+    voucher_value_percent: Optional[NonNegativeFloat]
+    max_age: Optional[PositiveInt]
+
+    @field_validator("provider_name", "product_id", "connection_type", mode="before")
+    def must_not_be_blank(cls, v):
+        s = str(v).strip()
+        if not s:
+            raise ValueError("must contain at least one non-whitespace character")
+        return s
+
+    @field_validator("tv_package_name", "voucher_type", mode="before")
+    def empty_string_to_none(cls, v):
+        if v == "":
+            return None
+        return v
+
+    @field_validator("speed_down_mbit", mode="before")
+    def validate_speed_down_mbit(cls, v):
+        """
+        Ensure speed_down_mbit is a positive integer.
+        """
+        if v is None:
+            return None
+        try:
+            int_v = int(round(float(v)))
+        except (TypeError, ValueError):
+            return None
+        if int_v <= 0:
+            return None
+        return int_v
+
+    @field_validator(
+        "price_cents_month_intro",
+        "price_cents_month_regular",
+        "contract_duration_months",
+        "voucher_value_cents",
+        "max_age",
+        "data_cap_gb",
+        mode="before",
+    )
+    def validate_positive_int_fields(cls, v, info):
+        """
+        Ensure positive integer fields are positive. If not, set to None to avoid validation error.
+        """
+        if v is None:
+            return None
+        try:
+            int_v = int(v)
+        except (TypeError, ValueError):
+            # if that fails, try float→int
+            try:
+                int_v = int(float(v))
+            except (TypeError, ValueError):
+                return None
+        if int_v <= 0:
+            return None
+        return int_v
 
     def to_offer(self, provider_name: str) -> Offer:
         return Offer(
@@ -36,7 +99,6 @@ class ByteMeResponse(BaseModel):
             contract_regular_months=24,
             connection_type=self.connection_type,
             installation_service_included=self.installation_service_included,
-            installation_cost_cents=None,
             tv_included=self.tv_included,
             tv_package_name=self.tv_package_name,
             data_cap_gb=self.data_cap_gb,
