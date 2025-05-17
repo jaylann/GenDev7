@@ -67,7 +67,7 @@ class ServusSpeedFactory:
                 logger.error(f"Invalid providerName '{provider_name}' for pid {pid}")
                 return None
 
-            speed = to_int(info.get("speed"), "speed")
+            speed = int(round(float(info.get("speed"))))
             contract_duration = to_int(info.get("contractDurationInMonths"), "contractDurationInMonths")
             monthly_cost = to_int(price.get("monthlyCostInCent"), "monthlyCostInCent")
 

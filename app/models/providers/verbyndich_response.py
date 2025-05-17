@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from typing import Optional
 
 from pydantic import (
@@ -103,7 +104,7 @@ class VerbynDichResponse(BaseModel):
         return Offer(
             provider=provider_name,
             plan_name=self.plan_name,
-            product_id=self.product,
+            product_id=str(uuid.uuid4()),
             speed_down_mbit=self.speed_down_mbit,
             connection_type=self.connection_type,
             price_cents_month_intro=self.price_cents_month,

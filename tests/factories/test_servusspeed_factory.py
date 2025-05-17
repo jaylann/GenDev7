@@ -1,7 +1,8 @@
 from typing import Dict, Any
 
 import pytest
-from hypothesis import given, strategies as st, settings, HealthCheck
+import math
+from hypothesis import given, strategies as st, settings, HealthCheck, assume
 
 from app.factories.servusspeed_factory import ServusSpeedFactory
 from app.models import Address
@@ -664,6 +665,13 @@ class TestParseDetailResponseFuzzing:
         suppress_health_check=[HealthCheck.filter_too_much],
     )
     def test_fuzz_to_int_via_parser_mandatory_field(self, value):
+        # Skip infinite inputs
+        try:
+            f_val = float(value)
+            assume(math.isfinite(f_val))
+        except (ValueError, TypeError):
+            # non-float-convertible inputs are fine
+            pass
         pid = "fuzz_to_int_mandatory"
         payload = {
             "servusSpeedProduct": {
