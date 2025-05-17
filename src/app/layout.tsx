@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import {GoogleMapsLoader} from "@/components/compare/address-autocomplete-input";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,6 +24,7 @@ export const metadata: Metadata = {
 }
 
 import type { Viewport } from 'next'
+import {GoogleMapsLoader} from "@/components/compare/google-maps-loader";
 
 export const viewport: Viewport = {
     width: 'device-width',
