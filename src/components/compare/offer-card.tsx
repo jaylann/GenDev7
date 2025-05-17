@@ -5,6 +5,7 @@ import {
     Download as DownloadIcon,
     DownloadCloud,
     Gift,
+    Share2Icon,
     ShieldCheck,
     Sparkles,
     Tv2,
@@ -13,14 +14,13 @@ import {
 import {Badge} from "@/components/ui/badge";
 import {motion} from "framer-motion";
 import {Card} from "@/components/ui/card";
-import {Offer} from "@/types/offer"; // Ensure this path is correct
-// Make sure VoucherKind is imported if you're using it with VoucherKind.ABSOLUTE etc.
-// import { VoucherKind } from "@/types/voucher-kind"; // Or from "@/types/offer" if re-exported
+import {Offer} from "@/types/offer";
 import {formatEur} from "@/utils/formatters";
 import {ProviderLogo} from "@/components/compare/provider-logo";
 import {DetailBadgeComponent, DetailBadgeInfo} from "@/components/compare/detail-badge";
+import {cn} from "@/lib/utils"; // Import cn utility
 
-// Badge color configurations
+// Badge color configurations (assuming they are the same)
 const BADGE_COLORS = {
     tv: {bg: "bg-purple-600/20", text: "text-purple-300", border: "border-purple-500/50", icon: "text-purple-400"},
     install: {bg: "bg-sky-600/20", text: "text-sky-300", border: "border-sky-500/50", icon: "text-sky-400"},
@@ -31,39 +31,31 @@ const BADGE_COLORS = {
 
 interface OfferCardProps {
     offer: Offer;
+    /** Callback to handle sharing a single offer. */
+    onShareOffer: (offer: Offer) => void;
+    /** The slug for the current full list of offers, required to enable sharing. */
+    activeShareableSlug: string | null;
 }
 
-// --- Helper Functions for Price Calculation ---
-
-/**
- * Calculates the effective monetary value of a voucher for an offer.
- * Percentage vouchers apply to `price_cents_month_intro` for each month
- * of `contract_duration_months`, capped by `voucher_max_value_cents`.
- * @param {Offer} offer - The offer object.
- * @returns {number} The calculated total voucher value in cents.
- */
+// --- Helper Functions for Price Calculation (assuming these are correct and remain unchanged) ---
 const calculateEffectiveVoucherValue = (offer: Offer): number => {
+    // ... (implementation from your provided code)
     let totalVoucherValueApplied = 0;
 
     if (!offer.voucher_type) {
         return 0;
     }
-    // Using string literals as per your current code. If VoucherKind enum is available, prefer that.
     switch (offer.voucher_type) {
         case "absolute":
         case "cashback":
             totalVoucherValueApplied = offer.voucher_value_cents ?? 0;
-            // Apply cap if business rule dictates it for absolute/cashback too
-            // if (offer.voucher_max_value_cents != null) {
-            //     totalVoucherValueApplied = Math.min(totalVoucherValueApplied, offer.voucher_max_value_cents);
-            // }
             break;
 
         case "percentage":
         case "discount":
             if (offer.voucher_value_percent != null && offer.voucher_value_percent > 0) {
                 const monthlyIntroPrice = offer.price_cents_month_intro;
-                const introDurationForVoucher = offer.contract_duration_months; // Voucher applies over intro period
+                const introDurationForVoucher = offer.contract_duration_months;
                 const percentOff = offer.voucher_value_percent / 100;
                 const maxCap = offer.voucher_max_value_cents ?? Infinity;
 
@@ -83,62 +75,42 @@ const calculateEffectiveVoucherValue = (offer: Offer): number => {
             }
             break;
         default:
-            // console.warn(`Unknown voucher type: ${offer.voucher_type}`);
             break;
     }
     return Math.max(0, Math.round(totalVoucherValueApplied));
 };
 
-/**
- * Calculates the gross total cost of an offer over a dynamic period.
- * @param {number | null | undefined} introPrice - Price per month during the introductory period (in cents).
- * @param {number | null | undefined} regularPrice - Regular price per month after intro period (in cents).
- * @param {number | null | undefined} introDurationMonths - Duration of the introductory price period (in months).
- * @param {number} calculationPeriodMonths - The total period (in months) over which to calculate the cost.
- * @returns {number | null} The total gross cost over the calculation period in cents, or null if not enough information.
- */
 const calculateGrossTotalCostOverDynamicPeriod = (
     introPrice: number | null | undefined,
     regularPrice: number | null | undefined,
     introDurationMonths: number | null | undefined,
     calculationPeriodMonths: number
 ): number | null => {
-    // Scenario 1: Valid intro price and duration for the intro period itself
+    // ... (implementation from your provided code)
     if (introPrice != null && introPrice > 0 && introDurationMonths != null && introDurationMonths > 0) {
-        const effectiveRegularPrice = regularPrice ?? introPrice; // Fallback to intro if regular is not set
-
-        // If the intro period covers or exceeds the entire calculation period
+        const effectiveRegularPrice = regularPrice ?? introPrice;
         if (introDurationMonths >= calculationPeriodMonths) {
             return introPrice * calculationPeriodMonths;
         } else {
-            // Cost during intro period + cost during regular period for the remainder
             return (introPrice * introDurationMonths) + (effectiveRegularPrice * (calculationPeriodMonths - introDurationMonths));
         }
+    } else if (regularPrice != null && regularPrice > 0) {
+        return regularPrice * calculationPeriodMonths;
+    } else if (introPrice != null && introPrice > 0) {
+        return introPrice * calculationPeriodMonths;
     }
-    // Scenario 2: No valid intro period, but regular price exists
-    else if (regularPrice != null && regularPrice > 0) {
-        return regularPrice * calculationPeriodMonths; // Assume flat regular price
-    }
-    // Scenario 3: Only intro price exists (no duration, no regular price) - less ideal
-    else if (introPrice != null && introPrice > 0) {
-        return introPrice * calculationPeriodMonths; // Assume flat intro price
-    }
-
-    return null; // Not enough information
+    return null;
 };
 
 
-export const OfferCard: FC<OfferCardProps> = ({offer}) => {
+export const OfferCard: FC<OfferCardProps> = ({offer, onShareOffer, activeShareableSlug}) => {
     const {
         price_cents_month_intro,
         price_cents_month_regular,
-        contract_duration_months, // This is the offer's minimum contract term
+        contract_duration_months,
     } = offer;
 
-    // Determine the period for average price calculation
-    // Default to 24, but use contract_duration_months if it's longer.
-    // If contract_duration_months is null/undefined, default to 24.
-    const actualContractDuration = contract_duration_months ?? 0; // Treat null/undefined as 0 for comparison
+    const actualContractDuration = contract_duration_months ?? 0;
     const calculationPeriodMonths = Math.max(24, actualContractDuration);
 
     let avgPriceDisplay: string = 'N/A';
@@ -147,8 +119,8 @@ export const OfferCard: FC<OfferCardProps> = ({offer}) => {
     const grossTotalCost = calculateGrossTotalCostOverDynamicPeriod(
         price_cents_month_intro,
         price_cents_month_regular,
-        contract_duration_months, // The intro period for pricing structure
-        calculationPeriodMonths   // The total period for averaging
+        offer.intro_duration_months ?? contract_duration_months, // Use intro_duration_months if available, else contract_duration_months
+        calculationPeriodMonths
     );
 
     if (grossTotalCost != null) {
@@ -157,11 +129,11 @@ export const OfferCard: FC<OfferCardProps> = ({offer}) => {
         const averageNetMonthlyCost = netTotalCost / calculationPeriodMonths;
         avgPriceDisplay = formatEur(Math.round(averageNetMonthlyCost));
     } else {
-        // If gross cost couldn't be calculated, label might be less relevant or could also be 'N/A'
-        avgPriceLabel = 'Avg./mo'; // Or some other fallback
+        avgPriceLabel = 'Avg./mo';
     }
 
-    // --- Prominent Bonus Text and Detail Badges (Logic remains the same as your provided code) ---
+    // --- Prominent Bonus Text and Detail Badges ---
+    // ... (logic from your provided code, unchanged)
     let prominentBonusText: string | null = null;
     if ((offer.voucher_type === "absolute" || offer.voucher_type === "cashback") &&
         offer.voucher_value_cents != null && offer.voucher_value_cents > 0) {
@@ -178,10 +150,7 @@ export const OfferCard: FC<OfferCardProps> = ({offer}) => {
 
     if (offer.installation_service_included === true) {
         detailBadges.push({
-            key: 'install',
-            icon: DownloadCloud,
-            text: "Install Incl.",
-            colorConfig: BADGE_COLORS.install
+            key: 'install', icon: DownloadCloud, text: "Install Incl.", colorConfig: BADGE_COLORS.install
         });
     } else if (offer.installation_service_included === false) {
         if (offer.installation_cost_cents != null && offer.installation_cost_cents > 0) {
@@ -193,10 +162,7 @@ export const OfferCard: FC<OfferCardProps> = ({offer}) => {
             });
         } else {
             detailBadges.push({
-                key: 'install',
-                icon: DownloadCloud,
-                text: "Install Opt.",
-                colorConfig: BADGE_COLORS.install
+                key: 'install', icon: DownloadCloud, text: "Install Opt.", colorConfig: BADGE_COLORS.install
             });
         }
     } else if (offer.installation_service_included == null) {
@@ -212,26 +178,17 @@ export const OfferCard: FC<OfferCardProps> = ({offer}) => {
 
     if (offer.data_cap_gb != null) {
         detailBadges.push({
-            key: 'dataCap',
-            icon: Database,
-            text: `${offer.data_cap_gb} GB Cap`,
-            colorConfig: BADGE_COLORS.dataCap,
+            key: 'dataCap', icon: Database, text: `${offer.data_cap_gb} GB Cap`, colorConfig: BADGE_COLORS.dataCap,
         });
     } else {
         detailBadges.push({
-            key: 'dataCap',
-            icon: Database,
-            text: `Unlimited Data`,
-            colorConfig: BADGE_COLORS.dataCap,
+            key: 'dataCap', icon: Database, text: `Unlimited Data`, colorConfig: BADGE_COLORS.dataCap,
         });
     }
 
     if (offer.max_age != null) {
         detailBadges.push({
-            key: 'youth',
-            icon: ShieldCheck,
-            text: `Youth (≤${offer.max_age}y)`,
-            colorConfig: BADGE_COLORS.youth,
+            key: 'youth', icon: ShieldCheck, text: `Youth (≤${offer.max_age}y)`, colorConfig: BADGE_COLORS.youth,
         });
     }
 
@@ -245,13 +202,13 @@ export const OfferCard: FC<OfferCardProps> = ({offer}) => {
             colorConfig: BADGE_COLORS.discount,
         });
     }
-
-    // --- JSX for Price Sections (Logic remains the same as your provided code) ---
+    // --- JSX for Price Sections ---
+    // ... (logic from your provided code, unchanged)
     let introPriceSection: JSX.Element | null = null;
     if (price_cents_month_intro != null) {
         const formattedIntroPrice = formatEur(price_cents_month_intro);
-        const durationText = offer.contract_duration_months
-            ? `first ${offer.contract_duration_months} months`
+        const durationText = (offer.intro_duration_months ?? offer.contract_duration_months)
+            ? `first ${offer.intro_duration_months ?? offer.contract_duration_months} months`
             : `for introductory period`;
 
         introPriceSection = (
@@ -284,7 +241,6 @@ export const OfferCard: FC<OfferCardProps> = ({offer}) => {
         }
     }
 
-
     return (
         <motion.div
             layout
@@ -297,7 +253,7 @@ export const OfferCard: FC<OfferCardProps> = ({offer}) => {
             <Card
                 className="h-full py-2 bg-[#1C203C] border border-[#303558]/80 text-slate-300 flex flex-col rounded-lg shadow-lg hover:border-indigo-600/70 transition-colors duration-200 group data-[selected=true]:border-indigo-500 data-[selected=true]:ring-2 data-[selected=true]:ring-indigo-500"
             >
-                {/* Header: Provider Info and Average Price */}
+                {/* Header: Provider Info and Average Price with Share Button */}
                 <div className="p-4 flex items-center gap-2.5 border-b border-[#303558]/80">
                     <ProviderLogo
                         providerName={offer.provider}
@@ -314,14 +270,44 @@ export const OfferCard: FC<OfferCardProps> = ({offer}) => {
                             {offer.plan_name}
                         </p>
                     </div>
+
+                    {/* MODIFIED: Average Price and Share Icon Area */}
                     <div className="ml-auto text-right">
-                        {/* MODIFIED: Dynamic average price label */}
-                        <p className="text-[0.65rem] text-slate-400">{avgPriceLabel}</p>
-                        <p className="text-sm font-semibold text-indigo-300">{avgPriceDisplay}</p>
+                        <div className="relative"> {/* Container for positioning */}
+                            {/* Average Price Content - will be visually altered on group-hover */}
+                            <div
+                                className="transition-opacity duration-200 group-hover:opacity-30 group-focus-within:opacity-30">
+                                <p className="text-[0.65rem] text-slate-400">{avgPriceLabel}</p>
+                                <p className="text-sm font-semibold text-indigo-300">{avgPriceDisplay}</p>
+                            </div>
+
+                            {/* Share Icon Button - appears on group-hover and overlays */}
+                            {activeShareableSlug && ( // Only render if sharing is possible
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation(); // Prevent card click if it has other actions
+                                        onShareOffer(offer);
+                                    }}
+                                    disabled={!activeShareableSlug}
+                                    aria-label={`Share ${offer.plan_name}`}
+                                    title={`Share ${offer.plan_name} details`}
+                                    className={cn(
+                                        "absolute inset-0 z-10 flex items-center justify-center rounded-md",
+                                        "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100", // Also show on focus within card
+                                        "focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1C203C]",
+                                        "transition-all duration-200 ease-in-out",
+                                        "hover:bg-indigo-500/20" // Slight bg on direct hover of the button itself
+                                    )}
+                                >
+                                    <Share2Icon size={18}
+                                                className="text-indigo-300 group-hover:scale-110 transition-transform"/>
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
-                {/* Body: Speeds, Pricing, Contract Details */}
+                {/* Body: Speeds, Pricing, Contract Details (unchanged structure) */}
                 <div className="p-4 pt-0 flex-grow flex flex-col justify-between">
                     <div>
                         {/* Speed Section */}
@@ -340,7 +326,6 @@ export const OfferCard: FC<OfferCardProps> = ({offer}) => {
                         <div className="space-y-1.5 mb-3">
                             {introPriceSection}
                             {regularPriceSection}
-                            {/* MODIFIED: Check against grossTotalCost not grossTotalCost24Months */}
                             {(introPriceSection == null && regularPriceSection == null && grossTotalCost == null) && (
                                 <p className="text-sm text-slate-400 text-center">Price information not available.</p>
                             )}
@@ -365,7 +350,7 @@ export const OfferCard: FC<OfferCardProps> = ({offer}) => {
                         </div>
                     </div>
 
-                    {/* Footer: Bonuses and Badges */}
+                    {/* Footer: Bonuses and Badges (unchanged structure) */}
                     {(prominentBonusText || detailBadges.length > 0) && (
                         <div className="mt-3 pt-3 border-t border-[#303558]/80 space-y-2">
                             {prominentBonusText && (

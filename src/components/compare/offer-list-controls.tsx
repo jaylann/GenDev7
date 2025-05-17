@@ -33,6 +33,7 @@ interface OfferListControlsProps {
     originalOffers: Offer[];
     isLoadingOffers: boolean; // For disabling controls during initial load
     areAnyOffersLoaded: boolean; // To disable controls if no offers at all
+    isSingleOfferView?: boolean; // Add this
 }
 
 /**
@@ -52,6 +53,7 @@ export const OfferListControls: FC<OfferListControlsProps> = ({
                                                                   originalOffers,
                                                                   isLoadingOffers,
                                                                   areAnyOffersLoaded,
+                                                                  isSingleOfferView = false,
                                                               }) => {
     const currentSortOptionConfig = SORT_OPTIONS.find(s => s.key === sortOption);
     const controlDisabled = isLoadingOffers && !areAnyOffersLoaded;
@@ -64,7 +66,7 @@ export const OfferListControls: FC<OfferListControlsProps> = ({
                     <Button
                         variant="ghost"
                         className="text-slate-300 hover:text-white hover:bg-slate-700/50 px-3 py-1.5"
-                        disabled={controlDisabled}
+                        disabled={controlDisabled || isSingleOfferView}
                     >
                         {currentSortOptionConfig?.icon && React.createElement(currentSortOptionConfig.icon, { className: "mr-2 size-4" })}
                         Sort: {currentSortOptionConfig?.label ?? 'Select'}

@@ -3,6 +3,44 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@layer base {
+  html {
+    @apply bg-[linear-gradient(to_br,#0B0B2D,#1C1044,#3C0E4C)] bg-fixed;
+  }
+  body {
+    @apply bg-transparent;
+  }
+}
+
+:root {
+  --safe-top: env(safe-area-inset-top);
+}
+
+/* 2. fixed overlay that only covers the notch/status-bar area */
+.safe-area-glass {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--safe-top);
+
+  /* the frosted‐glass effect */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  /* tweak the translucency */
+  background-color: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* 3. dark mode variant */
+@media (prefers-color-scheme: dark) {
+  .safe-area-glass {
+    background-color: rgba(0, 0, 0, 0.3);
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
