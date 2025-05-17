@@ -1,5 +1,5 @@
 // app/compare/hooks/useOfferProcessing.ts
-import { useMemo } from 'react';
+import {useMemo} from 'react';
 import {Offer} from "@/types/offer";
 import {SortOptionKey} from "@/types/sort-option-key";
 import {FiltersState} from "@/types/filters-state";
@@ -12,11 +12,7 @@ import {calculateEffectivePriceForSorting, calculateRecommendationScore} from "@
  * @param filters - The current filter state.
  * @returns A list of processed (enriched, filtered, sorted) offers.
  */
-export const useOfferProcessing = (
-    originalOffers: Offer[],
-    sortOption: SortOptionKey,
-    filters: FiltersState
-): Offer[] => {
+export const useOfferProcessing = (originalOffers: Offer[], sortOption: SortOptionKey, filters: FiltersState): Offer[] => {
     const processedOffers = useMemo(() => {
         if (originalOffers.length === 0) {
             return [];
@@ -25,12 +21,10 @@ export const useOfferProcessing = (
         // 1. Enrich offers (calculate effective price and recommendation score)
         const enrichedOffers = originalOffers
             .map(offer => ({
-                ...offer,
-                effective_price_24_months: calculateEffectivePriceForSorting(offer),
+                ...offer, effective_price_24_months: calculateEffectivePriceForSorting(offer),
             }))
             .map((offer, _, allEnriched) => ({
-                ...offer,
-                recommendation_score: calculateRecommendationScore(offer, allEnriched),
+                ...offer, recommendation_score: calculateRecommendationScore(offer, allEnriched),
             }));
 
         // 2. Filter offers

@@ -1,5 +1,5 @@
 // app/compare/components/UpdatePromptDialog.tsx
-import React, { FC } from 'react';
+import React, {FC} from 'react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -26,13 +26,9 @@ interface UpdatePromptDialogProps {
  * @param pendingOfferCount - The number of new/updated offers pending.
  */
 export const UpdatePromptDialog: FC<UpdatePromptDialogProps> = ({
-                                                                    isOpen,
-                                                                    onOpenChange,
-                                                                    onConfirm,
-                                                                    pendingOfferCount,
+                                                                    isOpen, onOpenChange, onConfirm, pendingOfferCount,
                                                                 }) => {
-    return (
-        <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+    return (<AlertDialog open={isOpen} onOpenChange={onOpenChange}>
             <AlertDialogContent className="bg-slate-800 border-slate-700 text-white">
                 <AlertDialogHeader>
                     <AlertDialogTitle>New Offers Available</AlertDialogTitle>
@@ -58,6 +54,5 @@ export const UpdatePromptDialog: FC<UpdatePromptDialogProps> = ({
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
-        </AlertDialog>
-    );
+        </AlertDialog>);
 };

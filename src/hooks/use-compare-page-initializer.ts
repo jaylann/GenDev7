@@ -1,13 +1,13 @@
-import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import {useSearchParams} from "next/navigation";
+import {useEffect} from "react";
 
-import { API_BASE_URL, DEFAULT_FILTERS, SORT_OPTIONS } from "@/config/constants";
-import { deserializeFiltersFromURL } from "@/utils/url";
+import {API_BASE_URL, DEFAULT_FILTERS, SORT_OPTIONS} from "@/config/constants";
+import {deserializeFiltersFromURL} from "@/utils/url";
 
-import type { Offer } from "@/types/offer";
-import type { Address } from "@/types/address";
-import type { SortOptionKey } from "@/types/sort-option-key";
-import type { FiltersState } from "@/types/filters-state";
+import type {Offer} from "@/types/offer";
+import type {Address} from "@/types/address";
+import type {SortOptionKey} from "@/types/sort-option-key";
+import type {FiltersState} from "@/types/filters-state";
 
 interface SharedOffersResponse {
     slug: string;
@@ -65,7 +65,7 @@ export const useComparePageInitializer = ({
             if (sortFromUrl && SORT_OPTIONS.some((s) => s.key === sortFromUrl)) {
                 setSortOption(sortFromUrl);
             }
-            setFilters({ ...DEFAULT_FILTERS, ...filtersFromUrl });
+            setFilters({...DEFAULT_FILTERS, ...filtersFromUrl});
         };
 
         // ---------------------------------------------------------------------
@@ -83,13 +83,12 @@ export const useComparePageInitializer = ({
             (async () => {
                 try {
                     const res = await fetch(`${API_BASE_URL}/compare/${slugFromUrl}`, {
-                        headers: { Accept: "application/json" },
-                        cache: "no-store",
+                        headers: {Accept: "application/json"}, cache: "no-store",
                     });
 
                     if (!res.ok) {
                         // Try to surface backend error payload if any
-                        const { detail } = (await res.json().catch(() => ({}))) as { detail?: string };
+                        const {detail} = (await res.json().catch(() => ({}))) as { detail?: string };
                         throw new Error(detail ?? `Backend returned ${res.status}`);
                     }
 
@@ -104,10 +103,7 @@ export const useComparePageInitializer = ({
                         setParsedAddress?.(data.address);
 
                         // Fallback text for the rare case geocoding fails
-                        setInitialAddressLabel?.(
-                            `${data.address.street} ${data.address.house_number}, ` +
-                            `${data.address.plz} ${data.address.city}`
-                        );
+                        setInitialAddressLabel?.(`${data.address.street} ${data.address.house_number}, ` + `${data.address.plz} ${data.address.city}`);
                     } else {
                         // fallback if backend stored no address on this slug
                         const shortSlug = data.slug.length > 20 ? data.slug.slice(0, 17) + "…" : data.slug;
@@ -119,10 +115,7 @@ export const useComparePageInitializer = ({
                     applyUrlParams();
                 } catch (err: any) {
                     console.error("Error loading shared offers:", err);
-                    setStatus(
-                        `Error: Could not load shared comparison. ${err.message}. ` +
-                        `Link may be invalid or expired.`
-                    );
+                    setStatus(`Error: Could not load shared comparison. ${err.message}. ` + `Link may be invalid or expired.`);
 
                     // Clean-up state so UI returns to an empty page
                     setOriginalOffers([]);

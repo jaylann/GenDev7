@@ -1,15 +1,10 @@
 // app/compare/components/OfferListControls.tsx
-import React, { FC } from 'react';
-import { Button } from '@/components/ui/button';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { ChevronDown, Share2, LayoutGrid, List } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, {FC} from 'react';
+import {Button} from '@/components/ui/button';
+import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,} from '@/components/ui/dropdown-menu';
+import {ToggleGroup, ToggleGroupItem} from "@/components/ui/toggle-group";
+import {ChevronDown, LayoutGrid, List, Share2} from 'lucide-react';
+import {cn} from '@/lib/utils';
 import {SORT_OPTIONS} from "@/config/constants";
 import {SortOptionKey} from "@/types/sort-option-key";
 import {FiltersState} from "@/types/filters-state";
@@ -58,8 +53,8 @@ export const OfferListControls: FC<OfferListControlsProps> = ({
     const currentSortOptionConfig = SORT_OPTIONS.find(s => s.key === sortOption);
     const controlDisabled = isLoadingOffers && !areAnyOffersLoaded;
 
-    return (
-        <section className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3 md:gap-x-6 text-sm text-slate-300 border-y border-slate-700/50 py-4">
+    return (<section
+            className="flex flex-wrap items-center justify-center gap-x-4 gap-y-3 md:gap-x-6 text-sm text-slate-300 border-y border-slate-700/50 py-4">
             {/* Sort Dropdown */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -68,24 +63,19 @@ export const OfferListControls: FC<OfferListControlsProps> = ({
                         className="text-slate-300 hover:text-white hover:bg-slate-700/50 px-3 py-1.5"
                         disabled={controlDisabled || isSingleOfferView}
                     >
-                        {currentSortOptionConfig?.icon && React.createElement(currentSortOptionConfig.icon, { className: "mr-2 size-4" })}
+                        {currentSortOptionConfig?.icon && React.createElement(currentSortOptionConfig.icon, {className: "mr-2 size-4"})}
                         Sort: {currentSortOptionConfig?.label ?? 'Select'}
-                        <ChevronDown className="ml-2 size-4" />
+                        <ChevronDown className="ml-2 size-4"/>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="bg-slate-800 border-slate-700 text-slate-200 w-56">
-                    {SORT_OPTIONS.map(option => (
-                        <DropdownMenuItem
+                    {SORT_OPTIONS.map(option => (<DropdownMenuItem
                             key={option.key}
                             onClick={() => onSortChange(option.key)}
-                            className={cn(
-                                "focus:bg-slate-700 focus:text-white",
-                                sortOption === option.key && "bg-indigo-600/30 text-indigo-300"
-                            )}
+                            className={cn("focus:bg-slate-700 focus:text-white", sortOption === option.key && "bg-indigo-600/30 text-indigo-300")}
                         >
-                            {option.icon && <option.icon className="mr-2 size-4" />} {option.label}
-                        </DropdownMenuItem>
-                    ))}
+                            {option.icon && <option.icon className="mr-2 size-4"/>} {option.label}
+                        </DropdownMenuItem>))}
                 </DropdownMenuContent>
             </DropdownMenu>
 
@@ -105,7 +95,7 @@ export const OfferListControls: FC<OfferListControlsProps> = ({
                 onClick={onShare}
                 disabled={isShareDisabled || sharedLinkCopied}
             >
-                <Share2 className="mr-2 size-4" />
+                <Share2 className="mr-2 size-4"/>
                 {sharedLinkCopied ? 'Copied!' : 'Share'}
             </Button>
 
@@ -115,18 +105,21 @@ export const OfferListControls: FC<OfferListControlsProps> = ({
                 <ToggleGroup
                     type="single"
                     value={viewMode}
-                    onValueChange={(v) => { if (v) onViewModeChange(v as ViewMode); }}
+                    onValueChange={(v) => {
+                        if (v) onViewModeChange(v as ViewMode);
+                    }}
                     className="bg-slate-800/60 rounded-md p-0.5"
                     disabled={controlDisabled}
                 >
-                    <ToggleGroupItem value="grid" aria-label="Grid view" className="data-[state=on]:bg-indigo-600 data-[state=on]:text-white text-slate-400 hover:text-white px-2.5 py-1">
-                        <LayoutGrid className="size-4" />
+                    <ToggleGroupItem value="grid" aria-label="Grid view"
+                                     className="data-[state=on]:bg-indigo-600 data-[state=on]:text-white text-slate-400 hover:text-white px-2.5 py-1">
+                        <LayoutGrid className="size-4"/>
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="list" aria-label="List view" className="data-[state=on]:bg-indigo-600 data-[state=on]:text-white text-slate-400 hover:text-white px-2.5 py-1">
-                        <List className="size-4" />
+                    <ToggleGroupItem value="list" aria-label="List view"
+                                     className="data-[state=on]:bg-indigo-600 data-[state=on]:text-white text-slate-400 hover:text-white px-2.5 py-1">
+                        <List className="size-4"/>
                     </ToggleGroupItem>
                 </ToggleGroup>
             </div>
-        </section>
-    );
+        </section>);
 };

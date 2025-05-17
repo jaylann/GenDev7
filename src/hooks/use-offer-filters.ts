@@ -1,5 +1,5 @@
 // app/compare/hooks/useOfferFilters.ts
-import { useState, useCallback, useMemo } from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {FiltersState} from "@/types/filters-state";
 import {DEFAULT_FILTERS} from "@/config/constants";
 
@@ -32,14 +32,11 @@ export const useOfferFilters = (initialFilters: FiltersState = DEFAULT_FILTERS) 
      * @param value - The new value for the filter.
      */
     const updateFilter = useCallback(<K extends keyof FiltersState>(filterKey: K, value: FiltersState[K]) => {
-        setFilters(prev => ({ ...prev, [filterKey]: value }));
+        setFilters(prev => ({...prev, [filterKey]: value}));
     }, []);
 
     return {
-        filters,
-        setFilters, // Expose direct setter for flexibility (e.g., URL sync)
-        updateFilter,
-        resetFilters,
-        activeFilterCount,
+        filters, setFilters, // Expose direct setter for flexibility (e.g., URL sync)
+        updateFilter, resetFilters, activeFilterCount,
     };
 };

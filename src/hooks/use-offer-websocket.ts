@@ -1,8 +1,8 @@
-import { useRef, useCallback, useEffect } from 'react';
-import { ParsedAddress } from '@/components/address-autocomplete-input';
-import { Offer } from '@/types/offer';
-import { WEBSOCKET_URL } from '@/config/constants';
-import { WebSocketMessage } from '@/types/web-socket-message';
+import {useCallback, useEffect, useRef} from 'react';
+import {ParsedAddress} from '@/components/compare/address-autocomplete-input';
+import {Offer} from '@/types/offer';
+import {WEBSOCKET_URL} from '@/config/constants';
+import {WebSocketMessage} from '@/types/web-socket-message';
 
 export type SlugType = 'INITIAL' | 'FINAL' | 'SHARED';
 
@@ -16,10 +16,7 @@ interface UseOfferWebSocketProps {
     providers: string[];
     /** Whether the user explicitly wants fibre offers (derived from the Connection‑Type filter). */
     wantsFiber: boolean;
-    onOffersReceived: (
-        offers: Offer[],
-        phase: 'INITIAL_OFFERS' | 'FINAL_OFFERS',
-    ) => void;
+    onOffersReceived: (offers: Offer[], phase: 'INITIAL_OFFERS' | 'FINAL_OFFERS',) => void;
     onWebSocketSlugReceived: (slug: string | null, slugType: SlugType) => void;
     onLoadingChange: (waitingForInitial: boolean) => void;
     onStatusUpdate: (msg: string) => void;
@@ -30,19 +27,19 @@ interface UseOfferWebSocketProps {
 }
 
 export const useOfferWebSocket = ({
-    parsedAddress,
-    hasApiKey,
-    providers,
-    wantsFiber,
-    onOffersReceived,
-    onWebSocketSlugReceived,
-    onLoadingChange,
-    onStatusUpdate,
-    onConnectionError,
-    onPendingOffersUpdate,
-    onPromptOpenChange,
-    initialLoadingState,
-}: UseOfferWebSocketProps) => {
+                                      parsedAddress,
+                                      hasApiKey,
+                                      providers,
+                                      wantsFiber,
+                                      onOffersReceived,
+                                      onWebSocketSlugReceived,
+                                      onLoadingChange,
+                                      onStatusUpdate,
+                                      onConnectionError,
+                                      onPendingOffersUpdate,
+                                      onPromptOpenChange,
+                                      initialLoadingState,
+                                  }: UseOfferWebSocketProps) => {
     const ws = useRef<WebSocket | null>(null);
     const offersRef = useRef<Offer[]>([]);
     const initialOffersTimestampRef = useRef<number | null>(null);
@@ -71,9 +68,7 @@ export const useOfferWebSocket = ({
         sock.onopen = () => {
             if (sock.readyState === WebSocket.OPEN) {
                 const payload = {
-                    ...parsedAddress,
-                    providers: providers.length ? providers : undefined,
-                    wants_fiber: wantsFiber, // note snake_case for back‑end pydantic model
+                    ...parsedAddress, providers: providers.length ? providers : undefined, wants_fiber: wantsFiber, // note snake_case for back‑end pydantic model
                 } as Record<string, unknown>;
 
                 sock.send(JSON.stringify(payload));
@@ -105,10 +100,7 @@ export const useOfferWebSocket = ({
                     initialOffersTimestampRef.current = Date.now();
                     onOffersReceived(offers, 'INITIAL_OFFERS');
 
-                    onStatusUpdate(
-                        data.message ??
-                        `Received ${offers.length} offers. Refining search …`,
-                    );
+                    onStatusUpdate(data.message ?? `Received ${offers.length} offers. Refining search …`,);
                     break;
                 }
                 case 'FINAL_OFFERS': {
@@ -124,10 +116,7 @@ export const useOfferWebSocket = ({
                     if (isQuickFinal) {
                         offersRef.current = offers;
                         onOffersReceived(offers, 'FINAL_OFFERS');
-                        onStatusUpdate(
-                            data.message ??
-                            `Search complete. ${offers.length} offers found.`
-                        );
+                        onStatusUpdate(data.message ?? `Search complete. ${offers.length} offers found.`);
                     } else {
                         if (offersRef.current.length === 0) {
                             offersRef.current = offers;
@@ -136,10 +125,7 @@ export const useOfferWebSocket = ({
                             onPendingOffersUpdate(offers);
                             onPromptOpenChange(true);
                         }
-                        onStatusUpdate(
-                            data.message ??
-                            `Search complete. ${offers.length} offers found.`
-                        );
+                        onStatusUpdate(data.message ?? `Search complete. ${offers.length} offers found.`);
                     }
 
                     // Reset timestamp after handling
@@ -181,19 +167,7 @@ export const useOfferWebSocket = ({
                 onStatusUpdate('Connection lost – displaying partial results.');
             }
         };
-    }, [
-        hasApiKey,
-        parsedAddress,
-        providers,
-        wantsFiber,
-        onLoadingChange,
-        onStatusUpdate,
-        onConnectionError,
-        onWebSocketSlugReceived,
-        onOffersReceived,
-        onPendingOffersUpdate,
-        onPromptOpenChange,
-    ]);
+    }, [hasApiKey, parsedAddress, providers, wantsFiber, onLoadingChange, onStatusUpdate, onConnectionError, onWebSocketSlugReceived, onOffersReceived, onPendingOffersUpdate, onPromptOpenChange,]);
 
     const updateWebSocketOffersRef = useCallback((offers: Offer[]) => {
         offersRef.current = offers;
@@ -206,5 +180,5 @@ export const useOfferWebSocket = ({
         };
     }, []);
 
-    return { connectWebSocket, updateWebSocketOffersRef };
+    return {connectWebSocket, updateWebSocketOffersRef};
 };

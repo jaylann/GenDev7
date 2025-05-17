@@ -1,5 +1,5 @@
 // app/compare/hooks/useRecentSearches.ts
-import { useState, useEffect, useCallback } from 'react';
+import {useCallback, useEffect, useState} from 'react';
 
 const MAX_RECENT_SEARCHES = 5;
 const STORAGE_KEY = 'recentCompareSearches';
@@ -55,22 +55,20 @@ export const useRecentSearches = () => {
             let updatedSearches = [...prevSearches];
 
             const newItemData: Omit<RecentSearchItem, 'id'> = {
-                ...searchData,
-                timestamp: Date.now(), // Always update timestamp
+                ...searchData, timestamp: Date.now(), // Always update timestamp
             };
 
             if (existingIndex > -1) {
                 // Update existing item: Preserve its original `id` but update other fields.
                 const existingItem = updatedSearches[existingIndex];
-                updatedSearches[existingIndex] = { ...existingItem, ...newItemData };
+                updatedSearches[existingIndex] = {...existingItem, ...newItemData};
                 // Move the updated item to the top
                 const itemToMove = updatedSearches.splice(existingIndex, 1)[0];
                 updatedSearches.unshift(itemToMove);
             } else {
                 // Add new item to the beginning
                 const newItem: RecentSearchItem = {
-                    ...newItemData,
-                    id: Date.now().toString() + Math.random().toString(36).substring(2, 7), // New unique ID for React
+                    ...newItemData, id: Date.now().toString() + Math.random().toString(36).substring(2, 7), // New unique ID for React
                 };
                 updatedSearches.unshift(newItem);
             }
@@ -98,5 +96,5 @@ export const useRecentSearches = () => {
         }
     }, []);
 
-    return { recentSearches, addRecentSearch, clearRecentSearches };
+    return {recentSearches, addRecentSearch, clearRecentSearches};
 };

@@ -1,4 +1,3 @@
-
 /**
  * Defines the available sorting options.
  */

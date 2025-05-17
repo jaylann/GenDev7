@@ -1,4 +1,3 @@
-
 /** Specifies the type of internet connection. */
 import {Offer} from "@/types/offer";
 

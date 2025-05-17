@@ -1,4 +1,4 @@
-import { Offer } from "@/types/offer";
+import {Offer} from "@/types/offer";
 // Assuming ConnectionType is defined in "@/types/connection-type" as:
 // export type ConnectionType = "DSL" | "Cable" | "Fiber" | "Mobile";
 // No need to import it here if it's only used for type checking within Offer,
@@ -139,8 +139,7 @@ export const calculateRecommendationScoreold = (offer: Offer, allOffers: Offer[]
     // Overall Speed Score (weighted average of download and upload)
     const W_DOWNLOAD_SPEED_CONTRIBUTION = 0.7;
     const W_UPLOAD_SPEED_CONTRIBUTION = 0.3;
-    const overallSpeedScore = (W_DOWNLOAD_SPEED_CONTRIBUTION * downloadSpeedScore) +
-        (W_UPLOAD_SPEED_CONTRIBUTION * uploadSpeedScore);
+    const overallSpeedScore = (W_DOWNLOAD_SPEED_CONTRIBUTION * downloadSpeedScore) + (W_UPLOAD_SPEED_CONTRIBUTION * uploadSpeedScore);
 
     // Core Speed-Price Value
     const speedPriceValue = priceScore * overallSpeedScore;
@@ -172,9 +171,7 @@ export const calculateRecommendationScoreold = (offer: Offer, allOffers: Offer[]
     const W_DURATION = 0.05;          // Contract flexibility
 
     // --- Step 5: Calculate Final Score ---
-    const coreWeightedScore = (W_SPEED_PRICE_VALUE * speedPriceValue) +
-        (W_DATA_CAP * dataCapScore) +
-        (W_DURATION * durationScore);
+    const coreWeightedScore = (W_SPEED_PRICE_VALUE * speedPriceValue) + (W_DATA_CAP * dataCapScore) + (W_DURATION * durationScore);
 
     const totalBonuses = tvIncludedBonus + freeInstallationBonus + youthTariffBonus + connectionTypeBonus;
 
@@ -199,10 +196,7 @@ export interface WeightConfig {
     dataPolicy: number;
     contractFlexibility: number;
     perks: {
-        max: number;
-        tv: number;
-        youth: number;
-        freeInstall: number;
+        max: number; tv: number; youth: number; freeInstall: number;
     };
 }
 
@@ -213,31 +207,22 @@ export const DEFAULT_WEIGHTS: WeightConfig = {
     latencyReliability: 0.15,
     dataPolicy: 0.10,
     contractFlexibility: 0.08,
-    perks: { max: 0.10, tv: 0.04, youth: 0.02, freeInstall: 0.04 },
+    perks: {max: 0.10, tv: 0.04, youth: 0.02, freeInstall: 0.04},
 };
 
 /** Typical latency proxies by connection type (ms) */
 const CONNECTION_TYPE_LATENCY_MS: Record<Offer["connection_type"], number> = {
-    Fiber: 12,
-    Cable: 25,
-    DSL: 40,
-    Mobile: 35,
+    Fiber: 12, Cable: 25, DSL: 40, Mobile: 35,
 };
 
 /* ---------- Helper utilities ---------- */
 const clamp01 = (v: number): Score => Math.max(0, Math.min(1, v));
 
 /** Z-score normalizer (robust against outliers) */
-const zNorm = (value: number, mean: number, std: number): Score =>
-    clamp01(0.5 + (value - mean) / (6 * std)); // ±3σ → [0,1]
+const zNorm = (value: number, mean: number, std: number): Score => clamp01(0.5 + (value - mean) / (6 * std)); // ±3σ → [0,1]
 
 /* ---------- Core scoring pipeline (no provider meta) ---------- */
-export function calculateRecommendationScore(
-    offer: Offer,
-    allOffers: Offer[],
-    w: WeightConfig = DEFAULT_WEIGHTS,
-    termInMonths = 24
-): Score {
+export function calculateRecommendationScore(offer: Offer, allOffers: Offer[], w: WeightConfig = DEFAULT_WEIGHTS, termInMonths = 24): Score {
     if (!allOffers.length) return 0;
 
     // 1. Gather stats
@@ -250,26 +235,22 @@ export function calculateRecommendationScore(
     const stats = (arr: number[]) => {
         const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
         const std = Math.sqrt(arr.reduce((s, v) => s + (v - mean) ** 2, 0) / arr.length) || 1;
-        return { mean, std };
+        return {mean, std};
     };
 
     // 2. Cost efficiency
     const effPrice = calculateEffectivePriceForSorting(offer, termInMonths);
     const pricePerMbps = effPrice / Math.max(offer.speed_down_mbit, 1);
-    const { mean: priceMean, std: priceStd } = stats(effPrices);
-    const { mean: speedMean } = stats(downSpeeds);
+    const {mean: priceMean, std: priceStd} = stats(effPrices);
+    const {mean: speedMean} = stats(downSpeeds);
 
-    const costScore =
-        0.6 * (1 - zNorm(effPrice, priceMean, priceStd)) +
-        0.4 * (1 - zNorm(pricePerMbps, speedMean ? priceMean / speedMean : priceMean, 0.01));
+    const costScore = 0.6 * (1 - zNorm(effPrice, priceMean, priceStd)) + 0.4 * (1 - zNorm(pricePerMbps, speedMean ? priceMean / speedMean : priceMean, 0.01));
 
     // 3. Performance
-    const { mean: downMean, std: downStd } = stats(downSpeeds);
-    const { mean: upMean, std: upStd } = stats(upSpeeds);
+    const {mean: downMean, std: downStd} = stats(downSpeeds);
+    const {mean: upMean, std: upStd} = stats(upSpeeds);
 
-    const perfScore =
-        0.7 * zNorm(offer.speed_down_mbit, downMean, downStd) +
-        0.3 * zNorm(offer.speed_up_mbit ?? 0, upMean, upStd);
+    const perfScore = 0.7 * zNorm(offer.speed_down_mbit, downMean, downStd) + 0.3 * zNorm(offer.speed_up_mbit ?? 0, upMean, upStd);
 
     // Symmetry bonus if upload ≥40% of download
     const symmetryBonus = (offer.speed_up_mbit ?? 0) / offer.speed_down_mbit > 0.4 ? 0.05 : 0;
@@ -283,26 +264,15 @@ export function calculateRecommendationScore(
     const dataScore = clamp01((offer.data_cap_gb ?? 10_000) / maxCap);
 
     // 6. Contract flexibility
-    const { mean: durMean, std: durStd } = stats(contracts);
+    const {mean: durMean, std: durStd} = stats(contracts);
     const etfPenalty = Math.min(1, (15_00 * offer.contract_duration_months) / (400 * 100));
-    const durationScore =
-        0.5 * (1 - zNorm(offer.contract_duration_months, durMean, durStd)) +
-        0.5 * (1 - etfPenalty);
+    const durationScore = 0.5 * (1 - zNorm(offer.contract_duration_months, durMean, durStd)) + 0.5 * (1 - etfPenalty);
 
     // 7. Perks & bonuses
-    const perks =
-        (offer.tv_included ? w.perks.tv : 0) +
-        (offer.installation_service_included ? w.perks.freeInstall : 0) +
-        (offer.max_age != null ? w.perks.youth : 0);
+    const perks = (offer.tv_included ? w.perks.tv : 0) + (offer.installation_service_included ? w.perks.freeInstall : 0) + (offer.max_age != null ? w.perks.youth : 0);
 
     // 8. Composite
-    const finalScore =
-        w.cost * costScore +
-        w.performance * (perfScore + symmetryBonus) +
-        w.latencyReliability * latencyScore +
-        w.dataPolicy * dataScore +
-        w.contractFlexibility * durationScore +
-        Math.min(perks, w.perks.max);
+    const finalScore = w.cost * costScore + w.performance * (perfScore + symmetryBonus) + w.latencyReliability * latencyScore + w.dataPolicy * dataScore + w.contractFlexibility * durationScore + Math.min(perks, w.perks.max);
 
     return +clamp01(finalScore).toFixed(4);
 }

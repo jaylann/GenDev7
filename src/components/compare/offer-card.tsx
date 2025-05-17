@@ -1,15 +1,6 @@
 import React, {FC, JSX} from "react";
 import {
-    CalendarClock,
-    Database,
-    Download as DownloadIcon,
-    DownloadCloud,
-    Gift,
-    Share2Icon,
-    ShieldCheck,
-    Sparkles,
-    Tv2,
-    Wifi
+    CalendarClock, Database, Download as DownloadIcon, DownloadCloud, Gift, Share2Icon, ShieldCheck, Sparkles, Tv2, Wifi
 } from "lucide-react";
 import {Badge} from "@/components/ui/badge";
 import {motion} from "framer-motion";
@@ -80,12 +71,7 @@ const calculateEffectiveVoucherValue = (offer: Offer): number => {
     return Math.max(0, Math.round(totalVoucherValueApplied));
 };
 
-const calculateGrossTotalCostOverDynamicPeriod = (
-    introPrice: number | null | undefined,
-    regularPrice: number | null | undefined,
-    introDurationMonths: number | null | undefined,
-    calculationPeriodMonths: number
-): number | null => {
+const calculateGrossTotalCostOverDynamicPeriod = (introPrice: number | null | undefined, regularPrice: number | null | undefined, introDurationMonths: number | null | undefined, calculationPeriodMonths: number): number | null => {
     // ... (implementation from your provided code)
     if (introPrice != null && introPrice > 0 && introDurationMonths != null && introDurationMonths > 0) {
         const effectiveRegularPrice = regularPrice ?? introPrice;
@@ -105,9 +91,7 @@ const calculateGrossTotalCostOverDynamicPeriod = (
 
 export const OfferCard: FC<OfferCardProps> = ({offer, onShareOffer, activeShareableSlug}) => {
     const {
-        price_cents_month_intro,
-        price_cents_month_regular,
-        contract_duration_months,
+        price_cents_month_intro, price_cents_month_regular, contract_duration_months,
     } = offer;
 
     const actualContractDuration = contract_duration_months ?? 0;
@@ -116,12 +100,8 @@ export const OfferCard: FC<OfferCardProps> = ({offer, onShareOffer, activeSharea
     let avgPriceDisplay: string = 'N/A';
     let avgPriceLabel: string = `Avg./mo (${calculationPeriodMonths}m)`;
 
-    const grossTotalCost = calculateGrossTotalCostOverDynamicPeriod(
-        price_cents_month_intro,
-        price_cents_month_regular,
-        offer.intro_duration_months ?? contract_duration_months, // Use intro_duration_months if available, else contract_duration_months
-        calculationPeriodMonths
-    );
+    const grossTotalCost = calculateGrossTotalCostOverDynamicPeriod(price_cents_month_intro, price_cents_month_regular, offer.intro_duration_months ?? contract_duration_months, // Use intro_duration_months if available, else contract_duration_months
+        calculationPeriodMonths);
 
     if (grossTotalCost != null) {
         const effectiveVoucherValue = calculateEffectiveVoucherValue(offer);
@@ -135,8 +115,7 @@ export const OfferCard: FC<OfferCardProps> = ({offer, onShareOffer, activeSharea
     // --- Prominent Bonus Text and Detail Badges ---
     // ... (logic from your provided code, unchanged)
     let prominentBonusText: string | null = null;
-    if ((offer.voucher_type === "absolute" || offer.voucher_type === "cashback") &&
-        offer.voucher_value_cents != null && offer.voucher_value_cents > 0) {
+    if ((offer.voucher_type === "absolute" || offer.voucher_type === "cashback") && offer.voucher_value_cents != null && offer.voucher_value_cents > 0) {
         prominentBonusText = `${formatEur(offer.voucher_value_cents)} ${offer.voucher_type === "cashback" ? 'Cashback' : 'Bonus'}`;
     }
 
@@ -192,9 +171,7 @@ export const OfferCard: FC<OfferCardProps> = ({offer, onShareOffer, activeSharea
         });
     }
 
-    if (!prominentBonusText &&
-        (offer.voucher_type === "percentage" || (offer.voucher_type === "discount" && offer.voucher_value_percent != null)) &&
-        offer.voucher_value_percent != null && offer.voucher_value_percent > 0) {
+    if (!prominentBonusText && (offer.voucher_type === "percentage" || (offer.voucher_type === "discount" && offer.voucher_value_percent != null)) && offer.voucher_value_percent != null && offer.voucher_value_percent > 0) {
         detailBadges.push({
             key: 'discount',
             icon: Gift,
@@ -207,12 +184,9 @@ export const OfferCard: FC<OfferCardProps> = ({offer, onShareOffer, activeSharea
     let introPriceSection: JSX.Element | null = null;
     if (price_cents_month_intro != null) {
         const formattedIntroPrice = formatEur(price_cents_month_intro);
-        const durationText = (offer.intro_duration_months ?? offer.contract_duration_months)
-            ? `first ${offer.intro_duration_months ?? offer.contract_duration_months} months`
-            : `for introductory period`;
+        const durationText = (offer.intro_duration_months ?? offer.contract_duration_months) ? `first ${offer.intro_duration_months ?? offer.contract_duration_months} months` : `for introductory period`;
 
-        introPriceSection = (
-            <div>
+        introPriceSection = (<div>
                 <span className="text-[0.7rem] text-slate-400 block mb-0">Intro Price:</span>
                 <p className="text-xl font-semibold text-white leading-tight">
                     {formattedIntroPrice} <span className="text-base font-normal text-slate-400">/mo</span>
@@ -220,29 +194,25 @@ export const OfferCard: FC<OfferCardProps> = ({offer, onShareOffer, activeSharea
                 <p className="text-[0.65rem] text-slate-500 leading-tight">
                     {durationText}
                 </p>
-            </div>
-        );
+            </div>);
     }
 
     let regularPriceSection: JSX.Element | null = null;
     if (price_cents_month_regular != null) {
         if (price_cents_month_intro == null || price_cents_month_regular !== price_cents_month_intro) {
             const formattedRegularPrice = formatEur(price_cents_month_regular);
-            regularPriceSection = (
-                <div>
+            regularPriceSection = (<div>
                     <span className="text-[0.7rem] text-slate-400 block mb-0">
                         {price_cents_month_intro != null ? "Regular:" : "Monthly Price:"}
                     </span>
                     <p className="text-lg font-medium text-slate-300 leading-tight">
                         {formattedRegularPrice} <span className="text-sm font-normal text-slate-400">/mo</span>
                     </p>
-                </div>
-            );
+                </div>);
         }
     }
 
-    return (
-        <motion.div
+    return (<motion.div
             layout
             initial={{opacity: 0, y: 15, scale: 0.98}}
             animate={{opacity: 1, y: 0, scale: 1}}
@@ -291,18 +261,13 @@ export const OfferCard: FC<OfferCardProps> = ({offer, onShareOffer, activeSharea
                                     disabled={!activeShareableSlug}
                                     aria-label={`Share ${offer.plan_name}`}
                                     title={`Share ${offer.plan_name} details`}
-                                    className={cn(
-                                        "absolute inset-0 z-10 flex items-center justify-center rounded-md",
-                                        "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100", // Also show on focus within card
-                                        "focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1C203C]",
-                                        "transition-all duration-200 ease-in-out",
-                                        "hover:bg-indigo-500/20" // Slight bg on direct hover of the button itself
+                                    className={cn("absolute inset-0 z-10 flex items-center justify-center rounded-md", "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100", // Also show on focus within card
+                                        "focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1C203C]", "transition-all duration-200 ease-in-out", "hover:bg-indigo-500/20" // Slight bg on direct hover of the button itself
                                     )}
                                 >
                                     <Share2Icon size={18}
                                                 className="text-indigo-300 group-hover:scale-110 transition-transform"/>
-                                </button>
-                            )}
+                                </button>)}
                         </div>
                     </div>
                 </div>
@@ -327,8 +292,7 @@ export const OfferCard: FC<OfferCardProps> = ({offer, onShareOffer, activeSharea
                             {introPriceSection}
                             {regularPriceSection}
                             {(introPriceSection == null && regularPriceSection == null && grossTotalCost == null) && (
-                                <p className="text-sm text-slate-400 text-center">Price information not available.</p>
-                            )}
+                                <p className="text-sm text-slate-400 text-center">Price information not available.</p>)}
                         </div>
 
                         {/* Contract Details Section */}
@@ -353,25 +317,18 @@ export const OfferCard: FC<OfferCardProps> = ({offer, onShareOffer, activeSharea
                     {/* Footer: Bonuses and Badges (unchanged structure) */}
                     {(prominentBonusText || detailBadges.length > 0) && (
                         <div className="mt-3 pt-3 border-t border-[#303558]/80 space-y-2">
-                            {prominentBonusText && (
-                                <Badge
+                            {prominentBonusText && (<Badge
                                     variant="default"
                                     className="w-full justify-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold py-1.5 rounded-md leading-tight"
                                 >
                                     <Sparkles size={14}/> {prominentBonusText}
-                                </Badge>
-                            )}
-                            {detailBadges.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5 justify-center">
+                                </Badge>)}
+                            {detailBadges.length > 0 && (<div className="flex flex-wrap gap-1.5 justify-center">
                                     {detailBadges.map(badgeInfo => (
-                                        <DetailBadgeComponent key={badgeInfo.key} {...badgeInfo} />
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                                        <DetailBadgeComponent key={badgeInfo.key} {...badgeInfo} />))}
+                                </div>)}
+                        </div>)}
                 </div>
             </Card>
-        </motion.div>
-    );
+        </motion.div>);
 };

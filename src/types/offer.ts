@@ -1,4 +1,4 @@
-import { ConnectionType } from "./connection-type";
+import {ConnectionType} from "./connection-type";
 import {VoucherKind} from "@/types/voucher-kind";
 
 /**

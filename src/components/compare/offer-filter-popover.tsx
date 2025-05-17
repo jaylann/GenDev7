@@ -1,25 +1,21 @@
-import React, { FC, useState, useEffect, useMemo } from 'react';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Checkbox } from '@/components/ui/checkbox';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Badge } from '@/components/ui/badge';
-import { SlidersHorizontal, X as XIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { FiltersState } from '@/types/filters-state';
-import { Offer } from '@/types/offer';
+import React, {FC, useEffect, useMemo, useState} from 'react';
+import {Popover, PopoverContent, PopoverTrigger,} from '@/components/ui/popover';
+import {Button} from '@/components/ui/button';
+import {ScrollArea} from '@/components/ui/scroll-area';
+import {Label} from '@/components/ui/label';
+import {Slider} from '@/components/ui/slider';
+import {ToggleGroup, ToggleGroupItem} from '@/components/ui/toggle-group';
+import {Checkbox} from '@/components/ui/checkbox';
+import {RadioGroup, RadioGroupItem} from '@/components/ui/radio-group';
+import {Badge} from '@/components/ui/badge';
+import {SlidersHorizontal, X as XIcon} from 'lucide-react';
+import {cn} from '@/lib/utils';
+import {FiltersState} from '@/types/filters-state';
+import {Offer} from '@/types/offer';
 import {
     AVAILABLE_CONNECTION_TYPES,
     AVAILABLE_CONTRACT_DURATIONS,
-    AVAILABLE_PROVIDER_NAMES, // Retained import
+    AVAILABLE_PROVIDER_NAMES,
     DEFAULT_FILTERS,
     MAX_SPEED_FALLBACK,
     MIN_SPEED_SLIDER_FLOOR,
@@ -59,10 +55,10 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
 
     const controlsDisabled = isLoadingOffers && originalOffers.length === 0;
 
-    const handleDraftFilterChange = <K extends keyof FiltersState>(
-        key: K,
-        value: FiltersState[K],
-    ) => setDraftFilters((prev) => ({ ...prev, [key]: value }));
+    const handleDraftFilterChange = <K extends keyof FiltersState>(key: K, value: FiltersState[K],) => setDraftFilters((prev) => ({
+        ...prev,
+        [key]: value
+    }));
 
     const handleApply = () => {
         onApplyFilters(draftFilters);
@@ -81,47 +77,35 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
      * Always uses the predefined `AVAILABLE_PROVIDER_NAMES` and sorts them for consistent display.
      * @type {ReadonlyArray<string>}
      */
-    const providerList = useMemo(
-        () => [...AVAILABLE_PROVIDER_NAMES].sort(),
-        [] // Ensures this memoizes correctly and only runs once
+    const providerList = useMemo(() => [...AVAILABLE_PROVIDER_NAMES].sort(), [] // Ensures this memoizes correctly and only runs once
     );
 
-    const uniqueContractDurations = useMemo(
-        () =>
-            Array.from(new Set(originalOffers.map((o) => o.contract_duration_months)))
-                .filter(Boolean)
-                .sort((a, b) => a - b),
-        [originalOffers],
-    );
+    const uniqueContractDurations = useMemo(() => Array.from(new Set(originalOffers.map((o) => o.contract_duration_months)))
+        .filter(Boolean)
+        .sort((a, b) => a - b), [originalOffers],);
 
     const maxSpeedAvailable = useMemo(() => {
         if (originalOffers.length === 0) return MAX_SPEED_FALLBACK;
-        return Math.max(
-            ...originalOffers.map((o) => o.speed_down_mbit),
-            MIN_SPEED_SLIDER_FLOOR,
-        );
+        return Math.max(...originalOffers.map((o) => o.speed_down_mbit), MIN_SPEED_SLIDER_FLOOR,);
     }, [originalOffers]);
 
     // ---------------------------------------------------------------------
     // UI
     // ---------------------------------------------------------------------
-    return (
-        <Popover open={isOpen} onOpenChange={setIsOpen}>
+    return (<Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
                 <Button
                     variant="ghost"
                     className="text-slate-300 hover:text-white hover:bg-slate-700/50 px-3 py-1.5 relative"
                     disabled={controlsDisabled}
                 >
-                    <SlidersHorizontal className="mr-2 size-4" /> Filters
-                    {activeFilterCount > 0 && (
-                        <Badge
+                    <SlidersHorizontal className="mr-2 size-4"/> Filters
+                    {activeFilterCount > 0 && (<Badge
                             variant="destructive"
                             className="absolute -top-1.5 -right-1.5 h-5 w-5 flex items-center justify-center p-0.5 text-[0.6rem] rounded-full bg-indigo-600 text-white"
                         >
                             {activeFilterCount}
-                        </Badge>
-                    )}
+                        </Badge>)}
                 </Button>
             </PopoverTrigger>
             <PopoverContent
@@ -153,11 +137,7 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                                 max={maxSpeedAvailable}
                                 step={10}
                                 disabled={controlsDisabled}
-                                className={cn(
-                                    'w-full',
-                                    '[&>span:nth-child(1)]:h-1.5 [&>span:nth-child(1)]:bg-white/30',
-                                    '[&>span:nth-child(1)>span]:bg-white',
-                                )}
+                                className={cn('w-full', '[&>span:nth-child(1)]:h-1.5 [&>span:nth-child(1)]:bg-white/30', '[&>span:nth-child(1)>span]:bg-white',)}
                             />
                         </div>
 
@@ -175,19 +155,13 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                             >
                                 {(uniqueContractDurations.length ? uniqueContractDurations : AVAILABLE_CONTRACT_DURATIONS)
                                     .filter((d) => [12, 24].includes(d))
-                                    .map((d) => (
-                                        <ToggleGroupItem
+                                    .map((d) => (<ToggleGroupItem
                                             key={d}
                                             value={String(d)}
-                                            className={cn(
-                                                'h-8 px-3.5 text-[0.8rem] rounded-md border',
-                                                'border-[#4A5568] bg-[#2D3748]/60 text-slate-300 hover:bg-[#4A5568]/70',
-                                                'data-[state=on]:bg-[#4F46E5] data-[state=on]:border-[#4F46E5] data-[state=on]:text-white',
-                                            )}
+                                            className={cn('h-8 px-3.5 text-[0.8rem] rounded-md border', 'border-[#4A5568] bg-[#2D3748]/60 text-slate-300 hover:bg-[#4A5568]/70', 'data-[state=on]:bg-[#4F46E5] data-[state=on]:border-[#4F46E5] data-[state=on]:text-white',)}
                                         >
                                             {d}m
-                                        </ToggleGroupItem>
-                                    ))}
+                                        </ToggleGroupItem>))}
                             </ToggleGroup>
                         </div>
 
@@ -203,9 +177,7 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                                             id={`conn-${type}`}
                                             checked={draftFilters.connectionTypes.includes(type)}
                                             onCheckedChange={(checked) => {
-                                                const newTypes = checked
-                                                    ? [...draftFilters.connectionTypes, type]
-                                                    : draftFilters.connectionTypes.filter((t) => t !== type);
+                                                const newTypes = checked ? [...draftFilters.connectionTypes, type] : draftFilters.connectionTypes.filter((t) => t !== type);
                                                 handleDraftFilterChange('connectionTypes', newTypes);
                                             }}
                                             disabled={controlsDisabled}
@@ -214,8 +186,7 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                                         <Label htmlFor={`conn-${type}`} className="text-sm font-normal text-slate-200">
                                             {type}
                                         </Label>
-                                    </div>
-                                ))}
+                                    </div>))}
                             </div>
                         </div>
 
@@ -232,19 +203,17 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                                                 id={`prov-${provider}`}
                                                 checked={draftFilters.selectedProviders.includes(provider)}
                                                 onCheckedChange={(checked) => {
-                                                    const newList = checked
-                                                        ? [...draftFilters.selectedProviders, provider]
-                                                        : draftFilters.selectedProviders.filter((p) => p !== provider);
+                                                    const newList = checked ? [...draftFilters.selectedProviders, provider] : draftFilters.selectedProviders.filter((p) => p !== provider);
                                                     handleDraftFilterChange('selectedProviders', newList);
                                                 }}
                                                 disabled={controlsDisabled}
                                                 className="size-[17px] rounded-[3px] border-[#4A5568] data-[state=checked]:bg-[#4F46E5] data-[state=checked]:text-white data-[state=checked]:border-[#4F46E5]"
                                             />
-                                            <Label htmlFor={`prov-${provider}`} className="text-sm font-normal text-slate-200">
+                                            <Label htmlFor={`prov-${provider}`}
+                                                   className="text-sm font-normal text-slate-200">
                                                 {provider}
                                             </Label>
-                                        </div>
-                                    ))}
+                                        </div>))}
                                 </div>
                             </ScrollArea>
                         </div>
@@ -262,10 +231,11 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                                 >
                                     {(['any', 'yes', 'no'] as const).map((opt) => (
                                         <div key={opt} className="flex items-center space-x-2">
-                                            <RadioGroupItem value={opt} id={`tv-${opt}`} className="size-[17px] border-[#4A5568] data-[state=checked]:border-[#4F46E5] data-[state=checked]:text-[#4F46E5]" />
-                                            <Label htmlFor={`tv-${opt}"`} className="text-sm font-normal text-slate-200 capitalize">{opt}</Label>
-                                        </div>
-                                    ))}
+                                            <RadioGroupItem value={opt} id={`tv-${opt}`}
+                                                            className="size-[17px] border-[#4A5568] data-[state=checked]:border-[#4F46E5] data-[state=checked]:text-[#4F46E5]"/>
+                                            <Label htmlFor={`tv-${opt}"`}
+                                                   className="text-sm font-normal text-slate-200 capitalize">{opt}</Label>
+                                        </div>))}
                                 </RadioGroup>
                             </div>
                             <div>
@@ -279,10 +249,11 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                                 >
                                     {(['any', 'yes'] as const).map((opt) => (
                                         <div key={opt} className="flex items-center space-x-2">
-                                            <RadioGroupItem value={opt} id={`youth-${opt}`} className="size-[17px] border-[#4A5568] data-[state=checked]:border-[#4F46E5] data-[state=checked]:text-[#4F46E5]" />
-                                            <Label htmlFor={`youth-${opt}`} className="text-sm font-normal text-slate-200 capitalize">{opt}</Label>
-                                        </div>
-                                    ))}
+                                            <RadioGroupItem value={opt} id={`youth-${opt}`}
+                                                            className="size-[17px] border-[#4A5568] data-[state=checked]:border-[#4F46E5] data-[state=checked]:text-[#4F46E5]"/>
+                                            <Label htmlFor={`youth-${opt}`}
+                                                   className="text-sm font-normal text-slate-200 capitalize">{opt}</Label>
+                                        </div>))}
                                 </RadioGroup>
                             </div>
                         </div>
@@ -295,7 +266,7 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                         className="text-[0.875rem] text-slate-400 hover:text-slate-100 px-5 h-9 rounded-md hover:bg-[#303558]"
                         disabled={JSON.stringify(draftFilters) === JSON.stringify(DEFAULT_FILTERS)}
                     >
-                        <XIcon className="mr-1.5 size-4" /> Reset
+                        <XIcon className="mr-1.5 size-4"/> Reset
                     </Button>
                     <Button
                         onClick={handleApply}
@@ -305,6 +276,5 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                     </Button>
                 </div>
             </PopoverContent>
-        </Popover>
-    );
+        </Popover>);
 };
