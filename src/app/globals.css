@@ -3,14 +3,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@layer base {
-    html {
-        @apply bg-[linear-gradient(to_br,#0B0B2D,#1C1044,#3C0E4C)] bg-fixed;
-    }
-    body {
-        @apply bg-transparent;
-    }
-}
 
 :root {
     --safe-top: env(safe-area-inset-top);
@@ -169,6 +161,9 @@
         @apply border-border outline-ring/50;
     }
     body {
-        @apply bg-background text-foreground;
+        @apply bg-transparent text-foreground;
+    }
+    html {
+        @apply bg-[linear-gradient(to_br,#0B0B2D,#1C1044,#3C0E4C)] bg-fixed;
     }
 }
