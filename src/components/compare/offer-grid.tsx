@@ -18,8 +18,8 @@ import { Button } from "@/components/ui/button";
 import { SlidersHorizontal, Wifi as WifiIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Offer } from "@/types/offer";
-import { ViewMode } from "@/components/compare/offer-list-controls";
 import { OfferCard } from "@/components/compare/offer-card";
+import { ViewMode } from "@/types/view-mode";
 
 /**
  * Props for OfferGrid component.

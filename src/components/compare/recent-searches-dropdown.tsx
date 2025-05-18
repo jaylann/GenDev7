@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { History, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { RecentSearchItem } from "@/hooks/use-recent-searches";
+import { RecentSearchItem } from "@/types/recent-search-item";
 
 interface RecentSearchesDropdownProps {
     searches: RecentSearchItem[];
