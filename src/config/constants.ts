@@ -68,7 +68,7 @@ export const DEFAULT_FILTERS: FiltersState = {
  * Supported contract durations in months.
  * Displayed as filter options in the UI.
  */
-export const AVAILABLE_CONTRACT_DURATIONS = [1, 12, 24];
+export const AVAILABLE_CONTRACT_DURATIONS = [1, 12, 24, 36];
 /**
  * Supported connection types for filtering.
  * Must match keys expected by the backend.

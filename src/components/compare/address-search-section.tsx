@@ -25,26 +25,27 @@ interface AddressSearchSectionProps {
 }
 
 /**
- * Section containing the address autocomplete input and the search button.
- * @param parsedAddress - The address object selected from autocomplete, if any.
- * @param defaultAddressText - Initial text to display in the address input.
- * @param onAddressSelect - Callback when an address is selected or input text changes.
- * @param onSearchClick - Callback when the search button is clicked.
- * @param isSearchDisabled - Whether the search button should be disabled.
- * @param isLoading - True when a search operation is in progress.
- * @param isLoadingFromSlug - True when initializing from a shared slug.
- * @param currentSlug - The current shared slug, if any.
+ * Section containing the address input and search button.
+ *
+ * @param parsedAddress      The address object selected from autocomplete, if any.
+ * @param defaultAddressText Initial text to display in the address input.
+ * @param onAddressSelect    Callback when an address is selected or input text changes.
+ * @param onSearchClick      Callback when the search button is clicked.
+ * @param isSearchDisabled   Whether the search button should be disabled.
+ * @param isLoading          True when a search operation is in progress.
+ * @param isLoadingFromSlug  True when initializing from a shared slug.
+ * @param currentSlug        The current shared slug, if any.
  */
 export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
-    parsedAddress,
-    defaultAddressText,
-    onAddressSelect,
-    onSearchClick,
-    isSearchDisabled,
-    isLoading,
-    isLoadingFromSlug,
-    currentSlug,
-}) => {
+                                                                        parsedAddress,
+                                                                        defaultAddressText,
+                                                                        onAddressSelect,
+                                                                        onSearchClick,
+                                                                        isSearchDisabled,
+                                                                        isLoading,
+                                                                        isLoadingFromSlug,
+                                                                        currentSlug,
+                                                                    }) => {
     // Check for presence of Google Maps API key for autocomplete.
     const hasApiKey = !!GOOGLE_MAPS_API_KEY_FROM_ENV;
 
@@ -53,7 +54,6 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
 
     // Determine the button label and icon based on loading and slug states.
     const renderButtonContent = () => {
-        // When a manual search is in progress and not loading from slug.
         if (isLoading && !currentSlug && !isLoadingFromSlug) {
             return (
                 <>
@@ -62,7 +62,6 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
                 </>
             );
         }
-        // When initializing data from a shared slug.
         if (isLoadingFromSlug) {
             return (
                 <>
@@ -71,7 +70,6 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
                 </>
             );
         }
-        // Default state: ready to initiate a new search.
         return (
             <>
                 <SearchIcon className="size-5 mr-2" />
@@ -88,18 +86,26 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
         onAddressSelect(address, fullText);
     };
 
+    // Runs only when the button is actually clickable.               // NEW
+    const handleEnterSearch = () => {                                // NEW
+        if (!isSearchDisabled && !isLoading && !isLoadingFromSlug) {
+            onSearchClick();
+        }
+    };                                                               // NEW
+
     // Layout section wrapping the address input and search button.
     return (
         <section className="max-w-2xl mx-auto px-4 py-2 md:px-0">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 md:gap-4">
                 <AddressAutocompleteInput
-                    key={defaultAddressText} // Force re-mount and re-init when defaultAddressText changes
+                    key={defaultAddressText}
                     parsedAddress={parsedAddress}
                     initialValue={defaultAddressText || ""}
                     onAddressSelect={handleInternalAddressSelect}
+                    onEnterSearch={handleEnterSearch}         // NEW
                     inputClassName="bg-slate-800/50 border-slate-700 placeholder:text-slate-400 rounded-lg px-3 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     containerClassName="flex-grow"
-                    disabled={inputDisabled} // Also disable if normal search is loading
+                    disabled={inputDisabled}
                 />
                 <Button
                     onClick={onSearchClick}

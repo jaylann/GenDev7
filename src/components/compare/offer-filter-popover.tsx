@@ -423,7 +423,7 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
             <PopoverTrigger asChild>
                 <Button
                     variant="ghost"
-                    className="text-slate-300 hover:text-white hover:bg-slate-700/50 px-3 py-1.5 relative"
+                    className="text-slate-300 hover:text-white  px-3 py-1.5 relative"
                     disabled={controlsDisabled}
                 >
                     <SlidersHorizontal className="mr-2 size-4" /> Filters

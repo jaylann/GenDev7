@@ -89,7 +89,7 @@ export const OfferListControls: FC<OfferListControlsProps> = ({
                 <DropdownMenuTrigger asChild>
                     <Button
                         variant="ghost"
-                        className="text-slate-300 hover:text-white hover:bg-slate-700/50 px-1 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm"
+                        className="text-slate-300 hover:text-white  px-1 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm"
                         disabled={controlDisabled || isSingleOfferView}
                     >
                         {currentSortOptionConfig?.icon &&
@@ -135,7 +135,7 @@ export const OfferListControls: FC<OfferListControlsProps> = ({
             {/* Share Button: copy or generate a shareable link for the current view */}
             <Button
                 variant="ghost"
-                className="text-slate-300 hover:text-white hover:bg-slate-700/50 px-1 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm"
+                className="text-slate-300 hover:text-white  px-1 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm"
                 onClick={onShare}
                 disabled={isShareDisabled || sharedLinkCopied}
             >

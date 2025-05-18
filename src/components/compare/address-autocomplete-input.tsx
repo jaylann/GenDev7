@@ -6,7 +6,8 @@
  * and emitting selection events via onAddressSelect.
  */
 "use client";
-import React, { useEffect, useRef } from "react";
+
+import React, { useEffect, useRef, useState } from "react";
 import { useAddressAutocomplete } from "@/hooks/use-address-autocomplete";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
@@ -33,6 +34,10 @@ export interface AddressAutocompleteInputProps {
     inputClassName?: string;
     containerClassName?: string;
     disabled?: boolean;
+    /**
+     * Triggered when the user presses Enter *and* the suggestion list is closed.
+     */
+    onEnterSearch?: () => void;          // NEW
 }
 
 /**
@@ -43,6 +48,7 @@ export interface AddressAutocompleteInputProps {
  *  - parsedAddress: If provided, will reverse-geocode and format into the input.
  *  - defaultAddressText: Fallback placeholder value when no initialValue.
  *  - onAddressSelect: Callback invoked with (parsedAddress | null, fullText).
+ *  - onEnterSearch: Callback invoked when Enter is pressed with no open suggestions.
  *  - inputClassName, containerClassName: Tailwind CSS class overrides.
  *  - disabled: Disable input and suggestions.
  *
@@ -51,14 +57,15 @@ export interface AddressAutocompleteInputProps {
 export const AddressAutocompleteInput: React.FC<
     AddressAutocompleteInputProps
 > = ({
-    initialValue,
-    parsedAddress,
-    defaultAddressText,
-    onAddressSelect,
-    inputClassName,
-    containerClassName,
-    disabled,
-}) => {
+         initialValue,
+         parsedAddress,
+         defaultAddressText,
+         onAddressSelect,
+         inputClassName,
+         containerClassName,
+         disabled,
+         onEnterSearch,                    // NEW
+     }) => {
     // Initialize autocomplete hook: manages input value, suggestion list, and selection logic.
     const {
         value,
@@ -73,6 +80,12 @@ export const AddressAutocompleteInput: React.FC<
             ? undefined
             : (initialValue ?? defaultAddressText ?? ""),
     });
+
+    // NEW: keyboard navigation state
+    const [highlightedIdx, setHighlightedIdx] = useState<number>(-1);
+    useEffect(() => {
+        setHighlightedIdx(-1);
+    }, [suggestions.data]);
 
     useEffect(() => {
         // When parsedAddress is supplied or input is cleared, ensure onAddressSelect is called appropriately.
@@ -114,8 +127,8 @@ export const AddressAutocompleteInput: React.FC<
 
     // Refs for handling focus and outside-click detection.
     const inputRef = useRef<HTMLInputElement | null>(null);
-    const listRef = useRef<HTMLDivElement | null>(null);
-    const [showSuggestions, setShowSuggestions] = React.useState(false);
+    const listRef = useRef<HTMLUListElement | null>(null);  // NEW
+    const [showSuggestions, setShowSuggestions] = useState(false);
     useOutsideClick([inputRef, listRef], () => {
         setShowSuggestions(false);
     });
@@ -125,25 +138,48 @@ export const AddressAutocompleteInput: React.FC<
         const newValue = e.target.value;
         setValue(newValue);
         setShowSuggestions(true);
+        setHighlightedIdx(-1);           // NEW
         if (!newValue.trim()) onAddressSelect(null, "");
     };
 
-    // Handle Enter to select top suggestion or geocode free-text; Escape to close suggestions.
+    const total = suggestions.data.length;  // NEW helper
+
+    // Handle keyboard navigation and selection
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            if (
-                showSuggestions &&
-                suggestions.status === "OK" &&
-                suggestions.data.length > 0
-            ) {
-                await handleSelect(suggestions.data[0].description);
-            } else if (value.trim()) {
-                setShowSuggestions(false);
-                await geocodeAndEmit(value);
+        switch (e.key) {
+            case "ArrowDown": {
+                if (total === 0) break;
+                e.preventDefault();
+                if (!showSuggestions) setShowSuggestions(true);
+                setHighlightedIdx((prev) => (prev + 1) % total);
+                break;
             }
-        } else if (e.key === "Escape") {
-            setShowSuggestions(false);
+            case "ArrowUp": {
+                if (total === 0) break;
+                e.preventDefault();
+                if (!showSuggestions) setShowSuggestions(true);
+                setHighlightedIdx((prev) => (prev - 1 + total) % total);
+                break;
+            }
+            case "Enter": {
+                e.preventDefault();
+                if (
+                    showSuggestions &&
+                    suggestions.status === "OK" &&
+                    total > 0
+                ) {
+                    const idx = highlightedIdx >= 0 ? highlightedIdx : 0;
+                    await handleSelect(suggestions.data[idx].description);
+                } else if (value.trim()) {
+                    setShowSuggestions(false);
+                    await geocodeAndEmit(value);
+                    onEnterSearch?.();       // NEW
+                }
+                break;
+            }
+            case "Escape":
+                setShowSuggestions(false);
+                break;
         }
     };
 
@@ -165,7 +201,6 @@ export const AddressAutocompleteInput: React.FC<
 
     return (
         <div className={cn("relative w-full", containerClassName)}>
-            {/* Container for autocomplete input and suggestion dropdown */}
             <Input
                 ref={inputRef}
                 type="text"
@@ -176,30 +211,28 @@ export const AddressAutocompleteInput: React.FC<
                     if (value.trim()) setShowSuggestions(true);
                 }}
                 placeholder="Street 123, 12345 City"
-                className={cn("h-12", inputClassName)}
+                className={cn("h-12 bg-slate-800/50 dark:bg-slate-800/50", inputClassName)}
                 disabled={disabled || !ready}
                 autoComplete="off"
                 aria-autocomplete="list"
-                aria-expanded={
-                    showSuggestions &&
-                    suggestions.status === "OK" &&
-                    suggestions.data.length > 0
+                aria-expanded={showSuggestions && total > 0}
+                aria-activedescendant={
+                    highlightedIdx >= 0 ? `addr-opt-${highlightedIdx}` : undefined
                 }
             />
             {!ready && (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-5 animate-spin text-slate-400" />
             )}
-            {/* Suggestion list dropdown, rendered when suggestions are available */}
-            <div ref={listRef}>
-                <AddressSuggestionsList
-                    show={showSuggestions}
-                    suggestions={suggestions}
-                    onSelect={async (d) => {
-                        await handleSelect(d);
-                        setShowSuggestions(false);
-                    }}
-                />
-            </div>
+            <AddressSuggestionsList
+                ref={listRef}
+                show={showSuggestions}
+                suggestions={suggestions}
+                highlightedIndex={highlightedIdx}
+                onSelect={async (d) => {
+                    await handleSelect(d);
+                    setShowSuggestions(false);
+                }}
+            />
         </div>
     );
 };
