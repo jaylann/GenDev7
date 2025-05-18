@@ -1,8 +1,8 @@
-'use client';
-import {useCallback, useEffect, useRef, useState} from 'react';
-import usePlacesAutocomplete, {getGeocode} from 'use-places-autocomplete';
-import {parseGeocodeResult} from '@/utils/address';
-import type {Address} from '@/types/address';
+"use client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import usePlacesAutocomplete, { getGeocode } from "use-places-autocomplete";
+import { parseGeocodeResult } from "@/utils/address";
+import type { Address } from "@/types/address";
 
 // Provide proper typing for the global Google namespace
 declare global {
@@ -18,7 +18,7 @@ export interface UseAddressAutocomplete {
     /** Update value (triggers suggestions). */
     setValue: (val: string, shouldFetchSuggestions?: boolean) => void;
     /** Suggestions returned by Google Places. */
-    suggestions: ReturnType<typeof usePlacesAutocomplete>['suggestions'];
+    suggestions: ReturnType<typeof usePlacesAutocomplete>["suggestions"];
     /** Call when user picks or submits an address. */
     handleSelect: (desc: string) => Promise<void>;
     /** Geocode an arbitrary string & emit result. */
@@ -35,12 +35,20 @@ interface Params {
 }
 
 export const useAddressAutocomplete = ({
-                                           onAddressSelect, initialValue = '',
-                                       }: Params): UseAddressAutocomplete => {
+    onAddressSelect,
+    initialValue = "",
+}: Params): UseAddressAutocomplete => {
     const {
-        ready: hookReady, value, suggestions, setValue, clearSuggestions, init,
+        ready: hookReady,
+        value,
+        suggestions,
+        setValue,
+        clearSuggestions,
+        init,
     } = usePlacesAutocomplete({
-        initOnMount: false, requestOptions: {componentRestrictions: {country: 'de'}}, debounce: 400,
+        initOnMount: false,
+        requestOptions: { componentRestrictions: { country: "de" } },
+        debounce: 400,
     });
 
     /** Wait for the global Google SDK then run `init()` once. */
@@ -62,31 +70,40 @@ export const useAddressAutocomplete = ({
     }, [init]);
 
     /** Submit, geocode, emit parsed value. */
-    const geocodeAndEmit = useCallback(async (addr: string) => {
-        const trimmed = addr.trim();
-        if (!trimmed) return onAddressSelect(null, '');
+    const geocodeAndEmit = useCallback(
+        async (addr: string) => {
+            const trimmed = addr.trim();
+            if (!trimmed) return onAddressSelect(null, "");
 
-        if (!hookReady) {
-            // SDK not ready – emit raw value only
-            return onAddressSelect(null, trimmed);
-        }
+            if (!hookReady) {
+                // SDK not ready – emit raw value only
+                return onAddressSelect(null, trimmed);
+            }
 
-        try {
-            const results = await getGeocode({address: trimmed});
-            const parsed = parseGeocodeResult(results);
-            onAddressSelect(parsed, results[0]?.formatted_address ?? trimmed);
-        } catch (err: unknown) {
-            console.error('[AddressAutocomplete] Geocoding failed:', err);
-            onAddressSelect(null, trimmed);
-        }
-    }, [hookReady, onAddressSelect],);
+            try {
+                const results = await getGeocode({ address: trimmed });
+                const parsed = parseGeocodeResult(results);
+                onAddressSelect(
+                    parsed,
+                    results[0]?.formatted_address ?? trimmed,
+                );
+            } catch (err: unknown) {
+                console.error("[AddressAutocomplete] Geocoding failed:", err);
+                onAddressSelect(null, trimmed);
+            }
+        },
+        [hookReady, onAddressSelect],
+    );
 
     /** When user picks a suggestion row. */
-    const handleSelect = useCallback(async (desc: string) => {
-        setValue(desc, false);
-        clearSuggestions();
-        await geocodeAndEmit(desc);
-    }, [setValue, clearSuggestions, geocodeAndEmit],);
+    const handleSelect = useCallback(
+        async (desc: string) => {
+            setValue(desc, false);
+            clearSuggestions();
+            await geocodeAndEmit(desc);
+        },
+        [setValue, clearSuggestions, geocodeAndEmit],
+    );
 
     /** One-time initial value. */
     useEffect(() => {
@@ -95,6 +112,11 @@ export const useAddressAutocomplete = ({
     }, []);
 
     return {
-        value, setValue, suggestions, handleSelect, geocodeAndEmit, ready: sdkReady && hookReady,
+        value,
+        setValue,
+        suggestions,
+        handleSelect,
+        geocodeAndEmit,
+        ready: sdkReady && hookReady,
     };
 };

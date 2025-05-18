@@ -1,15 +1,16 @@
 /**
  * Specifies the type of internet connection.
  */
-export type ConnectionType = 'DSL' | 'Cable' | 'Fiber' | 'Mobile';
-
+export type ConnectionType = "DSL" | "Cable" | "Fiber" | "Mobile";
 
 /**
  * Helper function to get a user-friendly display name for a connection type.
  * @param connectionType - The connection type.
  * @returns A human-readable string for the connection type.
  */
-export const getConnectionTypeDisplayName = (connectionType: ConnectionType): string => {
+export const getConnectionTypeDisplayName = (
+    connectionType: ConnectionType,
+): string => {
     switch (connectionType) {
         case "DSL":
             return "DSL";

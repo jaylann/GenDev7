@@ -1,7 +1,6 @@
 // src/models/offer.model.ts
 
-
-import {ConnectionType} from "@/types/connection-type";
+import { ConnectionType } from "@/types/connection-type";
 import { VoucherKind } from "./voucher-kind";
 
 /**

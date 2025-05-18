@@ -5,10 +5,11 @@
  */
 export const formatEur = (cents: number | null | undefined): string => {
     if (cents == null) {
-        return '–';
+        return "–";
     }
-    return new Intl.NumberFormat('de-DE', {
-        style: 'currency', currency: 'EUR',
+    return new Intl.NumberFormat("de-DE", {
+        style: "currency",
+        currency: "EUR",
     }).format(cents / 100);
 };
 

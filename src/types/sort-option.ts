@@ -1,6 +1,5 @@
 import React from "react";
-import {SortOptionKey} from "@/types/sort-option-key";
-
+import { SortOptionKey } from "@/types/sort-option-key";
 
 export interface SortOption {
     key: SortOptionKey;

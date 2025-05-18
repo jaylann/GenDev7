@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, type RefObject } from "react";
 
 /** Fires `onOutside` whenever a click happens outside **all** provided refs. */
 export const useOutsideClick = <T extends HTMLElement = HTMLElement>(
@@ -11,9 +11,9 @@ export const useOutsideClick = <T extends HTMLElement = HTMLElement>(
                 onOutside();
             }
         };
-        document.addEventListener('mousedown', handler);
+        document.addEventListener("mousedown", handler);
         return () => {
-            document.removeEventListener('mousedown', handler);
+            document.removeEventListener("mousedown", handler);
         };
     }, [refs, onOutside]);
 };

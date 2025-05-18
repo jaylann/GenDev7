@@ -1,14 +1,16 @@
 // app/compare/hooks/useOfferFilters.ts
-import {useCallback, useMemo, useState} from 'react';
-import {FiltersState} from "@/types/filters-state";
-import {DEFAULT_FILTERS} from "@/config/constants";
+import { useCallback, useMemo, useState } from "react";
+import { FiltersState } from "@/types/filters-state";
+import { DEFAULT_FILTERS } from "@/config/constants";
 
 /**
  * Custom hook to manage offer filter state and related logic.
  * @param initialFilters - Optional initial filter state.
  * @returns An object containing filter state, setters, and derived values.
  */
-export const useOfferFilters = (initialFilters: FiltersState = DEFAULT_FILTERS) => {
+export const useOfferFilters = (
+    initialFilters: FiltersState = DEFAULT_FILTERS,
+) => {
     const [filters, setFilters] = useState<FiltersState>(initialFilters);
 
     const activeFilterCount = useMemo(() => {
@@ -31,12 +33,21 @@ export const useOfferFilters = (initialFilters: FiltersState = DEFAULT_FILTERS) 
      * @param filterKey - The key of the filter to update.
      * @param value - The new value for the filter.
      */
-    const updateFilter = useCallback(<K extends keyof FiltersState>(filterKey: K, value: FiltersState[K]) => {
-        setFilters(prev => ({...prev, [filterKey]: value}));
-    }, []);
+    const updateFilter = useCallback(
+        <K extends keyof FiltersState>(
+            filterKey: K,
+            value: FiltersState[K],
+        ) => {
+            setFilters((prev) => ({ ...prev, [filterKey]: value }));
+        },
+        [],
+    );
 
     return {
-        filters, setFilters, // Expose direct setter for flexibility (e.g., URL sync)
-        updateFilter, resetFilters, activeFilterCount,
+        filters,
+        setFilters, // Expose direct setter for flexibility (e.g., URL sync)
+        updateFilter,
+        resetFilters,
+        activeFilterCount,
     };
 };

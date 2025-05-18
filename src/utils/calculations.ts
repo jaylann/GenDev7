@@ -1,6 +1,6 @@
-import {Offer} from "@/types/offer";
-import {VoucherKind} from "@/types/voucher-kind";
-import {ConnectionType} from "@/types/connection-type";
+import { Offer } from "@/types/offer";
+import { VoucherKind } from "@/types/voucher-kind";
+import { ConnectionType } from "@/types/connection-type";
 
 /**
  * Determines the duration of the introductory price in months.
@@ -17,7 +17,10 @@ import {ConnectionType} from "@/types/connection-type";
  * // Offer without intro price -> returns 0
  */
 export const getIntroPriceDurationMonths = (offer: Offer): number => {
-    if (offer.price_cents_month_intro != null && offer.price_cents_month_intro > 0) {
+    if (
+        offer.price_cents_month_intro != null &&
+        offer.price_cents_month_intro > 0
+    ) {
         // `contract_regular_months` from Pydantic has a default of 12.
         // This field defines the duration for which the intro price is typically valid.
         return offer.contract_regular_months ?? 12;
@@ -36,8 +39,11 @@ export const getIntroPriceDurationMonths = (offer: Offer): number => {
  * // Offer: intro 20€ for 6m, regular 40€. Period: 24m.
  * // Cost = (2000 * 6) + (4000 * 18) = 12000 + 72000 = 84000 cents.
  */
-export const calculateGrossTotalCostOverDynamicPeriod = (offer: Offer, calculationPeriodMonths: number): number | null => {
-    const {price_cents_month_intro, price_cents_month_regular} = offer;
+export const calculateGrossTotalCostOverDynamicPeriod = (
+    offer: Offer,
+    calculationPeriodMonths: number,
+): number | null => {
+    const { price_cents_month_intro, price_cents_month_regular } = offer;
     const introDuration = getIntroPriceDurationMonths(offer);
 
     let totalCost = 0;
@@ -45,14 +51,18 @@ export const calculateGrossTotalCostOverDynamicPeriod = (offer: Offer, calculati
     if (price_cents_month_intro != null) {
         // If regular price is not set, assume intro price continues (or use a fallback if defined).
         // Pydantic ensures at least one price, so if intro exists, regular can be null.
-        const effectiveRegularPrice = price_cents_month_regular ?? price_cents_month_intro;
+        const effectiveRegularPrice =
+            price_cents_month_regular ?? price_cents_month_intro;
 
         if (introDuration >= calculationPeriodMonths) {
             // Entire calculation period is covered by intro price.
             totalCost = price_cents_month_intro * calculationPeriodMonths;
         } else {
             // Part intro price, part regular price.
-            totalCost = (price_cents_month_intro * introDuration) + (effectiveRegularPrice * (calculationPeriodMonths - introDuration));
+            totalCost =
+                price_cents_month_intro * introDuration +
+                effectiveRegularPrice *
+                    (calculationPeriodMonths - introDuration);
         }
     } else if (price_cents_month_regular != null) {
         // No intro price, only regular price applies for the whole period.
@@ -60,12 +70,13 @@ export const calculateGrossTotalCostOverDynamicPeriod = (offer: Offer, calculati
     } else {
         // This case should ideally not be reached if the Pydantic model ensures
         // that at least one price (intro or regular) is always present.
-        console.warn(`Offer ${offer.product_id} has no valid price information.`);
+        console.warn(
+            `Offer ${offer.product_id} has no valid price information.`,
+        );
         return null;
     }
     return Math.round(totalCost); // Ensure integer cents
 };
-
 
 /**
  * Computes the average net monthly cost over a given period.
@@ -74,8 +85,14 @@ export const calculateGrossTotalCostOverDynamicPeriod = (offer: Offer, calculati
  * @param periodMonths - The number of months over which to average.
  * @returns The rounded average net monthly cost in cents, or null if unavailable.
  */
-export function calculateAvgNetMonthlyCost(offer: Offer, periodMonths: number): number | null {
-    const grossTotalCost = calculateGrossTotalCostOverDynamicPeriod(offer, periodMonths);
+export function calculateAvgNetMonthlyCost(
+    offer: Offer,
+    periodMonths: number,
+): number | null {
+    const grossTotalCost = calculateGrossTotalCostOverDynamicPeriod(
+        offer,
+        periodMonths,
+    );
     if (grossTotalCost == null) return null;
 
     const voucherValue = calculateEffectiveVoucherValue(offer, periodMonths);
@@ -99,7 +116,10 @@ export function calculateAvgNetMonthlyCost(offer: Offer, periodMonths: number): 
  *                                  The voucher's own runtime limits take precedence if shorter.
  * @returns The total effective voucher value in cents, rounded to the nearest cent.
  */
-export const calculateEffectiveVoucherValue = (offer: Offer, calculationPeriodMonths: number): number => {
+export const calculateEffectiveVoucherValue = (
+    offer: Offer,
+    calculationPeriodMonths: number,
+): number => {
     if (!offer.voucher_type) {
         return 0; // No voucher, no value.
     }
@@ -116,16 +136,25 @@ export const calculateEffectiveVoucherValue = (offer: Offer, calculationPeriodMo
             // `voucher_max_runtime_months` is usually not applicable here, assumed to be a one-off.
             totalVoucherValueApplied = offer.voucher_value_cents ?? 0;
             // The value is then capped by `voucher_max_value_cents`.
-            totalVoucherValueApplied = Math.min(totalVoucherValueApplied, overallMaxCapCents);
+            totalVoucherValueApplied = Math.min(
+                totalVoucherValueApplied,
+                overallMaxCapCents,
+            );
             break;
 
         case VoucherKind.PERCENTAGE:
-            if (offer.voucher_value_percent != null && offer.voucher_value_percent > 0) {
+            if (
+                offer.voucher_value_percent != null &&
+                offer.voucher_value_percent > 0
+            ) {
                 const percentOff = offer.voucher_value_percent / 100;
 
                 // Determine the effective number of months the percentage voucher applies.
                 // It's the minimum of its own max runtime, or the overall calculation period.
-                const voucherEffectiveMonths = Math.min(offer.voucher_max_runtime_months ?? calculationPeriodMonths, calculationPeriodMonths);
+                const voucherEffectiveMonths = Math.min(
+                    offer.voucher_max_runtime_months ?? calculationPeriodMonths,
+                    calculationPeriodMonths,
+                );
 
                 for (let month = 0; month < voucherEffectiveMonths; month++) {
                     if (totalVoucherValueApplied >= overallMaxCapCents) {
@@ -134,7 +163,10 @@ export const calculateEffectiveVoucherValue = (offer: Offer, calculationPeriodMo
 
                     let currentMonthlyPrice: number;
                     // Determine price for the current month (intro or regular).
-                    if (month < introPriceDuration && offer.price_cents_month_intro != null) {
+                    if (
+                        month < introPriceDuration &&
+                        offer.price_cents_month_intro != null
+                    ) {
                         currentMonthlyPrice = offer.price_cents_month_intro;
                     } else if (offer.price_cents_month_regular != null) {
                         currentMonthlyPrice = offer.price_cents_month_regular;
@@ -148,9 +180,13 @@ export const calculateEffectiveVoucherValue = (offer: Offer, calculationPeriodMo
                     }
 
                     if (currentMonthlyPrice > 0) {
-                        const discountThisMonth = currentMonthlyPrice * percentOff;
+                        const discountThisMonth =
+                            currentMonthlyPrice * percentOff;
                         // The discount applied this month cannot exceed the remaining room under the overall cap.
-                        const applicableDiscountThisMonth = Math.min(discountThisMonth, overallMaxCapCents - totalVoucherValueApplied);
+                        const applicableDiscountThisMonth = Math.min(
+                            discountThisMonth,
+                            overallMaxCapCents - totalVoucherValueApplied,
+                        );
                         totalVoucherValueApplied += applicableDiscountThisMonth;
                     }
                 }
@@ -165,15 +201,27 @@ export const calculateEffectiveVoucherValue = (offer: Offer, calculationPeriodMo
             if (offer.voucher_value_cents != null) {
                 // Behaves like an ABSOLUTE voucher.
                 totalVoucherValueApplied = offer.voucher_value_cents;
-                totalVoucherValueApplied = Math.min(totalVoucherValueApplied, overallMaxCapCents);
-            } else if (offer.voucher_value_percent != null && offer.voucher_value_percent > 0) {
+                totalVoucherValueApplied = Math.min(
+                    totalVoucherValueApplied,
+                    overallMaxCapCents,
+                );
+            } else if (
+                offer.voucher_value_percent != null &&
+                offer.voucher_value_percent > 0
+            ) {
                 // Behaves like a PERCENTAGE voucher (re-use logic, could be refactored).
                 const percentOff = offer.voucher_value_percent / 100;
-                const voucherEffectiveMonths = Math.min(offer.voucher_max_runtime_months ?? calculationPeriodMonths, calculationPeriodMonths);
+                const voucherEffectiveMonths = Math.min(
+                    offer.voucher_max_runtime_months ?? calculationPeriodMonths,
+                    calculationPeriodMonths,
+                );
                 for (let month = 0; month < voucherEffectiveMonths; month++) {
                     if (totalVoucherValueApplied >= overallMaxCapCents) break;
                     let currentMonthlyPrice: number;
-                    if (month < introPriceDuration && offer.price_cents_month_intro != null) {
+                    if (
+                        month < introPriceDuration &&
+                        offer.price_cents_month_intro != null
+                    ) {
                         currentMonthlyPrice = offer.price_cents_month_intro;
                     } else if (offer.price_cents_month_regular != null) {
                         currentMonthlyPrice = offer.price_cents_month_regular;
@@ -183,8 +231,12 @@ export const calculateEffectiveVoucherValue = (offer: Offer, calculationPeriodMo
                         continue;
                     }
                     if (currentMonthlyPrice > 0) {
-                        const discountThisMonth = currentMonthlyPrice * percentOff;
-                        const applicableDiscountThisMonth = Math.min(discountThisMonth, overallMaxCapCents - totalVoucherValueApplied);
+                        const discountThisMonth =
+                            currentMonthlyPrice * percentOff;
+                        const applicableDiscountThisMonth = Math.min(
+                            discountThisMonth,
+                            overallMaxCapCents - totalVoucherValueApplied,
+                        );
                         totalVoucherValueApplied += applicableDiscountThisMonth;
                     }
                 }
@@ -196,7 +248,9 @@ export const calculateEffectiveVoucherValue = (offer: Offer, calculationPeriodMo
             // This ensures all VoucherKind cases are handled.
             // If a new VoucherKind is added without updating this switch, TypeScript will error.
             const _exhaustiveCheck: never = offer.voucher_type;
-            console.warn(`Unknown voucher type encountered: ${_exhaustiveCheck}`);
+            console.warn(
+                `Unknown voucher type encountered: ${_exhaustiveCheck}`,
+            );
             return 0;
     }
 
