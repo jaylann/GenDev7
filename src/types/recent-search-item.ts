@@ -1,11 +1,9 @@
-
 /**
  * recent-search-item.ts
  *
  * Defines the data structure for a recent search entry in the ComparePage module.
  * Each item represents a previous search or shared link that can be revisited.
  */
-
 
 /**
  * Represents an entry in the list of recent searches.

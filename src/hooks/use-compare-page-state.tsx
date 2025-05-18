@@ -27,7 +27,6 @@ import { generateShareLink } from "@/utils/generate-share-link";
 import { toast as sonnerToast } from "sonner";
 import { ViewMode } from "@/types/view-mode";
 
-
 /**
  * ComparePageState groups all public state values and action handlers returned by useComparePageState.
  *
@@ -283,7 +282,8 @@ export function useComparePageState(): ComparePageState {
                                 Refining&nbsp;your&nbsp;search…
                             </p>
                             <p className="text-slate-400">
-                                We&apos;re polishing the results while you browse.
+                                We&apos;re polishing the results while you
+                                browse.
                             </p>
                         </div>,
                         { duration: 5_000 },

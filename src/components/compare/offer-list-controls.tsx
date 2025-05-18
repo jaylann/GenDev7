@@ -98,7 +98,7 @@ export const OfferListControls: FC<OfferListControlsProps> = ({
                             })}
                         <span className="hidden sm:inline">Sort: </span>
                         <span className="truncate max-w-[11ch] sm:max-w-none">
-                          {currentSortOptionConfig?.label ?? "Select"}
+                            {currentSortOptionConfig?.label ?? "Select"}
                         </span>
                         <ChevronDown className="ml-1 sm:ml-2 size-3 sm:size-4" />
                     </Button>

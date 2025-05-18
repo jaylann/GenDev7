@@ -14,7 +14,6 @@ import usePlacesAutocomplete, { getGeocode } from "use-places-autocomplete";
 import { parseGeocodeResult } from "@/utils/address";
 import type { Address } from "@/types/address";
 
-
 /** The public shape returned by the custom hook. */
 /**
  * Public API of the useAddressAutocomplete hook.
