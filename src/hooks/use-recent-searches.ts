@@ -1,17 +1,13 @@
 // app/compare/hooks/useRecentSearches.ts
 import { useCallback, useEffect, useState } from "react";
+import { RecentSearchItem } from "@/types/recent-search-item";
 
+// Maximum number of searches to retain in sessionStorage
 const MAX_RECENT_SEARCHES = 5;
+// Key under which recent searches are stored in sessionStorage
 const STORAGE_KEY = "recentCompareSearches";
 
-export interface RecentSearchItem {
-    id: string; // Unique ID for React key (e.g., timestamp + random string)
-    sessionId: string; // Identifies the logical search session (e.g., address searched, or slug for shared links)
-    url: string; // The full shareable URL path (e.g., /compare?slug=...)
-    label: string; // User-friendly label (e.g., the address or "Shared: XYZ")
-    timestamp: number; // To sort by recency and for updating
-}
-
+// Represents the data required to add or update a recent search entry
 interface AddRecentSearchData {
     url: string;
     label: string;
@@ -19,16 +15,24 @@ interface AddRecentSearchData {
 }
 
 /**
- * Custom hook to manage a list of recently visited comparison search URLs.
- * Stores data in sessionStorage.
- * Entries with the same sessionId are updated rather than duplicated.
- * @returns An object with recent searches, add/update function, and clear function.
+ * useRecentSearches hook
+ *
+ * Manages a list of recent compare page searches:
+ * - Loads and validates stored searches from sessionStorage on mount.
+ * - Provides functions to add/update and clear searches.
+ *
+ * @returns {{
+ *   recentSearches: RecentSearchItem[];
+ *   addRecentSearch: (data: AddRecentSearchData) => void;
+ *   clearRecentSearches: () => void;
+ * }}
  */
 export const useRecentSearches = () => {
     const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>(
         [],
     );
 
+    // Initialize recentSearches state from sessionStorage on first render
     useEffect(() => {
         try {
             const storedSearches = sessionStorage.getItem(STORAGE_KEY);
@@ -65,22 +69,29 @@ export const useRecentSearches = () => {
     }, []);
 
     /**
-     * Adds a new search or updates an existing one based on sessionId.
-     * The updated/added item is moved to the top of the list.
-     * @param searchData - The search data including url, label, and sessionId.
+     * Adds a new search entry or updates an existing one:
+     * - If sessionId exists, update that entry's label, url, and timestamp, moving it to the front.
+     * - Otherwise, create a new entry with a unique id and timestamp.
+     * - Ensures the list does not exceed MAX_RECENT_SEARCHES entries.
+     * - Persists the updated list back to sessionStorage.
+     *
+     * @param searchData - Object containing url, label, and sessionId for the search
      */
     const addRecentSearch = useCallback((searchData: AddRecentSearchData) => {
         setRecentSearches((prevSearches) => {
+            // Check if this sessionId already has an entry
             const existingIndex = prevSearches.findIndex(
                 (s) => s.sessionId === searchData.sessionId,
             );
             let updatedSearches = [...prevSearches];
 
+            // Prepare updated fields (timestamp always current)
             const newItemData: Omit<RecentSearchItem, "id"> = {
                 ...searchData,
                 timestamp: Date.now(), // Always update timestamp
             };
 
+            // Update existing entry and move it to the top of the list
             if (existingIndex > -1) {
                 // Update existing item: Preserve its original `id` but update other fields.
                 const existingItem = updatedSearches[existingIndex];
@@ -92,7 +103,7 @@ export const useRecentSearches = () => {
                 const itemToMove = updatedSearches.splice(existingIndex, 1)[0];
                 updatedSearches.unshift(itemToMove);
             } else {
-                // Add new item to the beginning
+                // Create a new RecentSearchItem and add to the top of the list
                 const newItem: RecentSearchItem = {
                     ...newItemData,
                     id:
@@ -102,11 +113,12 @@ export const useRecentSearches = () => {
                 updatedSearches.unshift(newItem);
             }
 
-            // Keep only the most recent MAX_RECENT_SEARCHES
+            // Trim list to maximum allowed entries
             if (updatedSearches.length > MAX_RECENT_SEARCHES) {
                 updatedSearches = updatedSearches.slice(0, MAX_RECENT_SEARCHES);
             }
 
+            // Persist updated list to sessionStorage
             try {
                 sessionStorage.setItem(
                     STORAGE_KEY,
@@ -122,6 +134,9 @@ export const useRecentSearches = () => {
         });
     }, []);
 
+    /**
+     * Clears all recent search entries from state and sessionStorage.
+     */
     const clearRecentSearches = useCallback(() => {
         setRecentSearches([]);
         try {
@@ -134,5 +149,6 @@ export const useRecentSearches = () => {
         }
     }, []);
 
+    // Expose state and handlers to consuming components
     return { recentSearches, addRecentSearch, clearRecentSearches };
 };

@@ -1,3 +1,10 @@
+/**
+ * AddressAutocompleteInput Module
+ *
+ * Provides a reusable input component with Google Maps-based autocomplete.
+ * Handles querying suggestions, selecting an address, formatting parsed addresses,
+ * and emitting selection events via onAddressSelect.
+ */
 "use client";
 import React, { useEffect, useRef } from "react";
 import { useAddressAutocomplete } from "@/hooks/use-address-autocomplete";
@@ -10,6 +17,7 @@ import { AddressSuggestionsList } from "./address-suggestion-list";
 
 export type ParsedAddress = Address;
 
+// Validate that the Google Maps API key is present for enabling autocomplete.
 const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 if (!apiKey) {
     console.error(
@@ -27,6 +35,19 @@ export interface AddressAutocompleteInputProps {
     disabled?: boolean;
 }
 
+/**
+ * AddressAutocompleteInput component renders a text input with location autocomplete.
+ *
+ * Props:
+ *  - initialValue: Optional initial raw input text.
+ *  - parsedAddress: If provided, will reverse-geocode and format into the input.
+ *  - defaultAddressText: Fallback placeholder value when no initialValue.
+ *  - onAddressSelect: Callback invoked with (parsedAddress | null, fullText).
+ *  - inputClassName, containerClassName: Tailwind CSS class overrides.
+ *  - disabled: Disable input and suggestions.
+ *
+ * @returns JSX.Element
+ */
 export const AddressAutocompleteInput: React.FC<
     AddressAutocompleteInputProps
 > = ({
@@ -38,6 +59,7 @@ export const AddressAutocompleteInput: React.FC<
     containerClassName,
     disabled,
 }) => {
+    // Initialize autocomplete hook: manages input value, suggestion list, and selection logic.
     const {
         value,
         setValue,
@@ -53,6 +75,7 @@ export const AddressAutocompleteInput: React.FC<
     });
 
     useEffect(() => {
+        // When parsedAddress is supplied or input is cleared, ensure onAddressSelect is called appropriately.
         if (!ready) return;
 
         if (parsedAddress) {
@@ -89,7 +112,7 @@ export const AddressAutocompleteInput: React.FC<
         }
     }, [parsedAddress, ready, setValue, onAddressSelect, value]);
 
-    // Use correct element types for refs
+    // Refs for handling focus and outside-click detection.
     const inputRef = useRef<HTMLInputElement | null>(null);
     const listRef = useRef<HTMLDivElement | null>(null);
     const [showSuggestions, setShowSuggestions] = React.useState(false);
@@ -97,6 +120,7 @@ export const AddressAutocompleteInput: React.FC<
         setShowSuggestions(false);
     });
 
+    // Update input value, show suggestions, and clear selection if input emptied.
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newValue = e.target.value;
         setValue(newValue);
@@ -104,6 +128,7 @@ export const AddressAutocompleteInput: React.FC<
         if (!newValue.trim()) onAddressSelect(null, "");
     };
 
+    // Handle Enter to select top suggestion or geocode free-text; Escape to close suggestions.
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter") {
             e.preventDefault();
@@ -140,6 +165,7 @@ export const AddressAutocompleteInput: React.FC<
 
     return (
         <div className={cn("relative w-full", containerClassName)}>
+            {/* Container for autocomplete input and suggestion dropdown */}
             <Input
                 ref={inputRef}
                 type="text"
@@ -163,6 +189,7 @@ export const AddressAutocompleteInput: React.FC<
             {!ready && (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-5 animate-spin text-slate-400" />
             )}
+            {/* Suggestion list dropdown, rendered when suggestions are available */}
             <div ref={listRef}>
                 <AddressSuggestionsList
                     show={showSuggestions}

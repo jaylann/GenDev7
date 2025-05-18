@@ -1,3 +1,9 @@
+/**
+ * URL Filter Serialization Module
+ *
+ * Provides utility functions to serialize and deserialize FiltersState
+ * to and from URL query parameters for sharing and persistence.
+ */
 import { FiltersState } from "@/types/filters-state";
 import {
     AVAILABLE_CONNECTION_TYPES,
@@ -11,18 +17,25 @@ import { ConnectionType } from "@/types/connection-type";
  * @returns A string representing the filters as URL query parameters.
  */
 export const serializeFiltersForURL = (filters: FiltersState): string => {
+    // Initialize query parameters container
     const params = new URLSearchParams();
+    // Include selected contract durations (comma-separated)
     if (filters.contractDurations.length > 0)
         params.set("cd", filters.contractDurations.join(","));
+    // Include selected connection types (comma-separated)
     if (filters.connectionTypes.length > 0)
         params.set("ct", filters.connectionTypes.join(","));
+    // Include minimum speed threshold
     if (filters.minSpeed > 0) params.set("ms", String(filters.minSpeed));
+    // Include TV inclusion preference if specified
     if (filters.tvIncluded !== "any") params.set("tv", filters.tvIncluded);
+    // Include selected providers, URL-encoded and comma-separated
     if (filters.selectedProviders.length > 0)
         params.set(
             "sp",
             filters.selectedProviders.map(encodeURIComponent).join(","),
         );
+    // Include youth offer preference if specified
     if (filters.youthOffer !== "any") params.set("yo", filters.youthOffer);
     return params.toString();
 };
@@ -35,7 +48,9 @@ export const serializeFiltersForURL = (filters: FiltersState): string => {
 export const deserializeFiltersFromURL = (
     searchParams: URLSearchParams,
 ): Partial<FiltersState> => {
+    // Prepare an object to accumulate validated filter values
     const loadedFilters: Partial<FiltersState> = {};
+    // Parse and validate contract durations from "cd" parameter
     if (searchParams.has("cd"))
         loadedFilters.contractDurations = searchParams
             .get("cd")!
@@ -44,6 +59,7 @@ export const deserializeFiltersFromURL = (
             .filter(
                 (n) => !isNaN(n) && AVAILABLE_CONTRACT_DURATIONS.includes(n),
             );
+    // Parse and validate connection types from "ct" parameter
     if (searchParams.has("ct"))
         loadedFilters.connectionTypes = searchParams
             .get("ct")!
@@ -51,20 +67,24 @@ export const deserializeFiltersFromURL = (
             .filter((ct) =>
                 AVAILABLE_CONNECTION_TYPES.includes(ct as ConnectionType),
             ) as ConnectionType[];
+    // Parse and validate minimum speed from "ms" parameter
     if (searchParams.has("ms")) {
         const msVal = parseInt(searchParams.get("ms")!, 10);
         if (!isNaN(msVal) && msVal >= 0) loadedFilters.minSpeed = msVal;
     }
+    // Parse and validate TV inclusion from "tv" parameter
     if (searchParams.has("tv")) {
         const tvVal = searchParams.get("tv") as FiltersState["tvIncluded"];
         if (["any", "yes", "no"].includes(tvVal))
             loadedFilters.tvIncluded = tvVal;
     }
+    // Parse and decode selected providers from "sp" parameter
     if (searchParams.has("sp"))
         loadedFilters.selectedProviders = searchParams
             .get("sp")!
             .split(",")
             .map(decodeURIComponent);
+    // Parse and validate youth offer preference from "yo" parameter
     if (searchParams.has("yo")) {
         const yoVal = searchParams.get("yo") as FiltersState["youthOffer"];
         if (["any", "yes"].includes(yoVal)) loadedFilters.youthOffer = yoVal;

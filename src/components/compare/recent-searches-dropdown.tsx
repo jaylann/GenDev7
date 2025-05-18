@@ -1,3 +1,9 @@
+/**
+ * RecentSearchesDropdown Module
+ *
+ * Provides a UI for displaying and navigating recent address searches.
+ * Includes options to select a past search or clear the history.
+ */
 import React, { FC } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -32,11 +38,13 @@ export const RecentSearchesDropdown: FC<RecentSearchesDropdownProps> = ({
 }) => {
     const router = useRouter();
 
+    // Navigate to the selected recent search URL when an item is clicked
     const handleSelectSearch = (url: string) => {
         // The URL stored in recentSearches is the relative path with query params (e.g., /compare?slug=...)
         router.push(url);
     };
 
+    // If there are no recent searches, do not render the dropdown component
     if (searches.length === 0) {
         return null;
     }
@@ -45,6 +53,7 @@ export const RecentSearchesDropdown: FC<RecentSearchesDropdownProps> = ({
         <div className={cn(className)}>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
+                    {/* Trigger button with history icon that opens the recent searches dropdown */}
                     <Button
                         variant="ghost" // Changed variant
                         size="icon"

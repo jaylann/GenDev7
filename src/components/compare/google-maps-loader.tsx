@@ -1,13 +1,26 @@
+/**
+ * GoogleMapsLoader Module
+ *
+ * Ensures the Google Maps JavaScript SDK is loaded once per application.
+ * Should be rendered at a high level (e.g. _app.tsx or layout.tsx).
+ */
 "use client";
 import Script from "next/script";
 
 /**
- * Loads the Google Maps JS SDK once per application.
- * Render this high in the tree (e.g. `_app.tsx` or `layout.tsx`).
+ * GoogleMapsLoader component dynamically injects the Google Maps SDK script.
+ *
+ * Checks for the NEXT_PUBLIC_GOOGLE_MAPS_API_KEY environment variable.
+ * - If missing (in development), logs an error and disables the SDK.
+ * - If present, loads the Maps API with the Places library asynchronously.
+ *
+ * @returns JSX.Element | null
  */
 export const GoogleMapsLoader: React.FC = () => {
+    // Retrieve the public API key for Google Maps from environment variables
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
     if (!apiKey) {
+        // If the API key is not set, log an error in development and skip loading the SDK
         if (process.env.NODE_ENV === "development") {
             console.error(
                 "❌ Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY – Google SDK disabled.",
@@ -16,6 +29,7 @@ export const GoogleMapsLoader: React.FC = () => {
         return null;
     }
 
+    // Load the Google Maps SDK script asynchronously after the page is interactive
     return (
         <Script
             id="google-maps-sdk"

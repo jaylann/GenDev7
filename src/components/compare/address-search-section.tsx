@@ -1,3 +1,10 @@
+/**
+ * AddressSearchSection Module
+ *
+ * Provides an address autocomplete input with a search button,
+ * managing loading states (search vs slug load) and delegating
+ * selection and search actions to parent handlers.
+ */
 import React, { FC } from "react";
 import { Button } from "@/components/ui/button";
 import { LoaderCircle, Search as SearchIcon } from "lucide-react";
@@ -19,13 +26,14 @@ interface AddressSearchSectionProps {
 
 /**
  * Section containing the address autocomplete input and the search button.
- * @param initialSearchQuery - The initial query to display in the address input.
- * @param onAddressSelect - Callback when an address is selected or input changes.
+ * @param parsedAddress - The address object selected from autocomplete, if any.
+ * @param defaultAddressText - Initial text to display in the address input.
+ * @param onAddressSelect - Callback when an address is selected or input text changes.
  * @param onSearchClick - Callback when the search button is clicked.
- * @param isSearchDisabled - Controls if the search button is disabled.
- * @param isLoading - Indicates if a search operation is in progress.
- * @param isLoadingFromSlug - Indicates if loading shared data.
- * @param currentSlug - The current slug, if any.
+ * @param isSearchDisabled - Whether the search button should be disabled.
+ * @param isLoading - True when a search operation is in progress.
+ * @param isLoadingFromSlug - True when initializing from a shared slug.
+ * @param currentSlug - The current shared slug, if any.
  */
 export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
     parsedAddress,
@@ -37,13 +45,15 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
     isLoadingFromSlug,
     currentSlug,
 }) => {
+    // Check for presence of Google Maps API key for autocomplete.
     const hasApiKey = !!GOOGLE_MAPS_API_KEY_FROM_ENV;
 
-    // Compute input disabled state
+    // Disable input if no API key or during loading states.
     const inputDisabled = !hasApiKey || isLoadingFromSlug || isLoading;
 
-    // Extract button content rendering from nested ternary
+    // Determine the button label and icon based on loading and slug states.
     const renderButtonContent = () => {
+        // When a manual search is in progress and not loading from slug.
         if (isLoading && !currentSlug && !isLoadingFromSlug) {
             return (
                 <>
@@ -52,6 +62,7 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
                 </>
             );
         }
+        // When initializing data from a shared slug.
         if (isLoadingFromSlug) {
             return (
                 <>
@@ -60,6 +71,7 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
                 </>
             );
         }
+        // Default state: ready to initiate a new search.
         return (
             <>
                 <SearchIcon className="size-5 mr-2" />
@@ -68,6 +80,7 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
         );
     };
 
+    // Internal handler to forward address selection events.
     const handleInternalAddressSelect = (
         address: Address | null,
         fullText: string,
@@ -75,15 +88,16 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
         onAddressSelect(address, fullText);
     };
 
+    // Layout section wrapping the address input and search button.
     return (
-        <section className="max-w-2xl mx-auto">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+        <section className="max-w-2xl mx-auto px-4 py-2 md:px-0">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 md:gap-4">
                 <AddressAutocompleteInput
                     key={defaultAddressText} // Force re-mount and re-init when defaultAddressText changes
                     parsedAddress={parsedAddress}
                     initialValue={defaultAddressText || ""}
                     onAddressSelect={handleInternalAddressSelect}
-                    inputClassName="bg-slate-800/50 border-slate-700 placeholder:text-slate-400 rounded-lg text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    inputClassName="bg-slate-800/50 border-slate-700 placeholder:text-slate-400 rounded-lg px-3 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     containerClassName="flex-grow"
                     disabled={inputDisabled} // Also disable if normal search is loading
                 />
@@ -91,7 +105,7 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
                     onClick={onSearchClick}
                     disabled={isSearchDisabled || !hasApiKey}
                     className={cn(
-                        "bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-8 rounded-lg w-full sm:w-auto text-base shrink-0 h-12",
+                        "bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 sm:px-8 rounded-lg w-full sm:w-auto text-sm sm:text-base shrink-0 h-10 sm:h-12",
                     )}
                     size="lg"
                 >

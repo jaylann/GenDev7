@@ -19,8 +19,10 @@ export const formatEur = (cents: number | null | undefined): string => {
  * @returns A string like "500 GB" or "Unlimited Data".
  */
 export const formatDataCap = (dataCapGb?: number | null): string => {
+    // If no data cap specified or value is zero/negative, treat as unlimited data
     if (dataCapGb == null || dataCapGb <= 0) {
         return "Unlimited Data";
     }
+    // Append "GB" unit to the numeric data cap for display
     return `${dataCapGb} GB`;
 };

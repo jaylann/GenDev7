@@ -1,8 +1,19 @@
+/**
+ * OfferGrid Module
+ *
+ * Displays a collection of internet service offers in grid or list form.
+ * Handles various loading and empty states:
+ *  1. Loading skeletons
+ *  2. Initial placeholder before search
+ *  3. No results after filtering
+ *  4. No offers found for address
+ *  5. Fallback null when appropriate
+ *  6. Actual offers display
+ */
 import React, { FC } from "react";
 import Image from "next/image";
 import { AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { SlidersHorizontal, Wifi as WifiIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -10,6 +21,19 @@ import { Offer } from "@/types/offer";
 import { ViewMode } from "@/components/compare/offer-list-controls";
 import { OfferCard } from "@/components/compare/offer-card";
 
+/**
+ * Props for OfferGrid component.
+ *
+ * @property offers List of offers to display.
+ * @property isLoading Whether the data is currently loading.
+ * @property viewMode Layout mode: "grid" or "list".
+ * @property areOriginalOffersLoaded Whether the initial fetch returned any offers.
+ * @property statusMessage Status text from backend, used to control certain empty states.
+ * @property onResetFilters Handler to reset all active filters.
+ * @property hasSearchBeenPerformed Whether the user has initiated at least one search.
+ * @property onShareOffer Callback invoked when sharing a single offer.
+ * @property activeShareableSlug Slug representing the currently shareable offer list.
+ */
 interface OfferGridProps {
     offers: Offer[];
     isLoading: boolean;
@@ -24,6 +48,14 @@ interface OfferGridProps {
     activeShareableSlug: string | null;
 }
 
+/**
+ * OfferGrid component renders the main content area for offers.
+ *
+ * It switches between different UI states based on loading, search, and filter flags,
+ * then ultimately shows the offers using OfferCard components within a scrollable container.
+ *
+ * @returns JSX.Element or null
+ */
 export const OfferGrid: FC<OfferGridProps> = ({
     offers,
     isLoading,
@@ -35,7 +67,7 @@ export const OfferGrid: FC<OfferGridProps> = ({
     onShareOffer,
     activeShareableSlug,
 }) => {
-    // 1. Skeletons
+    // 1. Loading state: show skeleton placeholders when fetching initial offers
     const showSkeletons = isLoading && offers.length === 0;
     if (showSkeletons) {
         const skeletonCount = viewMode === "grid" ? 6 : 3;
@@ -59,7 +91,7 @@ export const OfferGrid: FC<OfferGridProps> = ({
         );
     }
 
-    // 2. Initial Placeholder
+    // 2. Before any search: show a graphic and prompt to start
     const showInitialPlaceholder =
         !isLoading && !hasSearchBeenPerformed && offers.length === 0;
     if (showInitialPlaceholder) {
@@ -87,7 +119,7 @@ export const OfferGrid: FC<OfferGridProps> = ({
         );
     }
 
-    // 3. No Results After Filtering
+    // 3. No offers match current filters: prompt user to adjust or reset
     const showNoResultsAfterFilter =
         !isLoading &&
         hasSearchBeenPerformed &&
@@ -118,7 +150,7 @@ export const OfferGrid: FC<OfferGridProps> = ({
         );
     }
 
-    // 4. No Offers Found for Address
+    // 4. No offers returned for the given address: suggest checking or retrying
     const showNoOffersFoundForAddress =
         !isLoading &&
         hasSearchBeenPerformed &&
@@ -150,13 +182,13 @@ export const OfferGrid: FC<OfferGridProps> = ({
         );
     }
 
-    // 5. Fallback for Empty Offers
+    // 5. Fallback when no offers but a search was performed: render nothing
     if (offers.length === 0 && hasSearchBeenPerformed) {
         // only return null if search was done. Otherwise initial placeholder takes precedence
         return null;
     }
 
-    // 6. Render Offers Grid/List
+    // 6. Display the fetched offers using OfferCard components in chosen layout
     return (
         <div className="h-full overflow-y-auto scrollbar-none">
             <AnimatePresence mode="popLayout">

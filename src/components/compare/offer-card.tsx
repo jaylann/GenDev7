@@ -1,4 +1,15 @@
-// src/components/offers/OfferCard.tsx
+/**
+ * OfferCard Module
+ *
+ * Renders a single offer card with summary information and interactions.
+ * Handles:
+ *  - Displaying provider logo, plan name, and average cost
+ *  - Pricing sections (introductory and regular)
+ *  - Speed, contract, and connection details
+ *  - Voucher badge popovers for discounts or bonuses
+ *  - Detail badges for TV, installation, data cap, and youth offers
+ *  - Share button overlay when enabled
+ */
 "use client";
 
 import React, { FC, JSX, useMemo } from "react";
@@ -51,7 +62,6 @@ interface DetailBadgePropsForUserComponent
     icon: React.ElementType;
 }
 
-// Badge color configurations
 const BADGE_COLORS: Record<string, CustomDetailBadgeInfo["colorConfig"]> = {
     tv: {
         bg: "bg-purple-600/20",
@@ -85,36 +95,31 @@ const BADGE_COLORS: Record<string, CustomDetailBadgeInfo["colorConfig"]> = {
     },
 };
 
-/**
- * Props for the OfferCard component.
- */
 interface OfferCardProps {
-    /** The offer data to display. Crucial for the component to function. */
     offer: Offer;
-    /** Optional callback for when the share icon is clicked. */
     onShareOffer?: (offer: Offer) => void;
-    /**
-     * The slug for the current full list of offers, required to enable sharing.
-     * If null or undefined, the share button will not be rendered or will be disabled.
-     */
     activeShareableSlug?: string | null;
-    /** Optional className for custom styling on the root motion.div wrapper. */
     className?: string;
 }
 
 /**
- * `OfferCard` is a responsive, animated component for displaying internet offer details.
- * It follows a dark theme, uses shadcn UI components, Tailwind CSS, and Framer Motion.
- * It includes detailed calculations for average pricing and voucher effects.
+ * OfferCard component displays all relevant data for a given offer.
+ *
+ * @param {OfferCardProps} props
+ * @param {Offer} props.offer - The offer data to display.
+ * @param {(offer: Offer) => void} [props.onShareOffer] - Optional handler for sharing this offer.
+ * @param {string | null} [props.activeShareableSlug] - Slug that enables share overlay when present.
+ * @param {string} [props.className] - Additional CSS classes for the root element.
+ * @returns {JSX.Element}
  */
 export const OfferCard: FC<OfferCardProps> = ({
     offer,
     onShareOffer,
     activeShareableSlug,
     className,
-}) => {
-    // Provide safe defaults to ensure hooks are called unconditionally.
-    const safeOffer = (offer ?? {
+}: OfferCardProps): JSX.Element => {
+    // Ensure we have a complete Offer object, falling back to defaults if props.offer is undefined
+    const safeOffer = offer ?? {
         provider: "",
         plan_name: "",
         product_id: "",
@@ -134,8 +139,9 @@ export const OfferCard: FC<OfferCardProps> = ({
         voucher_max_value_cents: 0,
         voucher_max_runtime_months: 0,
         max_age: 0,
-    }) as unknown as Offer;
+    };
 
+    // Destructure the safeOffer object for easier access to individual properties
     const {
         provider,
         plan_name,
@@ -158,29 +164,31 @@ export const OfferCard: FC<OfferCardProps> = ({
         max_age,
     } = safeOffer;
 
+    // Compute how many months the introductory price applies, memoized for performance
     const introPriceDuration = useMemo(
         () => getIntroPriceDurationMonths(offer),
         [offer],
     );
 
+    // Determine period (in months) over which to average cost (min 24 months)
     const calculationPeriodMonths = useMemo(
         () => Math.max(24, contract_duration_months),
         [contract_duration_months],
     );
 
-    // Calculate numeric average net monthly cost
+    // Calculate the average net monthly cost over the calculation period
     const avgNetCost = useMemo(
         () => calculateAvgNetMonthlyCost(offer, calculationPeriodMonths),
         [offer, calculationPeriodMonths],
     );
 
-    // Format label and display in the UI layer
     const avgPriceLabel =
         avgNetCost != null
             ? `Avg./mo (${calculationPeriodMonths}m)`
             : "Avg./mo";
     const avgPriceDisplay = avgNetCost != null ? formatEur(avgNetCost) : "N/A";
 
+    // Derive a user-friendly text for absolute or cashback voucher amounts
     const prominentBonusText = useMemo<string | null>(() => {
         if (
             voucher_type &&
@@ -193,12 +201,12 @@ export const OfferCard: FC<OfferCardProps> = ({
             if (voucher_max_value_cents != null) {
                 value = Math.min(value, voucher_max_value_cents);
             }
-            // Use getVoucherKindDisplayName for consistency in naming
             return `${formatEur(value)} ${getVoucherKindDisplayName(voucher_type)}`;
         }
         return null;
     }, [voucher_type, voucher_value_cents, voucher_max_value_cents]);
 
+    // Build an array of detail badges for TV, installation, data cap, and youth offers
     const detailBadges = useMemo<DetailBadgePropsForUserComponent[]>(() => {
         const badges: DetailBadgePropsForUserComponent[] = [];
 
@@ -247,9 +255,6 @@ export const OfferCard: FC<OfferCardProps> = ({
         installation_service_included,
         data_cap_gb,
         max_age,
-        prominentBonusText,
-        voucher_type,
-        voucher_value_percent,
     ]);
 
     const introPriceSection = useMemo<JSX.Element | null>(() => {
@@ -263,13 +268,13 @@ export const OfferCard: FC<OfferCardProps> = ({
                     <span className="text-[0.7rem] text-slate-400 block mb-0">
                         Intro Price:
                     </span>
-                    <p className="text-xl font-semibold text-white leading-tight">
+                    <p className="text-lg sm:text-xl font-semibold text-white leading-tight">
                         {formatEur(price_cents_month_intro)}{" "}
-                        <span className="text-base font-normal text-slate-400">
+                        <span className="text-sm sm:text-base font-normal text-slate-400">
                             /mo
                         </span>
                     </p>
-                    <p className="text-[0.65rem] text-slate-500 leading-tight">
+                    <p className="text-[0.65rem] sm:text-xs text-slate-500 leading-tight">
                         {durationText}
                     </p>
                 </div>
@@ -294,9 +299,9 @@ export const OfferCard: FC<OfferCardProps> = ({
                                 ? "Then:"
                                 : "Price:"}
                         </span>
-                        <p className="text-lg font-medium text-slate-300 leading-tight">
+                        <p className="text-base sm:text-lg font-medium text-slate-300 leading-tight">
                             {formatEur(price_cents_month_regular)}{" "}
-                            <span className="text-sm font-normal text-slate-400">
+                            <span className="text-sm sm:text-base font-normal text-slate-400">
                                 /mo
                             </span>
                         </p>
@@ -307,6 +312,7 @@ export const OfferCard: FC<OfferCardProps> = ({
         return null;
     }, [price_cents_month_intro, price_cents_month_regular]);
 
+    // Render the detailed popover content for voucher information
     const renderVoucherPopoverContent = () => {
         if (!voucher_type)
             return (
@@ -315,7 +321,7 @@ export const OfferCard: FC<OfferCardProps> = ({
                 </p>
             );
 
-        const details = [];
+        const details: JSX.Element[] = [];
         if (
             voucher_value_cents != null &&
             (voucher_type === VoucherKind.ABSOLUTE ||
@@ -326,7 +332,7 @@ export const OfferCard: FC<OfferCardProps> = ({
             details.push(
                 <div className="flex items-center" key="val-cents">
                     <Tag size={16} className="mr-2 text-sky-400 shrink-0" />
-                    Value:{"\u00A0"}
+                    Value:&nbsp;
                     <strong>{formatEur(voucher_value_cents)}</strong>
                 </div>,
             );
@@ -339,7 +345,7 @@ export const OfferCard: FC<OfferCardProps> = ({
             details.push(
                 <div className="flex items-center" key="val-percent">
                     <Percent size={16} className="mr-2 text-sky-400 shrink-0" />
-                    Discount:{"\u00A0"}
+                    Discount:&nbsp;
                     <strong>{voucher_value_percent}%</strong>
                 </div>,
             );
@@ -351,7 +357,7 @@ export const OfferCard: FC<OfferCardProps> = ({
                         size={16}
                         className="mr-2 text-orange-400 shrink-0"
                     />
-                    Max. Benefit:{"\u00A0"}
+                    Max. Benefit:&nbsp;
                     <strong>{formatEur(voucher_max_value_cents)}</strong>
                 </div>,
             );
@@ -360,7 +366,7 @@ export const OfferCard: FC<OfferCardProps> = ({
             details.push(
                 <div className="flex items-center" key="min-order">
                     <Info size={16} className="mr-2 text-slate-400 shrink-0" />
-                    Min. Order Value:{"\u00A0"}
+                    Min. Order Value:&nbsp;
                     <strong>{formatEur(voucher_min_order_value_cents)}</strong>
                 </div>,
             );
@@ -372,7 +378,7 @@ export const OfferCard: FC<OfferCardProps> = ({
                         size={16}
                         className="mr-2 text-purple-400 shrink-0"
                     />
-                    Max. Duration:{"\u00A0"}
+                    Max. Duration:&nbsp;
                     <strong>{voucher_max_runtime_months} months</strong>
                 </div>,
             );
@@ -404,6 +410,7 @@ export const OfferCard: FC<OfferCardProps> = ({
         );
     };
 
+    // Prepare the interactive voucher badge with popover trigger, memoized for performance
     const voucherInteractiveDisplay = useMemo(() => {
         if (!voucher_type) return null;
 
@@ -424,18 +431,17 @@ export const OfferCard: FC<OfferCardProps> = ({
                 summaryText = `${formatEur(voucher_value_cents)} Discount`;
             else if (voucher_value_percent != null)
                 summaryText = `${voucher_value_percent}% Discount`;
-            else summaryText = "Special Discount"; // Keep default if no value
+            else summaryText = "Special Discount";
             IconComponent = Tag;
         }
 
         return (
             <Popover>
                 <PopoverTrigger asChild>
-                    {/* Using ShadcnBadge for the trigger to ensure it's a valid child for asChild */}
                     <ShadcnBadge
                         variant="default"
                         className={cn(
-                            "w-full cursor-pointer justify-center gap-1.5 text-xs font-semibold py-1.5 rounded-md leading-tight transition-all hover:opacity-80 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1C203C]",
+                            "w-full cursor-pointer justify-center gap-1 text-xs font-semibold py-1 rounded-md leading-tight transition-all hover:opacity-80 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1C203C]",
                             prominentBonusText
                                 ? "bg-green-500 hover:bg-green-600 text-white"
                                 : "bg-pink-600 hover:bg-pink-700 text-white",
@@ -460,11 +466,12 @@ export const OfferCard: FC<OfferCardProps> = ({
         voucher_value_cents,
     ]);
 
+    // Show placeholder card if no offer data is available
     if (!offer) {
         return (
             <Card
                 className={cn(
-                    "h-full p-4 flex items-center justify-center bg-[#1C203C] border border-[#303558]/80 text-slate-300",
+                    "h-full p-3 sm:p-4 flex items-center justify-center bg-[#1C203C] border border-[#303558]/80 text-slate-300",
                     className,
                 )}
             >
@@ -474,158 +481,173 @@ export const OfferCard: FC<OfferCardProps> = ({
     }
 
     return (
-        <motion.div
-            layout
-            initial={{ opacity: 0, y: 15, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            transition={{ duration: 0.25, ease: "circOut" }}
-            className={cn("h-full", className)}
-            data-testid={`offer-card-${product_id}`}
-        >
-            <Card className="h-full py-2 bg-[#1C203C] border border-[#303558]/80 text-slate-300 flex flex-col rounded-lg shadow-xl hover:border-indigo-600/70 transition-colors duration-200 group">
-                <div className="p-4 flex items-start sm:items-center gap-3 border-b border-[#303558]/80">
-                    <ProviderLogo
-                        providerName={provider}
-                        className="!size-10 mt-1 sm:mt-0 shrink-0"
-                    />
-                    <div className="flex-grow min-w-0">
-                        <h3
-                            className="text-base sm:text-lg font-semibold text-white group-hover:text-indigo-300 transition-colors leading-tight truncate"
-                            title={plan_name}
-                        >
-                            {plan_name}
-                        </h3>
-                        <p
-                            className="text-[0.7rem] text-slate-400 truncate leading-tight"
-                            title={`Provider: ${provider}, Product ID: ${product_id}`}
-                        >
-                            by {provider}
-                        </p>
-                    </div>
-
-                    <div className="ml-auto text-right flex-shrink-0">
-                        <div className="relative">
-                            <div
-                                className={cn(
-                                    "transition-opacity duration-200",
-                                    activeShareableSlug &&
-                                        onShareOffer &&
-                                        "group-hover:opacity-30 group-focus-within:opacity-30",
-                                )}
+        <>
+            {/* Container with animation for the offer card */}
+            <motion.div
+                layout
+                initial={{ opacity: 0, y: 15, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                transition={{ duration: 0.25, ease: "circOut" }}
+                className={cn("h-full", className)}
+                data-testid={`offer-card-${product_id}`}
+            >
+                <Card className="h-full py-1 sm:py-2 bg-[#1C203C] border border-[#303558]/80 text-slate-300 flex flex-col rounded-lg shadow-xl hover:border-indigo-600/70 transition-colors duration-200 group">
+                    {/* Card header: provider logo, name, and share overlay */}
+                    <div className="p-3 sm:p-4 flex items-center gap-2 sm:gap-3 border-b border-[#303558]/80">
+                        <ProviderLogo
+                            providerName={provider}
+                            className="!size-8 sm:!size-10 shrink-0"
+                        />
+                        <div className="flex-grow min-w-0 flex flex-col justify-center">
+                            <h3
+                                className="text-sm sm:text-lg font-semibold text-white group-hover:text-indigo-300 transition-colors leading-tight truncate"
+                                title={plan_name}
                             >
-                                <p className="text-[0.65rem] text-slate-400 whitespace-nowrap">
-                                    {avgPriceLabel}
-                                </p>
-                                <p className="text-sm sm:text-base font-semibold text-indigo-300">
-                                    {avgPriceDisplay}
-                                </p>
-                            </div>
-                            {activeShareableSlug && onShareOffer && (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        onShareOffer(offer);
-                                    }}
-                                    disabled={!activeShareableSlug}
-                                    aria-label={`Share ${plan_name}`}
-                                    title={`Share ${plan_name} details`}
+                                {plan_name}
+                            </h3>
+                            <p
+                                className="text-[0.65rem] sm:text-[0.7rem] text-slate-400 truncate leading-tight"
+                                title={`Provider: ${provider}, Product ID: ${product_id}`}
+                            >
+                                by {provider}
+                            </p>
+                        </div>
+
+                        <div className="ml-auto text-right flex-shrink-0">
+                            <div className="relative">
+                                <div
                                     className={cn(
-                                        "absolute inset-0 z-10 flex items-center justify-center rounded-md",
-                                        "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
-                                        "focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1C203C]",
-                                        "transition-all duration-200 ease-in-out hover:bg-indigo-500/20",
+                                        "transition-opacity duration-200",
+                                        activeShareableSlug &&
+                                            onShareOffer &&
+                                            "group-hover:opacity-30 group-focus-within:opacity-30",
                                     )}
                                 >
-                                    <Share2Icon
-                                        size={18}
-                                        className="text-indigo-300 group-hover:scale-110 transition-transform"
-                                    />
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                <div className="p-4 pt-3 flex-grow flex flex-col justify-between">
-                    <div>
-                        <div className="text-center mb-4">
-                            <div className="flex items-center justify-center text-[0.65rem] text-indigo-300 mb-0.5 font-medium">
-                                <DownloadIcon
-                                    size={14}
-                                    className="mr-1 text-indigo-400"
-                                />{" "}
-                                Download Speed
-                            </div>
-                            <p className="text-4xl font-bold text-white leading-none">
-                                {speed_down_mbit ?? "N/A"}
-                            </p>
-                            <p className="text-xs text-slate-400 mb-1">Mbps</p>
-                        </div>
-
-                        <div className="space-y-2 mb-4">
-                            {introPriceSection}
-                            {regularPriceSection}
-                            {!introPriceSection && !regularPriceSection && (
-                                <p className="text-sm text-slate-400 text-center py-2">
-                                    Price information not available.
-                                </p>
-                            )}
-                        </div>
-
-                        <div className="space-y-1.5 text-xs">
-                            <div className="flex items-center gap-1.5">
-                                <CalendarClock
-                                    size={13}
-                                    className="text-slate-500 shrink-0"
-                                />
-                                <span className="text-slate-400">
-                                    Contract:
-                                </span>
-                                <span className="font-medium text-slate-200">
-                                    {contract_duration_months
-                                        ? `${contract_duration_months} months`
-                                        : "N/A"}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <Wifi
-                                    size={13}
-                                    className="text-slate-500 shrink-0"
-                                />
-                                <span className="text-slate-400">Type:</span>
-                                <span className="font-medium text-slate-200">
-                                    {connection_type
-                                        ? getConnectionTypeDisplayName(
-                                              connection_type as ConnectionType,
-                                          )
-                                        : "N/A"}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {(voucherInteractiveDisplay || detailBadges.length > 0) && (
-                        <div className="mt-4 pt-4 border-t border-[#303558]/80 space-y-2.5">
-                            {voucherInteractiveDisplay}
-
-                            {detailBadges.length > 0 && (
-                                <div className="flex flex-wrap gap-1.5 justify-center pt-1">
-                                    {detailBadges.map((badgeProps) => (
-                                        <DetailBadgeComponent
-                                            key={badgeProps.badgeKey}
-                                            badgeKey={badgeProps.badgeKey}
-                                            icon={badgeProps.icon}
-                                            text={badgeProps.text}
-                                            colorConfig={badgeProps.colorConfig}
-                                        />
-                                    ))}
+                                    <p className="text-[0.6rem] sm:text-[0.65rem] text-slate-400 whitespace-nowrap">
+                                        {avgPriceLabel}
+                                    </p>
+                                    <p className="text-sm sm:text-base font-semibold text-indigo-300">
+                                        {avgPriceDisplay}
+                                    </p>
                                 </div>
-                            )}
+                                {activeShareableSlug && onShareOffer && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onShareOffer(offer);
+                                        }}
+                                        disabled={!activeShareableSlug}
+                                        aria-label={`Share ${plan_name}`}
+                                        title={`Share ${plan_name} details`}
+                                        className={cn(
+                                            "absolute inset-0 z-10 flex items-center justify-center rounded-md",
+                                            "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
+                                            "focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1C203C]",
+                                            "transition-all duration-200 ease-in-out hover:bg-indigo-500/20",
+                                        )}
+                                    >
+                                        <Share2Icon
+                                            size={18}
+                                            className="text-indigo-300 group-hover:scale-110 transition-transform"
+                                        />
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    )}
-                </div>
-            </Card>
-        </motion.div>
+                    </div>
+
+                    <div className="p-3 pt-2 sm:p-4 sm:pt-3 flex-grow flex flex-col justify-between">
+                        <div>
+                            {/* Download speed display */}
+                            <div className="text-center mb-2 sm:mb-4">
+                                <div className="flex items-center justify-center text-[0.65rem] sm:text-[0.7rem] text-indigo-300 mb-0.5 font-medium">
+                                    <DownloadIcon
+                                        size={14}
+                                        className="mr-1 text-indigo-400"
+                                    />{" "}
+                                    Download Speed
+                                </div>
+                                <p className="text-3xl sm:text-4xl font-bold text-white leading-none">
+                                    {speed_down_mbit ?? "N/A"}
+                                </p>
+                                <p className="text-xs sm:text-xs text-slate-400 mb-1">
+                                    Mbps
+                                </p>
+                            </div>
+
+                            {/* Pricing sections: intro and regular prices */}
+                            <div className="space-y-1 sm:space-y-2 mb-4">
+                                {introPriceSection}
+                                {regularPriceSection}
+                                {!introPriceSection && !regularPriceSection && (
+                                    <p className="text-sm text-slate-400 text-center py-2">
+                                        Price information not available.
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Contract duration and connection type details */}
+                            <div className="space-y-1.5 text-xs">
+                                <div className="flex items-center gap-1">
+                                    <CalendarClock
+                                        size={13}
+                                        className="text-slate-500 shrink-0"
+                                    />
+                                    <span className="text-slate-400">
+                                        Contract:
+                                    </span>
+                                    <span className="font-medium text-slate-200">
+                                        {contract_duration_months
+                                            ? `${contract_duration_months} months`
+                                            : "N/A"}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    <Wifi
+                                        size={13}
+                                        className="text-slate-500 shrink-0"
+                                    />
+                                    <span className="text-slate-400">
+                                        Type:
+                                    </span>
+                                    <span className="font-medium text-slate-200">
+                                        {connection_type
+                                            ? getConnectionTypeDisplayName(
+                                                  connection_type as ConnectionType,
+                                              )
+                                            : "N/A"}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer badges: voucher badge and additional detail badges */}
+                        {(voucherInteractiveDisplay ||
+                            detailBadges.length > 0) && (
+                            <div className="mt-3 pt-3 sm:mt-4 sm:pt-4 border-t border-[#303558]/80 space-y-2.5">
+                                {voucherInteractiveDisplay}
+
+                                {detailBadges.length > 0 && (
+                                    <div className="flex flex-wrap gap-1 sm:gap-1.5 justify-center pt-1">
+                                        {detailBadges.map((badgeProps) => (
+                                            <DetailBadgeComponent
+                                                key={badgeProps.badgeKey}
+                                                badgeKey={badgeProps.badgeKey}
+                                                icon={badgeProps.icon}
+                                                text={badgeProps.text}
+                                                colorConfig={
+                                                    badgeProps.colorConfig
+                                                }
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </Card>
+            </motion.div>
+        </>
     );
 };

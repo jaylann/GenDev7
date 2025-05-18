@@ -1,3 +1,9 @@
+/**
+ * update-prompt-dialog.tsx
+ *
+ * Provides a modal dialog prompting the user to view newly fetched or updated real estate offers.
+ * Uses the AlertDialog components for consistent modal behavior and styling.
+ */
 import React, { FC } from "react";
 import {
     AlertDialog,
@@ -17,22 +23,19 @@ interface UpdatePromptDialogProps {
     pendingOfferCount: number;
 }
 
-/**
- * Dialog component to prompt the user when new/updated offers are available.
- * @param isOpen - Controls the visibility of the dialog.
- * @param onOpenChange - Callback for when the dialog's open state changes.
- * @param onConfirm - Callback executed when the user confirms to show new offers.
- * @param pendingOfferCount - The number of new/updated offers pending.
- */
+// Component to prompt the user when there are new or updated offers available
 export const UpdatePromptDialog: FC<UpdatePromptDialogProps> = ({
     isOpen,
     onOpenChange,
     onConfirm,
     pendingOfferCount,
 }) => {
+    // Root AlertDialog controlling visibility and open state
     return (
         <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+            {/* Container for the dialog content, applies theme styling */}
             <AlertDialogContent className="bg-slate-800 border-slate-700 text-white">
+                {/* Header section with title and descriptive text */}
                 <AlertDialogHeader>
                     <AlertDialogTitle>New Offers Available</AlertDialogTitle>
                     <AlertDialogDescription className="text-slate-400">
@@ -40,6 +43,7 @@ export const UpdatePromptDialog: FC<UpdatePromptDialogProps> = ({
                         Would you like to display them?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
+                {/* Footer section containing action buttons for dismissal or confirmation */}
                 <AlertDialogFooter>
                     <AlertDialogCancel
                         onClick={() => onOpenChange(false)}

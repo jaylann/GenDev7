@@ -1,5 +1,19 @@
 /**
- * Specifies the type of internet connection.
+ * ConnectionType Module
+ *
+ * Defines the available internet connection types and provides utilities
+ * for presenting them in a user-friendly format.
+ */
+/**
+ * ConnectionType
+ *
+ * Union type representing supported internet connection standards.
+ *
+ * Possible values:
+ *  - "DSL": Digital Subscriber Line
+ *  - "Cable": Cable internet service
+ *  - "Fiber": Fiber-optic broadband
+ *  - "Mobile": Cellular data connection
  */
 export type ConnectionType = "DSL" | "Cable" | "Fiber" | "Mobile";
 
@@ -11,6 +25,7 @@ export type ConnectionType = "DSL" | "Cable" | "Fiber" | "Mobile";
 export const getConnectionTypeDisplayName = (
     connectionType: ConnectionType,
 ): string => {
+    // Map each ConnectionType value to its user-friendly label
     switch (connectionType) {
         case "DSL":
             return "DSL";
@@ -21,8 +36,7 @@ export const getConnectionTypeDisplayName = (
         case "Mobile":
             return "Mobile";
         default:
-            // This should ideally not be reached if types are correct
-            // but provides a fallback for exhaustiveness checking.
+            // Exhaustive type check: should never occur if all cases are handled
             const exhaustiveCheck: never = connectionType;
             return exhaustiveCheck;
     }

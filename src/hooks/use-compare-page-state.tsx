@@ -1,10 +1,16 @@
+/**
+ * useComparePageState Hook Module
+ *
+ * Encapsulates all business logic, side-effects, and state management for the ComparePage.
+ * Provides a clean separation of concerns by handling WebSocket orchestration, URL syncing,
+ * filter logic, history, clipboard interactions, and derived UI flags.
+ */
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Address } from "@/types/address";
 import type { Offer } from "@/types/offer";
 import { ParsedAddress } from "@/components/compare/address-autocomplete-input";
-import { ViewMode } from "@/components/compare/offer-list-controls";
 import { SortOptionKey } from "@/types/sort-option-key";
 import { useOfferFilters } from "@/hooks/use-offer-filters";
 import {
@@ -18,16 +24,15 @@ import { SlugType, useOfferWebSocket } from "@/hooks/use-offer-websocket";
 import { useOfferProcessing } from "@/hooks/use-offer-processing";
 import { buildUrl } from "@/utils/build-url";
 import { generateShareLink } from "@/utils/generate-share-link";
+import { toast as sonnerToast } from "sonner";
+import { ViewMode } from "@/types/view-mode";
 
-/* -------------------------------------------------------------------------- */
-/*                                Hook Types                                  */
-
-/* -------------------------------------------------------------------------- */
 
 /**
- * All public values returned by {@link useComparePageState } – neatly grouped
- * into `state` and `actions` to reduce prop-drilling noise in the component
- * tree and keep responsibilities explicit.
+ * ComparePageState groups all public state values and action handlers returned by useComparePageState.
+ *
+ * @property state - Read-only UI state and derived flags.
+ * @property actions - Methods to trigger side-effects and update state.
  */
 export interface ComparePageState {
     /* ──────────────── state ──────────────── */
@@ -95,21 +100,21 @@ export interface ComparePageState {
     };
 }
 
-/* -------------------------------------------------------------------------- */
-/*                             useComparePageState                            */
-
-/* -------------------------------------------------------------------------- */
-
 /**
- * Encapsulates **all** side-effects, WebSocket orchestration, URL/slug syncing,
- * filter logic, history management, clipboard interactions & derived booleans
- * for the compare offers page.
+ * Custom React hook for ComparePage.
  *
- * Keeping the hook colocated with the page means *zero* rendering code is
- * tangled with business logic – ComparePage becomes a clean, declarative view.
+ * Manages:
+ *  - Local and derived state for offers and UI.
+ *  - Initialization from URL slug.
+ *  - Offer fetching and WebSocket updates.
+ *  - Search, share, and pending-offer workflows.
+ *  - History and recent-searches management.
+ *
+ * @returns ComparePageState
  */
 export function useComparePageState(): ComparePageState {
-    /* ───────────── basic local state ───────────── */
+    // ───────────── Basic local state hooks ─────────────
+    // Track search lifecycle, offers data, and UI flags.
     const [hasSearchBeenPerformed, setHasSearchBeenPerformed] =
         useState<boolean>(false);
 
@@ -142,13 +147,15 @@ export function useComparePageState(): ComparePageState {
         useState<boolean>(false);
     const [sharedLinkCopied, setSharedLinkCopied] = useState<boolean>(false);
 
-    /* ───────────── filters / recent searches ───────────── */
+    // ───────────── Filters and recent searches hooks ─────────────
+    // Manage offer filters and persist recent address searches.
     const { filters, setFilters, resetFilters, activeFilterCount } =
         useOfferFilters(DEFAULT_FILTERS);
     const { recentSearches, addRecentSearch, clearRecentSearches } =
         useRecentSearches();
 
-    /* ───────────── memoised derivations ───────────── */
+    // ───────────── Memoized derived values ─────────────
+    // Compute expensive derived flags like wantsFiber and API provider list.
     const wantsFiber = useMemo(
         () =>
             filters.connectionTypes.some((ct) =>
@@ -165,11 +172,15 @@ export function useComparePageState(): ComparePageState {
         [filters.selectedProviders],
     );
 
-    /* ───────────── history / session id refs ───────────── */
+    // ───────────── History and session identifier refs ─────────────
+    // Track URL history integration and session labeling.
     const hasAddedInitialHistoryEntryRef = useRef<boolean>(false);
     const sessionIdRef = useRef<string | null>(null);
+    // Ref to track if we've already started a refine for this cycle
+    const hasTriggeredRefineRef = useRef<boolean>(false);
 
-    /* ───────────── initialisation from slug ───────────── */
+    // ───────────── Initialize from URL slug ─────────────
+    // Sync page state with URL slug and set up initial search context.
     useComparePageInitializer({
         setOriginalOffers,
         // now only takes slug
@@ -192,21 +203,22 @@ export function useComparePageState(): ComparePageState {
             setInitialAddressLabel(label),
     });
 
-    /* ───────────── process offers client-side ───────────── */
+    // ───────────── Client-side offer processing ─────────────
+    // Sort and filter raw offers using custom hook.
     const processedOffers = useOfferProcessing(
         originalOffers,
         sortOption,
         filters,
     );
 
-    /* ───────────── WebSocket management ───────────── */
+    // ───────────── WebSocket management ─────────────
+    // Handle connection, incoming offers, status updates, and pending-offer prompts.
     const handleWebSocketLoadingChange = useCallback((waiting: boolean) => {
         setIsWaitingInitialOffers(waiting);
     }, []);
 
     const handlePendingOffersUpdate = useCallback((offers: Offer[] | null) => {
         setPendingOffers(offers);
-        setIsRefiningOffers(Boolean(offers));
     }, []);
 
     const handleWebSocketSlugReceived = useCallback(
@@ -260,11 +272,29 @@ export function useComparePageState(): ComparePageState {
         wantsFiber,
         onOffersReceived: (offers, phase, willRefine) => {
             setOriginalOffers(offers);
+
             if (phase === "INITIAL_OFFERS") {
-                /* ← honour what the back-end actually promises */
-                setIsRefiningOffers(Boolean(willRefine));
+                // Show a one-time “Refining…” toast when backend signals further processing.
+                if (willRefine && !hasTriggeredRefineRef.current) {
+                    /** 🔔  Show “refining…” exactly once per search cycle */
+                    sonnerToast(
+                        <div>
+                            <p className="font-semibold text-white">
+                                Refining&nbsp;your&nbsp;search…
+                            </p>
+                            <p className="text-slate-400">
+                                We&apos;re polishing the results while you browse.
+                            </p>
+                        </div>,
+                        { duration: 5_000 },
+                    );
+
+                    setIsRefiningOffers(true);
+                    hasTriggeredRefineRef.current = true;
+                }
             } else if (phase === "FINAL_OFFERS") {
                 setIsRefiningOffers(false);
+                hasTriggeredRefineRef.current = false; // ready for the next run
             }
         },
         onWebSocketSlugReceived: handleWebSocketSlugReceived,
@@ -280,12 +310,13 @@ export function useComparePageState(): ComparePageState {
         initialLoadingState: isLoadingFromUrl,
     });
 
-    /* keep latest offers inside WebSocket ref for diff detection */
+    // Keep the latest originalOffers in WebSocket ref for diff detection on updates.
     useEffect(() => {
         updateWebSocketOffersRef(originalOffers);
     }, [originalOffers, updateWebSocketOffersRef]);
 
-    /* ───────────── address selection ───────────── */
+    // ───────────── Address selection handler ─────────────
+    // Update address state and status message based on user input.
     const handleAddressSelected = useCallback(
         (addr: ParsedAddress | null, fullText: string) => {
             setParsedBackendAddress(addr);
@@ -311,7 +342,8 @@ export function useComparePageState(): ComparePageState {
         [],
     );
 
-    /* ───────────── search button ───────────── */
+    // ───────────── Search button handler ─────────────
+    // Validate input, reset state, and initiate WebSocket connection.
     const handleSearchClick = useCallback(() => {
         if (!sessionIdRef.current && !parsedBackendAddress) {
             setStatusMessage("Please select a valid address first.");
@@ -336,7 +368,8 @@ export function useComparePageState(): ComparePageState {
         connectWebSocket();
     }, [parsedBackendAddress, connectWebSocket]);
 
-    /* ───────────── pending offer prompt ───────────── */
+    // ───────────── Pending-offer prompt handler ─────────────
+    // Replace the displayed offers with pending updates when confirmed.
     const handleShowPendingOffers = useCallback(() => {
         if (pendingOffers) {
             setOriginalOffers(pendingOffers);
@@ -370,7 +403,8 @@ export function useComparePageState(): ComparePageState {
         addRecentSearch,
     ]);
 
-    /* ───────────── sharing (page) ───────────── */
+    // ───────────── Page-sharing handler ─────────────
+    // Generate and copy shareable link for the full offer list.
     const handleSharePage = useCallback(async () => {
         if (!activeShareableSlug) {
             setStatusMessage("Cannot share yet – results are not ready.");
@@ -396,12 +430,14 @@ export function useComparePageState(): ComparePageState {
             setStatusMessage("Page link copied to clipboard!");
             setTimeout(() => setSharedLinkCopied(false), 2500);
         } catch (err) {
+            // Handle clipboard write failure gracefully and update status.
             console.error("Clipboard error:", err);
             setStatusMessage("Failed to copy page link. Please try manually.");
         }
     }, [activeShareableSlug, sortOption, filters]);
 
-    /* ───────────── sharing (single offer) ───────────── */
+    // ───────────── Single-offer sharing handler ─────────────
+    // Generate a deep link for an individual offer and copy to clipboard.
     const handleShareSingleOffer = useCallback(
         async (offer: Offer) => {
             if (!activeShareableSlug) {
@@ -443,7 +479,8 @@ export function useComparePageState(): ComparePageState {
         [activeShareableSlug],
     );
 
-    /* ───────────── history for sort / filter changes ───────────── */
+    // ───────────── Persist history on sort/filter changes ─────────────
+    // Push URL updates to recent searches when UI controls change.
     const prevSortRef = useRef<SortOptionKey>(sortOption);
     const prevFiltersRef = useRef<string>(JSON.stringify(filters));
 
@@ -485,7 +522,8 @@ export function useComparePageState(): ComparePageState {
         addRecentSearch,
     ]);
 
-    /* ───────────── derived helpers ───────────── */
+    // ───────────── Derived UI flags ─────────────
+    // Compute disabling flags and view-mode determinations.
     const isSearchButtonDisabled =
         isBlockingUi || !parsedBackendAddress || !GOOGLE_MAPS_API_KEY_FROM_ENV;
 
@@ -505,7 +543,8 @@ export function useComparePageState(): ComparePageState {
         !isLoadingFromUrl &&
         !isRefiningOffers;
 
-    /* ───────────── clear refine when loading a past search ───────────── */
+    // ───────────── Reset refining state on slug change ─────────────
+    // Ensure the UI is not stuck in “refining” when navigating history.
     useEffect(() => {
         // Whenever we jump to a “shared” or previously run search (i.e. slug changes),
         // ensure we’re no longer in the “Refining search…” state.
@@ -514,7 +553,8 @@ export function useComparePageState(): ComparePageState {
         }
     }, [currentDisplaySlug, setIsRefiningOffers]);
 
-    /* ───────────── final return ───────────── */
+    // ───────────── Public API return ─────────────
+    // Expose grouped state and action handlers for ComparePage.
     return {
         state: {
             /* status / lifecycle */

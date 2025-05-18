@@ -1,18 +1,43 @@
+/**
+ * AddressSuggestionsList Module
+ *
+ * Provides UI for displaying location autocomplete suggestions.
+ * Handles loading state, successful suggestions, zero results, and error statuses.
+ * Delegates selection events to the parent via the onSelect callback.
+ */
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import React, { ReactNode } from "react";
 
-interface Props {
+/**
+ * Props for AddressSuggestionsList component.
+ *
+ * @property show - Whether to display the suggestions list.
+ * @property suggestions - Suggestions object from use-places-autocomplete containing status, data, and loading flag.
+ * @property onSelect - Callback invoked with the description when a suggestion is clicked.
+ */
+interface AddressSuggestionsListProps {
     show: boolean;
     suggestions: import("use-places-autocomplete").Suggestions;
     onSelect: (desc: string) => void;
 }
 
+/**
+ * Props for StatusBox component.
+ *
+ * @property children - Content to display inside the status box.
+ * @property error - If true, renders the box in an error style.
+ */
 interface StatusBoxProps {
     children: ReactNode;
     error?: boolean;
 }
 
+/**
+ * StatusBox displays a bordered container for messages.
+ *
+ * Renders with error styling if the error prop is true, otherwise uses normal styling.
+ */
 const StatusBox: React.FC<StatusBoxProps> = ({ children, error }) => (
     <div
         className={cn(
@@ -26,18 +51,32 @@ const StatusBox: React.FC<StatusBoxProps> = ({ children, error }) => (
     </div>
 );
 
-export const AddressSuggestionsList: React.FC<Props> = ({
+/**
+ * AddressSuggestionsList component renders autocomplete suggestions for addresses.
+ *
+ * It returns:
+ *  - null if show is false.
+ *  - A loading spinner when suggestions.loading is true.
+ *  - A list of suggestions when status is "OK" and data is non-empty.
+ *  - A StatusBox with appropriate message for no results or errors.
+ *
+ * @returns ReactNode
+ */
+export const AddressSuggestionsList: React.FC<AddressSuggestionsListProps> = ({
     show,
     suggestions: { status, data, loading },
     onSelect,
 }) => {
+    // Do not render anything when dropdown is hidden
     if (!show) return null;
 
+    // Render loading spinner while suggestions are being fetched
     if (loading)
         return (
             <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 size-4 animate-spin text-slate-400" />
         );
 
+    // Render list of address suggestions on successful fetch
     if (status === "OK" && data.length > 0)
         return (
             <ul
@@ -64,14 +103,19 @@ export const AddressSuggestionsList: React.FC<Props> = ({
             </ul>
         );
 
+    // No suggestions found for the query
     if (status === "ZERO_RESULTS")
         return <StatusBox>No matching addresses found.</StatusBox>;
+
+    // API key error or quotas exceeded
     if (status === "REQUEST_DENIED")
         return (
             <StatusBox error>
                 Autocomplete error: REQUEST_DENIED (check API key &amp; quotas).
             </StatusBox>
         );
+
+    // Other non-success statuses
     if (status && status !== "OK")
         return <StatusBox>{`Autocomplete status: ${status}.`}</StatusBox>;
 

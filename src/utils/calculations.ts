@@ -1,3 +1,9 @@
+/**
+ * calculations Module
+ *
+ * Contains utility functions for computing gross and net costs of offers,
+ * taking into account introductory pricing, regular pricing, and various voucher types.
+ */
 import { Offer } from "@/types/offer";
 import { VoucherKind } from "@/types/voucher-kind";
 import { ConnectionType } from "@/types/connection-type";
@@ -44,8 +50,10 @@ export const calculateGrossTotalCostOverDynamicPeriod = (
     calculationPeriodMonths: number,
 ): number | null => {
     const { price_cents_month_intro, price_cents_month_regular } = offer;
+    // Determine how many months the introductory price applies
     const introDuration = getIntroPriceDurationMonths(offer);
 
+    // Initialize accumulator for total cost in cents
     let totalCost = 0;
 
     if (price_cents_month_intro != null) {
@@ -89,12 +97,14 @@ export function calculateAvgNetMonthlyCost(
     offer: Offer,
     periodMonths: number,
 ): number | null {
+    // If unable to calculate gross cost, abort net cost calculation
     const grossTotalCost = calculateGrossTotalCostOverDynamicPeriod(
         offer,
         periodMonths,
     );
     if (grossTotalCost == null) return null;
 
+    // Compute the total voucher value over the period
     const voucherValue = calculateEffectiveVoucherValue(offer, periodMonths);
     const netTotalCost = Math.max(0, grossTotalCost - voucherValue);
     return Math.round(netTotalCost / periodMonths);
@@ -120,6 +130,7 @@ export const calculateEffectiveVoucherValue = (
     offer: Offer,
     calculationPeriodMonths: number,
 ): number => {
+    // Compute total voucher benefit based on voucher kind, value, caps, and runtime
     if (!offer.voucher_type) {
         return 0; // No voucher, no value.
     }
@@ -156,6 +167,7 @@ export const calculateEffectiveVoucherValue = (
                     calculationPeriodMonths,
                 );
 
+                // Apply percentage discount monthly up to the voucher's runtime or overall cap
                 for (let month = 0; month < voucherEffectiveMonths; month++) {
                     if (totalVoucherValueApplied >= overallMaxCapCents) {
                         break; // Stop if the overall cap for the voucher has been reached.
@@ -245,8 +257,7 @@ export const calculateEffectiveVoucherValue = (
             break;
 
         default:
-            // This ensures all VoucherKind cases are handled.
-            // If a new VoucherKind is added without updating this switch, TypeScript will error.
+            // Ensure exhaustive handling of VoucherKind values; any new type will trigger a compile-time error
             const _exhaustiveCheck: never = offer.voucher_type;
             console.warn(
                 `Unknown voucher type encountered: ${_exhaustiveCheck}`,

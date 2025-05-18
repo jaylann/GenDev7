@@ -1,3 +1,9 @@
+/**
+ * useComparePageInitializer Module
+ *
+ * Contains a custom React hook for initializing the compare page state
+ * by reading URL parameters (slug, sort, filters) and fetching shared offers when needed.
+ */
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
@@ -20,7 +26,17 @@ interface SharedOffersResponse {
 }
 
 /**
- * Props expected by {@link useComparePageInitializer}
+ * Props for useComparePageInitializer hook.
+ *
+ * @property setOriginalOffers - Setter for the list of offers to display.
+ * @property setSlug - Setter for the current comparison slug.
+ * @property setSortOption - Setter for the selected sort option.
+ * @property setFilters - Setter for the active filter state.
+ * @property setStatus - Setter for status messages to show in the UI.
+ * @property setLoading - Setter for the global loading flag.
+ * @property setIsLoadingFromSlug - Setter for the “loading from slug” flag.
+ * @property setParsedAddress - Optional setter for the pre-validated address.
+ * @property setInitialAddressLabel - Optional setter for fallback address label.
  */
 export interface UseComparePageInitializerProps {
     setOriginalOffers: (offers: Offer[]) => void;
@@ -42,11 +58,16 @@ export interface UseComparePageInitializerProps {
 }
 
 /**
- * Reads `slug`, `sort`, and filter params from the URL and initialises page state.
- * – If `slug` is present it fetches the shared comparison and derived address.
- * – All setters are **stable** (`useState`) so they are safe to leave out of deps.
+ * Custom hook to initialize compare page based on URL search parameters.
+ *
+ * - Reads `slug`, `sort`, and filter parameters from the URL.
+ * - If a `slug` is present, fetches shared comparison data and populates state.
+ * - Otherwise, clears state and applies default sort/filters.
+ *
+ * @param props - Setter functions for page state and UI feedback.
  */
 export const useComparePageInitializer = ({
+    // Destructure setter functions for page state
     setOriginalOffers,
     setSlug,
     setSortOption,
@@ -59,6 +80,7 @@ export const useComparePageInitializer = ({
 }: UseComparePageInitializerProps): void => {
     const searchParams = useSearchParams();
 
+    // Run initialization logic whenever URL search parameters change
     useEffect(() => {
         const slugFromUrl = searchParams.get("slug");
         const sortFromUrl = searchParams.get("sort") as SortOptionKey | null;
@@ -75,15 +97,11 @@ export const useComparePageInitializer = ({
             setFilters({ ...DEFAULT_FILTERS, ...filtersFromUrl });
         };
 
-        // ---------------------------------------------------------------------
-        // 1.  Global “I’m loading” flags
-        // ---------------------------------------------------------------------
+        // Enter global loading state, mark if loading from slug
         setIsLoadingFromSlug(!!slugFromUrl);
         setLoading(true);
 
-        // ---------------------------------------------------------------------
-        // 2.  Process “shared link” or plain page
-        // ---------------------------------------------------------------------
+        // If a shared comparison slug exists, fetch and load shared offers
         if (slugFromUrl) {
             setStatus(
                 `Loading shared comparison (slug: ${slugFromUrl.slice(0, 20)}…)…`,
@@ -111,7 +129,7 @@ export const useComparePageInitializer = ({
 
                     const data: SharedOffersResponse = await res.json();
 
-                    // ---------------- results ----------------
+                    // Populate offers and slug from fetched shared comparison
                     setOriginalOffers(data.offers);
                     setSlug(data.slug);
 
@@ -155,13 +173,12 @@ export const useComparePageInitializer = ({
                 }
             })();
         } else {
-            //--------------------------------------------------------------------
-            //  No slug → just normal page initialisation
-            //--------------------------------------------------------------------
+            // No slug: initialize page with default empty state and URL params
             setOriginalOffers([]);
             setSlug(null);
             setParsedAddress?.(null);
             applyUrlParams();
+            // Prompt user to enter an address when no shared data is present
             setStatus("Enter an address to compare internet plans.");
             setLoading(false);
             setIsLoadingFromSlug(false);

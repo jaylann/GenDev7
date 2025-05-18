@@ -1,15 +1,35 @@
-// src/models/offer.model.ts
+/**
+ * Offer Model Definitions
+ *
+ * Declares the `Offer` interface mapping to the backend Pydantic model.
+ * Contains fields for identification, performance metrics, pricing,
+ * contract details, media bundles, and promotional incentives.
+ *
+ * All monetary values are represented in EUR-cents (integers).
+ */
 
 import { ConnectionType } from "@/types/connection-type";
 import { VoucherKind } from "./voucher-kind";
 
 /**
- * Represents a single internet tariff/plan that can be shown to the user.
- * This interface is meticulously aligned with the backend Pydantic `Offer` model.
- * All monetary values are in EUR-cents (integers).
+ * Offer
+ *
+ * Represents a single internet tariff/plan displayed to the user.
+ * Aligned with the backend Pydantic `Offer` model.
+ *
+ * Sections:
+ *  - Identification: provider, plan_name, product_id.
+ *  - Performance: speed, data cap, connection medium.
+ *  - Commercials: pricing and contract durations.
+ *  - TV & Media: bundled television products.
+ *  - Promotions & Audience: vouchers and eligibility constraints.
+ *
+ * @interface Offer
  */
 export interface Offer {
-    // --- Identification -----------------------------------------------------
+    /**
+     * Identification Fields
+     */
     /** Company selling the tariff (e.g., "ByteMe") */
     provider: string;
     /** Marketing / commercial name of the plan (e.g., "Ultra 70", "Premium 200 Young") */
@@ -17,7 +37,9 @@ export interface Offer {
     /** Provider-internal identifier (e.g., "501", "PROD-1234") */
     product_id: string;
 
-    // --- Performance --------------------------------------------------------
+    /**
+     * Performance Metrics
+     */
     /** Advertised downstream rate in Mbit/s. This is a required positive integer. */
     speed_down_mbit: number;
     /**
@@ -27,12 +49,14 @@ export interface Offer {
      */
     data_cap_gb?: number | null;
     /**
-     * Physical access medium. This is a required field.
-     * Corresponds to Pydantic `Literal["DSL", "Cable", "Fiber", "Mobile"]`.
+     * Physical access medium for the service (DSL, Cable, Fiber, or Mobile).
+     * Required field matching the backend literal type.
      */
     connection_type: ConnectionType;
 
-    // --- Commercials --------------------------------------------------------
+    /**
+     * Pricing & Contract Details
+     */
     /**
      * Price per month in EUR-cents during the initial term / promotional period.
      * `null` or `undefined` if not applicable.
@@ -60,7 +84,9 @@ export interface Offer {
      */
     installation_service_included: boolean;
 
-    // --- TV & Media ---------------------------------------------------------
+    /**
+     * TV & Media Bundles
+     */
     /**
      * True if any TV product is bundled with the offer.
      * Backend derives this from `tv_package_name` or an explicit value, ensuring it's always a boolean.
@@ -73,7 +99,9 @@ export interface Offer {
      */
     tv_package_name?: string | null;
 
-    // --- Promotions & Audience ---------------------------------------------
+    /**
+     * Promotions & Eligibility
+     */
     /**
      * Kind of voucher or incentive offered.
      * `null` or `undefined` if no voucher is applicable.

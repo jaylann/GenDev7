@@ -1,17 +1,31 @@
+/**
+ * useAddressAutocomplete Hook
+ *
+ * Provides an input-controlled address autocomplete experience using the
+ * Google Places SDK. Exposes suggestion fetching, selection handling,
+ * and geocoding to a standardized Address type.
+ *
+ * Delegates suggestion logic to usePlacesAutocomplete and
+ * parsing logic to parseGeocodeResult.
+ */
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import usePlacesAutocomplete, { getGeocode } from "use-places-autocomplete";
 import { parseGeocodeResult } from "@/utils/address";
 import type { Address } from "@/types/address";
 
-// Provide proper typing for the global Google namespace
-declare global {
-    interface Window {
-        google?: typeof google;
-    }
-}
 
 /** The public shape returned by the custom hook. */
+/**
+ * Public API of the useAddressAutocomplete hook.
+ *
+ * @property value - Controlled input value for the address field.
+ * @property setValue - Update the input value; optionally fetch suggestions.
+ * @property suggestions - Current list of place suggestions.
+ * @property handleSelect - Callback when a suggestion is chosen.
+ * @property geocodeAndEmit - Geocode an arbitrary string and emit result.
+ * @property ready - True when SDK and hook are fully initialized.
+ */
 export interface UseAddressAutocomplete {
     /** Controlled input value. */
     value: string;
@@ -34,6 +48,13 @@ interface Params {
     initialValue?: string;
 }
 
+/**
+ * Custom React hook for address autocomplete and geocoding.
+ *
+ * @param onAddressSelect - Called with parsed Address or null and full string.
+ * @param initialValue - Optional starting value for the input.
+ * @returns UseAddressAutocomplete API for managing the autocomplete flow.
+ */
 export const useAddressAutocomplete = ({
     onAddressSelect,
     initialValue = "",
@@ -56,6 +77,7 @@ export const useAddressAutocomplete = ({
     const triedInit = useRef(false);
 
     useEffect(() => {
+        // Poll for the Google Maps Places SDK to be available before initializing.
         if (triedInit.current) return;
         const poll = () => {
             if (window.google?.maps?.places) {
@@ -69,6 +91,7 @@ export const useAddressAutocomplete = ({
         poll();
     }, [init]);
 
+    // Geocode a free-form address string and invoke onAddressSelect with the parsed result.
     /** Submit, geocode, emit parsed value. */
     const geocodeAndEmit = useCallback(
         async (addr: string) => {
@@ -95,6 +118,7 @@ export const useAddressAutocomplete = ({
         [hookReady, onAddressSelect],
     );
 
+    // When a suggestion is picked: update input, clear suggestions, and geocode selection.
     /** When user picks a suggestion row. */
     const handleSelect = useCallback(
         async (desc: string) => {
@@ -105,6 +129,7 @@ export const useAddressAutocomplete = ({
         [setValue, clearSuggestions, geocodeAndEmit],
     );
 
+    // On mount, set the initial input value without fetching suggestions.
     /** One-time initial value. */
     useEffect(() => {
         if (initialValue) setValue(initialValue, false);
