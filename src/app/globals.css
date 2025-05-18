@@ -1,12 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
-
-
-:root {
-    --safe-top: env(safe-area-inset-top);
-}
 @keyframes slide-in {
     from {
         transform: translateY(10%);
@@ -20,30 +14,6 @@
 @layer utilities {
     .animate-slide-in {
         animation: slide-in 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-    }
-}
-/* 2. fixed overlay that only covers the notch/status-bar area */
-.safe-area-glass {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: var(--safe-top);
-
-    /* the frosted‐glass effect */
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-
-    /* tweak the translucency */
-    background-color: rgba(255, 255, 255, 0.3);
-    pointer-events: none;
-    z-index: 50;
-}
-
-/* 3. dark mode variant */
-@media (prefers-color-scheme: dark) {
-    .safe-area-glass {
-        background-color: rgba(0, 0, 0, 0.3);
     }
 }
 

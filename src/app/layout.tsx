@@ -38,7 +38,6 @@ export default function RootLayout({
             >
                 <GoogleMapsLoader />
                 <Toaster />
-                <div className="safe-area-glass" />
                 {children}
             </body>
         </html>
