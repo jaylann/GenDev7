@@ -18,6 +18,9 @@ def create_app() -> FastAPI:
         docs_url="/docs",
         redoc_url="/redoc",
     )
+    @app.get("/health")
+    async def health():
+        return {"status": "ok"}
 
     # ---------- include your modular routers ---------------------
     app.include_router(http_compare_router, prefix="")

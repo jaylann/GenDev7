@@ -179,22 +179,6 @@ class ServusSpeedProvider(ProviderBase):
             PRODUCT_DETAILS_TIMEOUT,
         )
         payload = resp.json()
-        file_path = "servusspeed_response.json"
-        try:
-            with open(file_path, "r+", encoding="utf-8") as f:
-                try:
-                    data = json.load(f)
-                    if not isinstance(data, list):
-                        data = [data]
-                except json.JSONDecodeError:
-                    data = []
-                data.append(payload)
-                f.seek(0)
-                json.dump(data, f, ensure_ascii=False, indent=2)
-                f.truncate()
-        except FileNotFoundError:
-            with open(file_path, "w", encoding="utf-8") as f:
-                json.dump([payload], f, ensure_ascii=False, indent=2)
-        # parse detail via factory
+
         resp_model = ServusSpeedFactory.parse_detail_response(pid, payload)
         return resp_model.to_offer(self.name)

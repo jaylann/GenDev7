@@ -40,12 +40,6 @@ class ByteMeProvider(ProviderBase):
             )
             resp: httpx.Response
             resp.raise_for_status()
-            # Debug: save raw CSV response
-            with open("byteme_response.csv", "wb") as f:
-                f.write(resp.content)
-            logger.debug(
-                "ByteMeProvider: Saved raw CSV response to byteme_response.csv"
-            )
             logger.info(f"Received HTTP {resp.status_code} from ByteMe endpoint")
         except Exception as exc:
             logger.error("ByteMe download failed", exc_info=True)

@@ -131,11 +131,5 @@ class VerbynDichProvider(ProviderBase):
                 pending.add(asyncio.create_task(_one(next_page)))
                 next_page += 1
 
-        # -----------------------------------------------------------------------------
-        # Diagnostics
-        os.makedirs("logs", exist_ok=True)
-        with open("logs/verbyndich_response.json", "w", encoding="utf-8") as fh:
-            json.dump(raw_pages, fh, indent=2, ensure_ascii=False)
-
         logger.info("VerbynDichProvider → returning {} offers", len(offers))
         return offers

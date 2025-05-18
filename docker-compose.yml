@@ -12,9 +12,10 @@ services:
       - PYTHON_ENV=production
     # health-check to let nginx wait until Gunicorn is ready
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
-      interval: 30s
+      test: [ "CMD-SHELL", "curl -f http://localhost:8000/health || exit 1" ]
+      interval: 15s
       timeout: 5s
+      start_period: 30s
       retries: 3
 
   nginx:
