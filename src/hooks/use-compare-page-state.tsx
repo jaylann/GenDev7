@@ -146,6 +146,16 @@ export function useComparePageState(): ComparePageState {
         useState<boolean>(false);
     const [sharedLinkCopied, setSharedLinkCopied] = useState<boolean>(false);
 
+    // Ephemeral toast notifications for user actions
+    const notify = useCallback(
+        (text: string, duration = 3000) =>
+            sonnerToast(<p className="text-white">{text}</p>, {
+                duration,
+                id: `toast-${Date.now()}`,
+            }),
+        [],
+    );
+
     // ───────────── Filters and recent searches hooks ─────────────
     // Manage offer filters and persist recent address searches.
     const { filters, setFilters, resetFilters, activeFilterCount } =
@@ -181,8 +191,7 @@ export function useComparePageState(): ComparePageState {
     // ───────────── Initialize from URL slug ─────────────
     // Sync page state with URL slug and set up initial search context.
     useComparePageInitializer({
-        setOriginalOffers,
-        // now only takes slug
+        setOriginalOffers, // now only takes slug
         setSlug: (slug: string | null) => {
             setCurrentDisplaySlug(slug);
             setActiveShareableSlug(slug);
@@ -196,8 +205,7 @@ export function useComparePageState(): ComparePageState {
         setStatus: setStatusMessage,
         setLoading: setIsLoadingFromUrl,
         setIsLoadingFromSlug: setIsLoadingFromUrl,
-        setParsedAddress: setParsedAddressFromSlug,
-        // now label is handled here, separately
+        setParsedAddress: setParsedAddressFromSlug, // now label is handled here, separately
         setInitialAddressLabel: (label: string) =>
             setInitialAddressLabel(label),
     });
@@ -275,7 +283,7 @@ export function useComparePageState(): ComparePageState {
             if (phase === "INITIAL_OFFERS") {
                 // Show a one-time “Refining…” toast when backend signals further processing.
                 if (willRefine && !hasTriggeredRefineRef.current) {
-                    /** 🔔  Show “refining…” exactly once per search cycle */
+                    /** Show “refining…” exactly once per search cycle */
                     sonnerToast(
                         <div>
                             <p className="font-semibold text-white">
@@ -409,10 +417,9 @@ export function useComparePageState(): ComparePageState {
     // Generate and copy shareable link for the full offer list.
     const handleSharePage = useCallback(async () => {
         if (!activeShareableSlug) {
-            setStatusMessage("Cannot share yet – results are not ready.");
+            notify("Cannot share yet – results are not ready.", 4000);
             return;
         }
-
         const sharePath = buildUrl(
             activeShareableSlug,
             sortOption,
@@ -420,65 +427,56 @@ export function useComparePageState(): ComparePageState {
             false,
         );
         if (!sharePath) {
-            setStatusMessage("Cannot share page – results are not ready.");
+            notify("Cannot share yet – results are not ready.", 4000);
             return;
         }
-
         try {
             await navigator.clipboard.writeText(
                 `${window.location.origin}${sharePath}`,
             );
             setSharedLinkCopied(true);
-            setStatusMessage("Page link copied to clipboard!");
+            notify("🔗\u00A0Page link copied to clipboard!");
             setTimeout(() => setSharedLinkCopied(false), 2500);
-        } catch (err) {
-            // Handle clipboard write failure gracefully and update status.
-            console.error("Clipboard error:", err);
-            setStatusMessage("Failed to copy page link. Please try manually.");
+        } catch {
+            notify("Failed to copy page link. Please try manually.", 5000);
         }
-    }, [activeShareableSlug, sortOption, filters]);
+    }, [activeShareableSlug, sortOption, filters, notify]);
 
     // ───────────── Single-offer sharing handler ─────────────
     // Generate a deep link for an individual offer and copy to clipboard.
     const handleShareSingleOffer = useCallback(
         async (offer: Offer) => {
             if (!activeShareableSlug) {
-                setStatusMessage(
-                    "Cannot share offer: main offer list context is missing.",
+                notify(
+                    "Cannot share offer: main list context is missing.",
+                    4000,
                 );
                 return;
             }
-
             const offerKey = `${offer.provider}:${offer.product_id}`;
-            setStatusMessage(`Generating share link for ${offer.plan_name}…`);
-            try {
-                const { shared_slug } = await generateShareLink(
-                    activeShareableSlug,
-                    offerKey,
-                );
-                const url = buildUrl(
-                    shared_slug,
-                    "recommended",
-                    DEFAULT_FILTERS,
-                    true,
-                );
-                if (!url) {
-                    setStatusMessage("Failed to construct share URL.");
-                    return;
-                }
-                await navigator.clipboard.writeText(
-                    `${window.location.origin}${url}`,
-                );
-                setStatusMessage(`Link for ${offer.plan_name} copied!`);
-            } catch (e: unknown) {
-                console.error("Share single offer error", e);
-                const errorMessage = e instanceof Error ? e.message : String(e);
-                setStatusMessage(
-                    errorMessage || "Could not share offer. Please try again.",
-                );
-            }
+            await sonnerToast.promise(
+                generateShareLink(activeShareableSlug, offerKey),
+                {
+                    loading: `Creating link for “${offer.plan_name}”…`,
+                    success: async ({ shared_slug }) => {
+                        const url = buildUrl(
+                            shared_slug,
+                            "recommended",
+                            DEFAULT_FILTERS,
+                            true,
+                        );
+                        await navigator.clipboard.writeText(
+                            `${window.location.origin}${url}`,
+                        );
+                        return `Link for “${offer.plan_name}” copied!`;
+                    },
+                    error: (e) =>
+                        (e as Error)?.message ??
+                        "Could not share offer. Please try again.",
+                },
+            );
         },
-        [activeShareableSlug],
+        [activeShareableSlug, notify],
     );
 
     // ───────────── Persist history on sort/filter changes ─────────────
