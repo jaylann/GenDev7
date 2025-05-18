@@ -26,7 +26,7 @@ import {Badge as ShadcnBadge} from '@/components/ui/badge';
 import {formatDataCap, formatEur} from '@/utils/formatters';
 import {
     calculateAvgNetMonthlyCost,
-    calculateEffectiveVoucherValue, calculateGrossTotalCostOverDynamicPeriod, getIntroPriceDurationMonths
+    getIntroPriceDurationMonths
 } from '@/utils/calculations';
 import {DetailBadgeComponent, type DetailBadgeInfo as CustomDetailBadgeInfo} from "@/components/compare/detail-badge";
 
@@ -156,19 +156,19 @@ export const OfferCard: FC<OfferCardProps> = ({offer, onShareOffer, activeSharea
         if (tv_included) {
             const tvText = tv_package_name ? (tv_package_name.length > 12 ? `${tv_package_name.substring(0, 10)}...` : tv_package_name) : "TV Incl.";
             badges.push({
-                key: 'tv', icon: Tv2, text: tvText, colorConfig: BADGE_COLORS.tv,
+                badgeKey: 'tv', icon: Tv2, text: tvText, colorConfig: BADGE_COLORS.tv,
             });
         }
 
         badges.push({
-            key: 'install',
+            badgeKey: 'install',
             icon: HardHat,
             text: installation_service_included ? "Install. Free" : "Install. Costs",
             colorConfig: BADGE_COLORS.install,
         });
 
         badges.push({
-            key: 'dataCap',
+            badgeKey: 'dataCap',
             icon: Database,
             text: formatDataCap(data_cap_gb).replace(" Data", ""),
             colorConfig: BADGE_COLORS.dataCap,
@@ -176,7 +176,7 @@ export const OfferCard: FC<OfferCardProps> = ({offer, onShareOffer, activeSharea
 
         if (max_age != null) {
             badges.push({
-                key: 'youth', icon: ShieldCheck, text: `Youth (≤${max_age}y)`, colorConfig: BADGE_COLORS.youth,
+                badgeKey: 'youth', icon: ShieldCheck, text: `Youth (≤${max_age}y)`, colorConfig: BADGE_COLORS.youth,
             });
         }
         return badges;
@@ -399,14 +399,15 @@ export const OfferCard: FC<OfferCardProps> = ({offer, onShareOffer, activeSharea
                             {voucherInteractiveDisplay}
 
                             {detailBadges.length > 0 && (<div className="flex flex-wrap gap-1.5 justify-center pt-1">
-                                    {detailBadges.map(badgeProps => ( // Renamed for clarity
+                                    {detailBadges.map(badgeProps => (
                                         <DetailBadgeComponent
-                                            // key is passed directly as a prop to DetailBadgeComponent as per user's definition
-                                            key={badgeProps.key}
+                                            key={badgeProps.badgeKey}
+                                            badgeKey={badgeProps.badgeKey}
                                             icon={badgeProps.icon}
-                                            text={badgeProps.text} // text is already string from `detailBadges` population
+                                            text={badgeProps.text}
                                             colorConfig={badgeProps.colorConfig}
-                                        />))}
+                                        />
+                                    ))}
                                 </div>)}
                         </div>)}
                 </div>

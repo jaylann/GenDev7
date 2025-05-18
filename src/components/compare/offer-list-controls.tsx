@@ -112,11 +112,11 @@ export const OfferListControls: FC<OfferListControlsProps> = ({
                 disabled={controlDisabled}
             >
                 <ToggleGroupItem value="grid" aria-label="Grid view"
-                                 className="data-[state=on]:bg-indigo-600 data-[state=on]:text-white text-slate-400 hover:text-white px-2.5 py-1">
+                                 className="data-[state=on]:bg-indigo-600 data-[state=on]:text-white text-slate-400 hover:bg-slate-700/50 hover:text-white px-2.5 py-1">
                     <LayoutGrid className="size-4"/>
                 </ToggleGroupItem>
                 <ToggleGroupItem value="list" aria-label="List view"
-                                 className="data-[state=on]:bg-indigo-600 data-[state=on]:text-white text-slate-400 hover:text-white px-2.5 py-1">
+                                 className="data-[state=on]:bg-indigo-600 data-[state=on]:text-white text-slate-400 hover:bg-slate-700/50 hover:text-white px-2.5 py-1">
                     <List className="size-4"/>
                 </ToggleGroupItem>
             </ToggleGroup>

@@ -16,7 +16,14 @@ interface UseOfferWebSocketProps {
     providers: string[];
     /** Whether the user explicitly wants fibre offers (derived from the Connection‑Type filter). */
     wantsFiber: boolean;
-    onOffersReceived: (offers: Offer[], phase: 'INITIAL_OFFERS' | 'FINAL_OFFERS',) => void;
+    /**
+     * `willRefine` is `true` only when the server tells us there are more offers to come.
+     */
+     onOffersReceived: (
+         offers: Offer[],
+         phase: 'INITIAL_OFFERS' | 'FINAL_OFFERS',
+         willRefine: boolean,
+     ) => void;
     onWebSocketSlugReceived: (slug: string | null, slugType: SlugType) => void;
     onLoadingChange: (waitingForInitial: boolean) => void;
     onStatusUpdate: (msg: string) => void;
@@ -97,9 +104,9 @@ export const useOfferWebSocket = ({
                     onLoadingChange(false);
                     offersRef.current = offers;
                     initialOffersTimestampRef.current = Date.now();
-                    onOffersReceived(offers, 'INITIAL_OFFERS');
+                    onOffersReceived(offers, 'INITIAL_OFFERS', Boolean(data.will_refine));
 
-                    onStatusUpdate(data.message ?? `Received ${offers.length} offers. Refining search …`,);
+                    onStatusUpdate(data.message ?? `Received ${offers.length} offers.`,);
                     break;
                 }
                 case 'FINAL_OFFERS': {
@@ -114,12 +121,12 @@ export const useOfferWebSocket = ({
                     // Auto-load if final offers arrive within 3 seconds of initial offers
                     if (isQuickFinal) {
                         offersRef.current = offers;
-                        onOffersReceived(offers, 'FINAL_OFFERS');
+                        onOffersReceived(offers, 'FINAL_OFFERS', false);
                         onStatusUpdate(data.message ?? `Search complete. ${offers.length} offers found.`);
                     } else {
                         if (offersRef.current.length === 0) {
                             offersRef.current = offers;
-                            onOffersReceived(offers, 'FINAL_OFFERS');
+                            onOffersReceived(offers, 'FINAL_OFFERS', false);
                         } else {
                             onPendingOffersUpdate(offers);
                             onPromptOpenChange(true);

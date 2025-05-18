@@ -198,9 +198,14 @@ export function useComparePageState(): ComparePageState {
         hasApiKey: Boolean(GOOGLE_MAPS_API_KEY_FROM_ENV),
         providers: providersForApi,
         wantsFiber,
-        onOffersReceived: (offers, phase) => {
+        onOffersReceived: (offers, phase, willRefine) => {
             setOriginalOffers(offers);
-            if (phase === 'INITIAL_OFFERS') setIsRefiningOffers(true); else if (phase === 'FINAL_OFFERS') setIsRefiningOffers(false);
+            if (phase === 'INITIAL_OFFERS') {
+                /* ← honour what the back-end actually promises */
+                setIsRefiningOffers(Boolean(willRefine));
+            } else if (phase === 'FINAL_OFFERS') {
+                setIsRefiningOffers(false);
+            }
         },
         onWebSocketSlugReceived: handleWebSocketSlugReceived,
         onLoadingChange: handleWebSocketLoadingChange,
@@ -356,6 +361,17 @@ export function useComparePageState(): ComparePageState {
 
     const areAnyOffersEverLoaded = originalOffers.length > 0 || pendingOffers !== null;
     const isSingleOfferView = originalOffers.length === 1 && hasSearchBeenPerformed && !isWaitingInitialOffers && !isLoadingFromUrl && !isRefiningOffers;
+
+    /* ───────────── clear refine when loading a past search ───────────── */
+    useEffect(() => {
+        // Whenever we jump to a “shared” or previously run search (i.e. slug changes),
+        // ensure we’re no longer in the “Refining search…” state.
+        if (currentDisplaySlug) {
+            setIsRefiningOffers(false);
+        }
+    }, [currentDisplaySlug, setIsRefiningOffers]);
+
+
 
     /* ───────────── final return ───────────── */
     return {

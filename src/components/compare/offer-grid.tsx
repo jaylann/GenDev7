@@ -115,10 +115,10 @@ export const OfferGrid: FC<OfferGridProps> = ({
 
 
     // 6. Render Offers Grid/List
-    return (<ScrollArea className={cn("overflow-y-auto", "max-h-[calc(100vh-450px)] sm:max-h-[calc(100vh-420px)]")}>
+    return (<div className="h-full overflow-y-auto scrollbar-none">
         <AnimatePresence mode="popLayout">
             <div
-                className={cn("grid gap-5 sm:gap-6 p-1", viewMode === 'grid' ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1 md:grid-cols-2 gap-4")}
+                className={cn("grid gap-5 sm:gap-6 px-1", viewMode === 'grid' ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3" : "grid-cols-1 md:grid-cols-2 gap-4")}
                 data-testid="offer-grid-results"
             >
                 {offers.map((offer) => (<OfferCard
@@ -129,5 +129,5 @@ export const OfferGrid: FC<OfferGridProps> = ({
                 />))}
             </div>
         </AnimatePresence>
-    </ScrollArea>);
+    </div>);
 };

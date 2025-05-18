@@ -10,4 +10,5 @@ export interface WebSocketMessage {
     slug?: string;
     message?: string;
     is_complete?: boolean;
+    will_refine?: boolean;
 }
