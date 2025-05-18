@@ -12,7 +12,7 @@
  */
 "use client";
 
-import React, { FC, JSX, useMemo } from "react";
+import React, { FC, JSX, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
     AlertTriangle,
@@ -313,7 +313,7 @@ export const OfferCard: FC<OfferCardProps> = ({
     }, [price_cents_month_intro, price_cents_month_regular]);
 
     // Render the detailed popover content for voucher information
-    const renderVoucherPopoverContent = () => {
+    const renderVoucherPopoverContent = useCallback(() => {
         if (!voucher_type)
             return (
                 <p className="p-4 text-sm text-slate-400">
@@ -408,7 +408,14 @@ export const OfferCard: FC<OfferCardProps> = ({
                 )}
             </div>
         );
-    };
+    }, [
+        voucher_type,
+        voucher_value_cents,
+        voucher_value_percent,
+        voucher_min_order_value_cents,
+        voucher_max_value_cents,
+        voucher_max_runtime_months
+    ]);
 
     // Prepare the interactive voucher badge with popover trigger, memoized for performance
     const voucherInteractiveDisplay = useMemo(() => {
@@ -464,6 +471,7 @@ export const OfferCard: FC<OfferCardProps> = ({
         prominentBonusText,
         voucher_value_percent,
         voucher_value_cents,
+        renderVoucherPopoverContent,  // ← added
     ]);
 
     // Show placeholder card if no offer data is available

@@ -6,7 +6,6 @@
  */
 import { Offer } from "@/types/offer";
 import { VoucherKind } from "@/types/voucher-kind";
-import { ConnectionType } from "@/types/connection-type";
 
 /**
  * Determines the duration of the introductory price in months.

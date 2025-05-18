@@ -1,3 +1,4 @@
+"use client";
 /**
  * useComparePageInitializer Module
  *
@@ -86,7 +87,7 @@ export const useComparePageInitializer = ({
         const sortFromUrl = searchParams.get("sort") as SortOptionKey | null;
         const filtersFromUrl = deserializeFiltersFromURL(searchParams);
 
-        /** Apply sort & filter params that live in the URL */
+        /** Apply sort & filter parameters that live in the URL */
         const applyUrlParams = (): void => {
             if (
                 sortFromUrl &&

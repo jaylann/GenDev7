@@ -128,7 +128,7 @@
 
 @layer base {
     * {
-        @apply border-border outline-ring/50;
+        @apply border-border ring ring-offset-transparent ring-opacity-50;
     }
     body {
         @apply bg-transparent text-foreground;

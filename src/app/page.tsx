@@ -1,116 +1,12 @@
-"use client";
+// app/page.tsx  (Server Component by default, remove "use client")
+import React, { Suspense } from "react";
+import ComparePage from "@/components/compare/compare-page";
+import ComparePageSkeleton from "@/components/compare/compare-page-skeleton";
 
-import React, { JSX } from "react";
-import { useComparePageState } from "@/hooks/use-compare-page-state";
-
-import { UpdatePromptDialog } from "@/components/compare/update-prompt-dialog";
-import { PageHeader } from "@/components/compare/page-header";
-import { RecentSearchesDropdown } from "@/components/compare/recent-searches-dropdown";
-import { AddressSearchSection } from "@/components/compare/address-search-section";
-import { OfferListControls } from "@/components/compare/offer-list-controls";
-import { OfferGrid } from "@/components/compare/offer-grid";
-
-/**
- * ComparePage component renders the main offer comparison UI.
- *
- * Utilizes the useComparePageState hook for state management and actions.
- * Renders:
- *  - UpdatePromptDialog for pending offers
- *  - PageHeader with a status message
- *  - RecentSearchesDropdown for quick access to past searches
- *  - AddressSearchSection for address input and lookup
- *  - OfferListControls for sorting, filtering, and sharing
- *  - OfferGrid for displaying the list or grid of offers
- *
- * @returns JSX.Element
- */
-export default function ComparePage(): JSX.Element {
-    // Obtain current page state and action handlers from our custom hook
-    const { state, actions } = useComparePageState();
-
-    // Remove any backend “Refining …” status messages before displaying to users
-    const cleanedStatus = state.statusMessage
-        .toLowerCase()
-        .startsWith("refining")
-        ? ""
-        : state.statusMessage;
-
+export default function Page() {
     return (
-        <div className="flex flex-col h-screen bg-gradient-to-br from-[#0B0B2D] via-[#1C1044] to-[#3C0E4C] text-slate-100 selection:bg-indigo-500 selection:text-white">
-            <main
-                className="container mx-auto max-w-7xl px-4 pt-12 pb-0 sm:pt-16 sm:pb-0
-                      flex-1 flex flex-col space-y-2 sm:space-y-6
-                      overflow-hidden"
-            >
-                {/* Offer-update prompt dialog, triggers when there are pending offers to confirm */}
-                <UpdatePromptDialog
-                    isOpen={state.isUpdatePromptOpen}
-                    onOpenChange={actions.setIsUpdatePromptOpen}
-                    onConfirm={actions.handleShowPendingOffers}
-                    pendingOfferCount={state.pendingOffers?.length ?? 0}
-                />
-
-                {/* Page header displaying the cleaned status message */}
-                <PageHeader statusMessage={cleanedStatus} />
-
-                {/* Dropdown for accessing and clearing recent address searches */}
-                <RecentSearchesDropdown
-                    searches={state.recentSearches}
-                    onClear={actions.clearRecentSearches}
-                    className="fixed top-4 right-4 z-50"
-                />
-
-                {/* Address search section for inputting and selecting an address */}
-                <div className="flex-none">
-                    <AddressSearchSection
-                        parsedAddress={state.parsedAddressFromSlug ?? undefined}
-                        defaultAddressText={state.initialAddressLabel}
-                        onAddressSelect={actions.handleAddressSelected}
-                        onSearchClick={actions.handleSearchClick}
-                        isSearchDisabled={state.isSearchButtonDisabled}
-                        isLoading={state.isBlockingUi}
-                        isLoadingFromSlug={state.isLoadingFromUrl}
-                        currentSlug={state.currentDisplaySlug}
-                    />
-                </div>
-
-                {/* Controls for sorting, filtering, and sharing the offer list */}
-                <OfferListControls
-                    sortOption={state.sortOption}
-                    onSortChange={actions.setSortOption}
-                    viewMode={state.viewMode}
-                    onViewModeChange={actions.setViewMode}
-                    onShare={actions.handleSharePage}
-                    isShareDisabled={state.isSharePageDisabled}
-                    sharedLinkCopied={state.sharedLinkCopied}
-                    filters={state.filters}
-                    onFiltersChange={actions.setFilters}
-                    activeFilterCount={state.activeFilterCount}
-                    originalOffers={state.originalOffers}
-                    isLoadingOffers={
-                        state.isWaitingInitialOffers || state.isRefiningOffers
-                    }
-                    areAnyOffersLoaded={state.areAnyOffersEverLoaded}
-                    isSingleOfferView={state.isSingleOfferView}
-                />
-
-                {/* Main content area: displays offers in grid or list view */}
-                <div className="flex-1 overflow-y-auto">
-                    <OfferGrid
-                        offers={state.processedOffers}
-                        isLoading={state.isBlockingUi || state.isRefiningOffers}
-                        viewMode={state.viewMode}
-                        areOriginalOffersLoaded={
-                            state.originalOffers.length > 0
-                        }
-                        statusMessage={state.statusMessage}
-                        onResetFilters={actions.resetFilters}
-                        hasSearchBeenPerformed={state.hasSearchBeenPerformed}
-                        onShareOffer={actions.handleShareSingleOffer}
-                        activeShareableSlug={state.activeShareableSlug}
-                    />
-                </div>
-            </main>
-        </div>
+        <Suspense fallback={<ComparePageSkeleton></ComparePageSkeleton>}>
+            <ComparePage />
+        </Suspense>
     );
 }
