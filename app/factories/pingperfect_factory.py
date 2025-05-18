@@ -45,8 +45,9 @@ class PingPerfectFactory:
             wantsFiber=wants_fiber,
         )
 
-        payload_json: str = req.model_dump_json(separators=(",", ":"))
-        logger.debug("PingPerfectFactory.build_payload → %s", payload_json)
+        # Pydantic v2 model_dump_json no longer supports separators; serialize manually
+        payload_json: str = json.dumps(req.model_dump(), separators=(",", ":"))
+        logger.debug(f"PingPerfectFactory.build_payload → {payload_json}")
 
         ts = str(int(time.time()))
         settings: Settings = get_settings()
@@ -79,7 +80,7 @@ class PingPerfectFactory:
         Let the Pydantic model decide what’s valid; we only pre-compute the
         deterministic ``product_id`` and simplify a few booleans.
         """
-        logger.debug("PingPerfectFactory.parse_response → %s", item)
+        logger.debug(f"PingPerfectFactory.parse_response → {item}")
 
         try:
             info: Dict[str, Any] = item.get("productInfo", {}) or {}
@@ -115,15 +116,11 @@ class PingPerfectFactory:
 
         except ValidationError as ve:
             logger.warning(
-                "PingPerfectFactory.parse_response → validation error: %s (item=%s)",
-                ve,
-                item,
+                f"PingPerfectFactory.parse_response → validation error: {ve} (item={item})"
             )
         except Exception as exc:
             logger.warning(
-                "PingPerfectFactory.parse_response → unexpected error: %s (item=%s)",
-                exc,
-                item,
+                f"PingPerfectFactory.parse_response → unexpected error: {exc} (item={item})"
             )
         return None
 
@@ -139,5 +136,5 @@ class PingPerfectFactory:
             if resp is not None:
                 responses.append(resp)
             else:
-                logger.debug("PingPerfectFactory → skipped invalid item %s", item)
+                logger.debug(f"PingPerfectFactory → skipped invalid item {item}")
         return responses

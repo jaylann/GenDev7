@@ -1,34 +1,39 @@
-import os
-
-import httpx
 from dotenv import load_dotenv
-load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import compare
-from app.core.config import get_settings
+from app.api.http_compare import router as http_compare_router
+from app.api.ws_compare import router as ws_compare_router
+from app.utils.http import shared_client
+
+load_dotenv()
 
 
 def create_app() -> FastAPI:
-    settings = get_settings()
 
-    app = FastAPI(title="CHECK24 Internet-Provider Comparison", version="1.0.0", docs_url="/docs",  # Swagger UI
-        redoc_url="/redoc", )
+    app = FastAPI(
+        title="CHECK24 Internet-Provider Comparison",
+        version="1.0.0",
+        docs_url="/docs",
+        redoc_url="/redoc",
+    )
 
-    # ---------- shared httpx client (injected via compare.router import) ----
-    client = httpx.AsyncClient(timeout=httpx.Timeout(30.0))
-
+    # ---------- shutdown: close shared HTTP client -----------------
     @app.on_event("shutdown")
-    async def _close_httpx():
-        await client.aclose()
+    async def _close_shared_client():
+        await shared_client.aclose()
 
-    # ---------- CORS (adjust origins for prod) ------------------------------
-    app.add_middleware(CORSMiddleware, allow_origins=["*"],  # tighten this in production!
-        allow_methods=["GET", "POST", "OPTIONS"], allow_headers=["*"], )
+    # ---------- CORS (tighten origins in prod!) ------------------
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_headers=["*"],
+    )
 
-    # ---------- routers -----------------------------------------------------
-    app.include_router(compare.router)
+    # ---------- include your modular routers ---------------------
+    app.include_router(http_compare_router, prefix="")
+    app.include_router(ws_compare_router, prefix="")
 
     return app
 

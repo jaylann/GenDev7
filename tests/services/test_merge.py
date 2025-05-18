@@ -9,7 +9,7 @@ from pydantic import (
 )
 
 from app.models.base.offer import VoucherKind, Offer
-from app.services.merge import _key, _effective_price, merge_offers
+from app.utils.merge import _key, _effective_price, merge_offers
 
 # --- Hypothesis Strategies ---
 id_text_strategy = st.text(

@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 
 import httpx
 from loguru import logger
-from tenacity import AsyncRetrying
+from tenacity import AsyncRetrying, retry_if_exception_type
 
 from app.core.retry_config import RetryConfig
 from app.exceptions.provider_error import ProviderError
@@ -44,7 +44,7 @@ class ProviderBase(abc.ABC):
         retryer: AsyncRetrying = AsyncRetrying(
             stop=self.retry_config.stop,
             wait=self.retry_config.wait,
-            retry=self.retry_config.retry,
+            retry=retry_if_exception_type((ProviderError, httpx.HTTPError)),
             reraise=self.retry_config.reraise,
         )
 

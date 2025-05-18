@@ -19,9 +19,9 @@ settings: Settings = get_settings()
 
 # concurrency & timeout constants
 MAX_PARALLEL = 3
-DETAIL_READ_SECS = 30.0
+DETAIL_READ_SECS = 60.0
 DETAIL_CONNECT_SECS = 5.0
-AVAILABLE_PRODUCTS_TIMEOUT = httpx.Timeout(30.0, connect=5.0)
+AVAILABLE_PRODUCTS_TIMEOUT = httpx.Timeout(60.0, connect=5.0)
 PRODUCT_DETAILS_TIMEOUT = httpx.Timeout(
     timeout=DETAIL_READ_SECS, connect=DETAIL_CONNECT_SECS
 )
@@ -75,7 +75,7 @@ class ServusSpeedProvider(ProviderBase):
     @retry(
         stop=stop_after_attempt(2),
         wait=wait_fixed(1),
-        retry=retry_if_exception_type((ProviderError, httpx.TimeoutException)),
+        retry=retry_if_exception_type((ProviderError, httpx.HTTPError)),
         reraise=True,
     )
     async def fetch(self, address: Address) -> List[Offer]:
