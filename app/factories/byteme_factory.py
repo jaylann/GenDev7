@@ -89,7 +89,9 @@ class ByteMeOfferFactory:
                 "price_cents_month_regular": row.afterTwoYearsMonthlyCost,
                 "contract_duration_months": row.durationInMonths,
                 "connection_type": row.connectionType,
-                "installation_service_included": getattr(row, "installationService", False),
+                "installation_service_included": getattr(
+                    row, "installationService", False
+                ),
                 "tv_included": tv_included,
                 "tv_package_name": tv_package_name,
                 "data_cap_gb": getattr(row, "limitFrom", None),
@@ -167,10 +169,10 @@ class ByteMeOfferFactory:
 
         # Row-level obvious filters
         mask_bad = (
-                df[cls._ESSENTIAL_NUMERIC_COLS].isna().any(axis=1)
-                | df[cls._ESSENTIAL_STRING_COLS].isna().any(axis=1)
-                | (df["speed"] <= 0)
-                | (df["monthlyCostInCent"] <= 0)
+            df[cls._ESSENTIAL_NUMERIC_COLS].isna().any(axis=1)
+            | df[cls._ESSENTIAL_STRING_COLS].isna().any(axis=1)
+            | (df["speed"] <= 0)
+            | (df["monthlyCostInCent"] <= 0)
         )
         df = df[~mask_bad]
 

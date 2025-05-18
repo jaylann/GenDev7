@@ -8,17 +8,20 @@ import httpx
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, MagicMock # For mocking ServusSpeedProvider __call__
+from unittest.mock import (
+    AsyncMock,
+    MagicMock,
+)  # For mocking ServusSpeedProvider __call__
 
 # Ensure the app's modules are importable
 # This might require setting PYTHONPATH or specific project configurations.
 # For this example, I'll assume relative imports work or paths are set.
-from app.main import app as fastapi_app # Assuming your FastAPI app instance is here
+from app.main import app as fastapi_app  # Assuming your FastAPI app instance is here
 from app.core.config import Settings, get_settings
 from app.models import Offer, Address
 from app.utils.slug import encode
-from app.api import endpoints as api_endpoints # To access the _cache
-from app.providers.base import ProviderBase # Assuming this base class exists
+from app.api import endpoints as api_endpoints  # To access the _cache
+from app.providers.base import ProviderBase  # Assuming this base class exists
 from app.providers.servusspeed import ServusSpeedProvider
 
 
@@ -28,6 +31,7 @@ def event_loop():
     loop = asyncio.get_event_loop_policy().new_event_loop()
     yield loop
     loop.close()
+
 
 @pytest.fixture
 def test_settings() -> Settings:
@@ -46,8 +50,9 @@ def test_settings() -> Settings:
         servusspeed_username="test_user_placeholder",
         servusspeed_password="test_pass_placeholder",
         verbyndich_api_key="test_key_placeholder",
-        cache_ttl_seconds=5  # Short TTL for cache expiry tests
+        cache_ttl_seconds=5,  # Short TTL for cache expiry tests
     )
+
 
 @pytest.fixture
 def app_instance(test_settings: Settings) -> FastAPI:
@@ -79,28 +84,45 @@ def clear_global_cache() -> None:
 
 # --- Mock Provider Fixtures ---
 
+
 class MockConcreteProvider(ProviderBase):
     """
     A mock provider that behaves like a concrete provider for testing.
     It simulates network delays and success/failure scenarios.
     """
-    def __init__(self, name: str, offers_to_return: List[Offer],
-                 should_succeed: bool = True, call_delay: float = 0.0):
-        super().__init__(name=name) # Assumes ProviderBase.__init__(self, name: str)
+
+    def __init__(
+        self,
+        name: str,
+        offers_to_return: List[Offer],
+        should_succeed: bool = True,
+        call_delay: float = 0.0,
+    ):
+        super().__init__(name=name)  # Assumes ProviderBase.__init__(self, name: str)
         # Deep copy offer data to prevent modification across tests/calls
-        self.offers_to_return_data: List[Dict[str, Any]] = [o.model_dump() for o in offers_to_return]
+        self.offers_to_return_data: List[Dict[str, Any]] = [
+            o.model_dump() for o in offers_to_return
+        ]
         self.should_succeed: bool = should_succeed
         self.call_delay: float = call_delay
-        self.client: Optional[httpx.AsyncClient] = None # Will be set by _execute_provider_fetch
+        self.client: Optional[httpx.AsyncClient] = (
+            None  # Will be set by _execute_provider_fetch
+        )
 
     async def __call__(self, address: Address) -> List[Offer]:
         """Simulates fetching offers from a provider."""
-        api_endpoints.logger.debug(f"MockProvider '{self.name}' called with delay {self.call_delay}s. Success: {self.should_succeed}")
+        api_endpoints.logger.debug(
+            f"MockProvider '{self.name}' called with delay {self.call_delay}s. Success: {self.should_succeed}"
+        )
         await asyncio.sleep(self.call_delay)
         if not self.should_succeed:
-            api_endpoints.logger.error(f"MockProvider '{self.name}' raising configured exception.")
+            api_endpoints.logger.error(
+                f"MockProvider '{self.name}' raising configured exception."
+            )
             raise ValueError(f"Mock provider {self.name} failed as configured.")
-        api_endpoints.logger.info(f"MockProvider '{self.name}' returning {len(self.offers_to_return_data)} offers.")
+        api_endpoints.logger.info(
+            f"MockProvider '{self.name}' returning {len(self.offers_to_return_data)} offers."
+        )
         return [Offer.model_validate(data) for data in self.offers_to_return_data]
 
 
@@ -109,29 +131,43 @@ def mock_provider_factory() -> Callable[..., MockConcreteProvider]:
     """
     Factory fixture to create instances of MockConcreteProvider.
     """
-    def _factory(name: str, offers_to_return: List[Offer],
-                 should_succeed: bool = True, call_delay: float = 0.0) -> MockConcreteProvider:
+
+    def _factory(
+        name: str,
+        offers_to_return: List[Offer],
+        should_succeed: bool = True,
+        call_delay: float = 0.0,
+    ) -> MockConcreteProvider:
         return MockConcreteProvider(name, offers_to_return, should_succeed, call_delay)
+
     return _factory
 
 
 @pytest.fixture
-def mock_servusspeed_provider_instance_factory(test_settings: Settings) -> Callable[..., ServusSpeedProvider]:
+def mock_servusspeed_provider_instance_factory(
+    test_settings: Settings,
+) -> Callable[..., ServusSpeedProvider]:
     """
     Factory fixture to create ServusSpeedProvider instances with a mocked __call__ method.
     This ensures `isinstance(p, ServusSpeedProvider)` works as expected in the API.
     """
-    def _factory(offers_to_return: Optional[List[Offer]] = None,
-                 should_succeed: bool = True, call_delay: float = 0.0) -> ServusSpeedProvider:
+
+    def _factory(
+        offers_to_return: Optional[List[Offer]] = None,
+        should_succeed: bool = True,
+        call_delay: float = 0.0,
+    ) -> ServusSpeedProvider:
 
         # Instantiate ServusSpeedProvider. It needs a client and credentials.
         # The client passed here is temporary; _execute_provider_fetch sets its own.
         # Credentials from test_settings.
-        dummy_client = MagicMock(spec=httpx.AsyncClient) # httpx.AsyncClient() - if it doesn't make calls in init
+        dummy_client = MagicMock(
+            spec=httpx.AsyncClient
+        )  # httpx.AsyncClient() - if it doesn't make calls in init
         instance = ServusSpeedProvider(
-            client=dummy_client, # This client will be replaced by _shared_client in _execute_provider_fetch
+            client=dummy_client,  # This client will be replaced by _shared_client in _execute_provider_fetch
             username=test_settings.servusspeed_username,
-            password=test_settings.servusspeed_password
+            password=test_settings.servusspeed_password,
         )
 
         # Ensure the instance has the correct name if not set by default or if customizable.
@@ -142,22 +178,35 @@ def mock_servusspeed_provider_instance_factory(test_settings: Settings) -> Calla
         offers_data_to_return = [o.model_dump() for o in (offers_to_return or [])]
 
         async def mock_call(address: Address) -> List[Offer]:
-            api_endpoints.logger.debug(f"Mocked ServusSpeedProvider ({instance.name}) __call__ invoked with delay {call_delay}s. Success: {should_succeed}")
+            api_endpoints.logger.debug(
+                f"Mocked ServusSpeedProvider ({instance.name}) __call__ invoked with delay {call_delay}s. Success: {should_succeed}"
+            )
             await asyncio.sleep(call_delay)
             if not should_succeed:
-                api_endpoints.logger.error(f"Mocked ServusSpeedProvider ({instance.name}) configured to fail.")
-                raise ValueError(f"Mocked ServusSpeedProvider ({instance.name}) failed as configured.")
-            api_endpoints.logger.info(f"Mocked ServusSpeedProvider ({instance.name}) returning {len(offers_data_to_return)} offers.")
+                api_endpoints.logger.error(
+                    f"Mocked ServusSpeedProvider ({instance.name}) configured to fail."
+                )
+                raise ValueError(
+                    f"Mocked ServusSpeedProvider ({instance.name}) failed as configured."
+                )
+            api_endpoints.logger.info(
+                f"Mocked ServusSpeedProvider ({instance.name}) returning {len(offers_data_to_return)} offers."
+            )
             return [Offer.model_validate(data) for data in offers_data_to_return]
 
-        instance.__call__ = mock_call # Replace the actual call method with our mock
+        instance.__call__ = mock_call  # Replace the actual call method with our mock
         return instance
+
     return _factory
 
+
 # Helper to pre-populate cache for tests
-async def set_cache_for_test(slug: str, offers: List[Offer], settings: Settings) -> None:
+async def set_cache_for_test(
+    slug: str, offers: List[Offer], settings: Settings
+) -> None:
     """Helper function to set items in the API's cache for testing purposes."""
     await api_endpoints._cache_set(slug, offers, settings.cache_ttl_seconds)
+
 
 def create_test_api_slug(payload_data: Dict[str, Any]) -> str:
     """Encodes a payload into a slug using the application's encode function."""

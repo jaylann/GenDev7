@@ -33,7 +33,9 @@ class Address(BaseModel):
         min_length=5,
         max_length=5,
     )
-    country_code: Literal["DE"] = Field(..., description="Country code (ISO 3166-1 alpha-2)", examples=["DE"])
+    country_code: Literal["DE"] = Field(
+        ..., description="Country code (ISO 3166-1 alpha-2)", examples=["DE"]
+    )
 
     class Config:
         frozen = True
@@ -44,7 +46,6 @@ class Address(BaseModel):
         if isinstance(v, str):
             return v.strip()
         return v
-
 
     @field_validator("country_code", mode="before")
     @classmethod

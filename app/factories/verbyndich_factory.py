@@ -11,22 +11,24 @@ from app.models.providers.verbyndich_response import VerbynDichResponse
 from app.utils.logger import logger
 
 # Pre-compiled regexes for extraction
-_PRICE_MONTH_RE    = re.compile(r"für\s*nur\s*(\d+(?:[.,]\d+)?)\s*€\s*im\s*Monat", re.I)
-_SPEED_RE          = re.compile(r"(\d+(?:[.,]\d+)?)\s*Mbit", re.I)
-_DURATION_RE       = re.compile(r"Mindestvertragslaufzeit\s*(\d+)\s*Monat", re.I)
-_MAX_AGE_RE        = re.compile(r"(?:unter|bis)\s*(\d+)\s*Jahr", re.I)
-_VOUCHER_EUR_RE    = re.compile(r"Rabatt\s+von\s*(\d+(?:[.,]\d+)?)\s*€", re.I)
-_VOUCHER_PERC_RE   = re.compile(r"Rabatt\s+von\s*(\d+(?:[.,]\d+)?)\s*%", re.I)
-_VOUCHER_CAP_RE    = re.compile(r"maximal(?:e|er)? Rabatt beträgt\s*(\d+(?:[.,]\d+)?)\s*€", re.I)
-_VOUCHER_UNTIL_RE  = re.compile(r"bis zum\s*(\d+)\s*\.?\s*Monat", re.I)
-_CONN_RE           = re.compile(r"\b(DSL|Cable|Kabel|Fiber|Glasfaser|Mobile)\b", re.I)
-_TV_PKG_RE         = re.compile(r"\b([A-Z][A-Za-z0-9]*TV\+?)(?=\W|$)")
-_DATA_CAP_RE       = re.compile(r"Ab\s*(\d+)\s*GB", re.I)
-_PROMO_PRICE_RE    = re.compile(
-    r"Ab\s*dem\s*(\d+)\.?\s*Monat[\s\S]*?monatliche\s*Preis\s*(\d+(?:[.,]\d+)?)\s*€",
-    re.I
+_PRICE_MONTH_RE = re.compile(r"für\s*nur\s*(\d+(?:[.,]\d+)?)\s*€\s*im\s*Monat", re.I)
+_SPEED_RE = re.compile(r"(\d+(?:[.,]\d+)?)\s*Mbit", re.I)
+_DURATION_RE = re.compile(r"Mindestvertragslaufzeit\s*(\d+)\s*Monat", re.I)
+_MAX_AGE_RE = re.compile(r"(?:unter|bis)\s*(\d+)\s*Jahr", re.I)
+_VOUCHER_EUR_RE = re.compile(r"Rabatt\s+von\s*(\d+(?:[.,]\d+)?)\s*€", re.I)
+_VOUCHER_PERC_RE = re.compile(r"Rabatt\s+von\s*(\d+(?:[.,]\d+)?)\s*%", re.I)
+_VOUCHER_CAP_RE = re.compile(
+    r"maximal(?:e|er)? Rabatt beträgt\s*(\d+(?:[.,]\d+)?)\s*€", re.I
 )
-_MIN_ORDER_RE      = re.compile(r"Mindestbestellwert\s*beträgt\s*(\d+)\s*€", re.I)
+_VOUCHER_UNTIL_RE = re.compile(r"bis zum\s*(\d+)\s*\.?\s*Monat", re.I)
+_CONN_RE = re.compile(r"\b(DSL|Cable|Kabel|Fiber|Glasfaser|Mobile)\b", re.I)
+_TV_PKG_RE = re.compile(r"\b([A-Z][A-Za-z0-9]*TV\+?)(?=\W|$)")
+_DATA_CAP_RE = re.compile(r"Ab\s*(\d+)\s*GB", re.I)
+_PROMO_PRICE_RE = re.compile(
+    r"Ab\s*dem\s*(\d+)\.?\s*Monat[\s\S]*?monatliche\s*Preis\s*(\d+(?:[.,]\d+)?)\s*€",
+    re.I,
+)
+_MIN_ORDER_RE = re.compile(r"Mindestbestellwert\s*beträgt\s*(\d+)\s*€", re.I)
 
 
 class VerbynDichFactory:
@@ -54,7 +56,7 @@ class VerbynDichFactory:
             return None
 
         try:
-            desc        = data.get("description", "")
+            desc = data.get("description", "")
             raw_product = data.get("product", "")
 
             def _match_first(pattern: re.Pattern[str]) -> Optional[str]:
@@ -70,15 +72,15 @@ class VerbynDichFactory:
                     pass
 
             # core numeric fields as strings (Pydantic will coerce/validate)
-            speed_down               = _match_first(_SPEED_RE) or "16"
+            speed_down = _match_first(_SPEED_RE) or "16"
             contract_duration_months = _match_first(_DURATION_RE) or "24"
-            max_age                  = _match_first(_MAX_AGE_RE)
+            max_age = _match_first(_MAX_AGE_RE)
 
             # voucher
-            voucher_type          = None
+            voucher_type = None
             voucher_value_percent = None
-            voucher_value_cap     = None
-            voucher_value_cents   = None
+            voucher_value_cap = None
+            voucher_value_cents = None
 
             if perc := _match_first(_VOUCHER_PERC_RE):
                 try:
@@ -86,7 +88,7 @@ class VerbynDichFactory:
                 except ValueError:
                     pct = 0.0
                 if pct > 0:
-                    voucher_type          = VoucherKind.PERCENTAGE
+                    voucher_type = VoucherKind.PERCENTAGE
                     voucher_value_percent = min(pct, 100.0)
                     if cap := _match_first(_VOUCHER_CAP_RE):
                         try:
@@ -95,7 +97,7 @@ class VerbynDichFactory:
                             pass
             elif eur := _match_first(_VOUCHER_EUR_RE):
                 try:
-                    voucher_type        = VoucherKind.ABSOLUTE
+                    voucher_type = VoucherKind.ABSOLUTE
                     voucher_value_cents = int(float(eur.replace(",", ".")) * 100)
                 except ValueError:
                     pass
@@ -105,26 +107,32 @@ class VerbynDichFactory:
             # connection
             conn = _match_first(_CONN_RE)
             conn_map = {
-                "dsl": "DSL", "cable": "Cable", "kabel": "Cable",
-                "fiber": "Fiber", "glasfaser": "Fiber", "mobile": "Mobile"
+                "dsl": "DSL",
+                "cable": "Cable",
+                "kabel": "Cable",
+                "fiber": "Fiber",
+                "glasfaser": "Fiber",
+                "mobile": "Mobile",
             }
             connection_type = conn_map.get(conn.lower(), "DSL") if conn else "DSL"
 
             # TV
-            tv_pkgs         = _TV_PKG_RE.findall(desc)
+            tv_pkgs = _TV_PKG_RE.findall(desc)
             tv_package_name = ", ".join(dict.fromkeys(tv_pkgs)) if tv_pkgs else None
-            tv_included     = bool(tv_pkgs)
+            tv_included = bool(tv_pkgs)
 
             # data cap
             data_cap_gb = _match_first(_DATA_CAP_RE)
 
             # promo price
-            promo_month       = None
+            promo_month = None
             promo_price_cents = None
             if promo := _PROMO_PRICE_RE.search(desc):
                 promo_month = promo.group(1)
                 try:
-                    promo_price_cents = int(float(promo.group(2).replace(",", ".")) * 100)
+                    promo_price_cents = int(
+                        float(promo.group(2).replace(",", ".")) * 100
+                    )
                 except ValueError:
                     pass
 
@@ -166,7 +174,9 @@ class VerbynDichFactory:
                 plan_name=plan_name,
             )
         except (ValidationError, Exception) as e:
-            logger.warning(f"VerbynDichFactory.parse_response exception: {e}", exc_info=True)
+            logger.warning(
+                f"VerbynDichFactory.parse_response exception: {e}", exc_info=True
+            )
             return None
 
     @staticmethod

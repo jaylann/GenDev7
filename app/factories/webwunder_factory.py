@@ -49,7 +49,10 @@ class WebWunderFactory:
         """
         Parse a single <products> element into a WebWunderResponse.
         """
-        def get_text_from_node(search_root: ET.Element, tag: str, default: str = "") -> str:
+
+        def get_text_from_node(
+            search_root: ET.Element, tag: str, default: str = ""
+        ) -> str:
             node = search_root.find(f".//{{*}}{tag}")
             return node.text.strip() if node is not None and node.text else default
 
@@ -84,11 +87,15 @@ class WebWunderFactory:
             if "absolutevoucher" in xsi_type:
                 voucher_type = VoucherKind.ABSOLUTE
                 voucher_value_cents = get_text_from_node(voucher_elem, "discountInCent")
-                voucher_min_order_value_cents = get_text_from_node(voucher_elem, "minOrderValueInCent")
+                voucher_min_order_value_cents = get_text_from_node(
+                    voucher_elem, "minOrderValueInCent"
+                )
             elif "percentagevoucher" in xsi_type:
                 voucher_type = VoucherKind.PERCENTAGE
                 voucher_value_percent = get_text_from_node(voucher_elem, "percentage")
-                voucher_max_value_cents = get_text_from_node(voucher_elem, "maxDiscountInCent")
+                voucher_max_value_cents = get_text_from_node(
+                    voucher_elem, "maxDiscountInCent"
+                )
             elif "cashbackvoucher" in xsi_type:
                 voucher_type = VoucherKind.CASHBACK
                 voucher_value_cents = get_text_from_node(voucher_elem, "cashbackInCent")

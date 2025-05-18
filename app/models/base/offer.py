@@ -168,7 +168,7 @@ class Offer(BaseModel):
                 "cable": "Cable",
                 "fiber": "Fiber",
                 "mobile": "Mobile",
-                "fibre": "Fiber"
+                "fibre": "Fiber",
             }
             return mapping.get(v.lower(), v)
         else:

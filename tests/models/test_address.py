@@ -10,7 +10,7 @@ def test_valid_address_trimming_and_normalization():
         "house_number": " 123A ",
         "city": " Berlin ",
         "plz": " 10115 ",
-        "country_code": " de "
+        "country_code": " de ",
     }
     addr = Address(**data)
     # Whitespace should be stripped
@@ -34,7 +34,7 @@ def test_valid_address_trimming_and_normalization():
         ("plz", "1234"),
         ("plz", "123456"),
         ("country_code", "US"),
-    ]
+    ],
 )
 def test_invalid_fields(field, value):
     valid = {
@@ -49,7 +49,7 @@ def test_invalid_fields(field, value):
         Address(**valid)
     errors = exc_info.value.errors()
     # There should be at least one error for the invalid field
-    assert any(error['loc'][0] == field for error in errors)
+    assert any(error["loc"][0] == field for error in errors)
 
 
 def test_strip_whitespace_non_str_types():
@@ -71,22 +71,14 @@ def test_strip_whitespace_non_str_types():
 def test_country_code_normalization_and_literal():
     # Normalization should allow lowercase with whitespace
     addr = Address(
-        street="Main",
-        house_number="1",
-        city="City",
-        plz="12345",
-        country_code=" dE "
+        street="Main", house_number="1", city="City", plz="12345", country_code=" dE "
     )
     assert addr.country_code == "DE"
 
     # Truly invalid country code should fail
     with pytest.raises(ValidationError) as exc_info:
         Address(
-            street="Main",
-            house_number="1",
-            city="City",
-            plz="12345",
-            country_code="FR"
+            street="Main", house_number="1", city="City", plz="12345", country_code="FR"
         )
     errors = exc_info.value.errors()
-    assert any(error['loc'][0] == 'country_code' for error in errors)
+    assert any(error["loc"][0] == "country_code" for error in errors)

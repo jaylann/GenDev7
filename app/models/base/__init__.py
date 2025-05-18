@@ -1,5 +1,5 @@
 from .address import Address
-from .offer  import Offer
+from .offer import Offer
 
 __all__ = [
     "Address",

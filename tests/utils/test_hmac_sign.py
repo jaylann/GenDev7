@@ -17,11 +17,11 @@ def test_sign_valid_simple_model():
     timestamp = "1672531200"
     secret = "mysecret"
     # Expected compact JSON serialization
-    payload = {"foo":"hello","bar":123}
-    payload_json = json.dumps(payload, separators=(',',':'))
+    payload = {"foo": "hello", "bar": 123}
+    payload_json = json.dumps(payload, separators=(",", ":"))
     expected = hmac.new(
-        secret.encode('utf-8'),
-        f"{timestamp}:{payload_json}".encode('utf-8'),
+        secret.encode("utf-8"),
+        f"{timestamp}:{payload_json}".encode("utf-8"),
         digestmod=hashlib.sha256,
     ).hexdigest()
     result = sign(model, timestamp, secret)
@@ -32,9 +32,7 @@ class AliasModel(BaseModel):
     my_field: str = Field(alias="myField")
     other: int
 
-    model_config = {
-        'populate_by_name': True
-    }
+    model_config = {"populate_by_name": True}
 
 
 def test_sign_respects_alias():
@@ -43,11 +41,11 @@ def test_sign_respects_alias():
     timestamp = "1620000000"
     secret = "anothersecret"
     # Expect alias key in JSON
-    payload = {"myField":"value","other":42}
-    payload_json = json.dumps(payload, separators=(',',':'))
+    payload = {"myField": "value", "other": 42}
+    payload_json = json.dumps(payload, separators=(",", ":"))
     expected = hmac.new(
-        secret.encode('utf-8'),
-        f"{timestamp}:{payload_json}".encode('utf-8'),
+        secret.encode("utf-8"),
+        f"{timestamp}:{payload_json}".encode("utf-8"),
         digestmod=hashlib.sha256,
     ).hexdigest()
     assert sign(model, timestamp, secret) == expected
@@ -73,6 +71,7 @@ class BadModel(BaseModel):
     def model_dump(self, by_alias: bool = False):
         raise ValueError("serialize error")
 
+
 def test_sign_serialization_error():
     model = BadModel()
     with pytest.raises(RuntimeError) as excinfo:
@@ -84,9 +83,11 @@ def test_sign_hmac_error(monkeypatch):
     model = SimpleModel(foo="test", bar=2)
     timestamp = "1000"
     secret = "sec"
+
     # Simulate HMAC computation failure
     def fake_new(key, msg, digestmod):
         raise RuntimeError("hmac failure")
+
     monkeypatch.setattr(hmac, "new", fake_new)
     with pytest.raises(RuntimeError) as excinfo:
         sign(model, timestamp, secret)

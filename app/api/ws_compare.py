@@ -21,9 +21,7 @@ async def compare_websocket(websocket: WebSocket):
         return
     except Exception:
         await websocket.send_json(
-            WsMessage(
-                type="ERROR", message="Failed to read request."
-            ).model_dump()
+            WsMessage(type="ERROR", message="Failed to read request.").model_dump()
         )
         await websocket.close(code=1008)
         return

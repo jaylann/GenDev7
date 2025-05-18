@@ -65,19 +65,19 @@ def create_app() -> FastAPI:
                     "Accepts a JSON payload matching the WsCompareAddressRequest schema and streams INITIAL_OFFERS and FINAL_OFFERS messages."
                 ),
                 "operationId": "compareWebsocket",
-                "responses": {
-                    "101": {"description": "Switching Protocols"}
-                },
+                "responses": {"101": {"description": "Switching Protocols"}},
                 "requestBody": {
                     "content": {
                         "application/json": {
-                            "schema": {"$ref": "#/components/schemas/WsCompareAddressRequest"}
+                            "schema": {
+                                "$ref": "#/components/schemas/WsCompareAddressRequest"
+                            }
                         }
                     },
                     "required": True,
                 },
                 "security": [],
-                "tags": ["WebSocket"]
+                "tags": ["WebSocket"],
             }
         }
         app.openapi_schema = openapi_schema

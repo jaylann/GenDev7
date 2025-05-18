@@ -6,6 +6,7 @@ class SingleOfferShareRequest(BaseModel):
     """
     Request model for sharing a single offer, including the originating page slug and the specific offer key.
     """
+
     original_page_slug: str = Field(
         ...,
         description="The slug of the page containing the full list of offers.",

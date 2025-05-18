@@ -31,8 +31,8 @@ class PingPerfectFactory:
 
     @staticmethod
     def build_payload(
-            address: Address,
-            wants_fiber: bool = False,
+        address: Address,
+        wants_fiber: bool = False,
     ) -> Tuple[str, Dict[str, str]]:
         """
         Return ``(json_payload, headers)`` for the PingPerfect availability endpoint.

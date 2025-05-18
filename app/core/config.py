@@ -12,9 +12,7 @@ class Settings(BaseSettings):
     )
     webwunder_api_key: str
 
-    byteme_endpoint: str = (
-        "https://byteme.gendev7.check24.fun/app/api/products/data"
-    )
+    byteme_endpoint: str = "https://byteme.gendev7.check24.fun/app/api/products/data"
     byteme_api_key: str
 
     pingperfect_endpoint: str = (
@@ -27,14 +25,14 @@ class Settings(BaseSettings):
     servusspeed_username: str
     servusspeed_password: str
 
-    verbyndich_base: str = (
-        "https://verbyndich.gendev7.check24.fun/check24/data"
-    )
+    verbyndich_base: str = "https://verbyndich.gendev7.check24.fun/check24/data"
     verbyndich_api_key: str
 
-    cache_ttl_seconds: int = 24*60*60  # one hour
+    cache_ttl_seconds: int = 24 * 60 * 60  # one hour
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+    )
 
 
 @lru_cache
