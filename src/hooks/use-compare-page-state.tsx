@@ -365,6 +365,8 @@ export function useComparePageState(): ComparePageState {
         setIsRefiningOffers(false);
         setHasSearchBeenPerformed(true);
 
+        // Reset refine toast guard for each new search
+        hasTriggeredRefineRef.current = false;
         connectWebSocket();
     }, [parsedBackendAddress, connectWebSocket]);
 
