@@ -86,12 +86,12 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
         onAddressSelect(address, fullText);
     };
 
-    // Runs only when the button is actually clickable.               // NEW
-    const handleEnterSearch = () => {                                // NEW
+    // Runs only when the button is actually clickable.
+    const handleEnterSearch = () => {
         if (!isSearchDisabled && !isLoading && !isLoadingFromSlug) {
             onSearchClick();
         }
-    };                                                               // NEW
+    };
 
     // Layout section wrapping the address input and search button.
     return (
@@ -102,7 +102,7 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
                     parsedAddress={parsedAddress}
                     initialValue={defaultAddressText || ""}
                     onAddressSelect={handleInternalAddressSelect}
-                    onEnterSearch={handleEnterSearch}         // NEW
+                    onEnterSearch={handleEnterSearch}
                     inputClassName="bg-slate-800/50 border-slate-700 placeholder:text-slate-400 rounded-lg px-3 py-2 text-sm sm:text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                     containerClassName="flex-grow"
                     disabled={inputDisabled}

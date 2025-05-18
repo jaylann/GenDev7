@@ -37,7 +37,7 @@ export interface AddressAutocompleteInputProps {
     /**
      * Triggered when the user presses Enter *and* the suggestion list is closed.
      */
-    onEnterSearch?: () => void;          // NEW
+    onEnterSearch?: () => void;
 }
 
 /**
@@ -64,7 +64,7 @@ export const AddressAutocompleteInput: React.FC<
          inputClassName,
          containerClassName,
          disabled,
-         onEnterSearch,                    // NEW
+         onEnterSearch,
      }) => {
     // Initialize autocomplete hook: manages input value, suggestion list, and selection logic.
     const {
@@ -81,7 +81,6 @@ export const AddressAutocompleteInput: React.FC<
             : (initialValue ?? defaultAddressText ?? ""),
     });
 
-    // NEW: keyboard navigation state
     const [highlightedIdx, setHighlightedIdx] = useState<number>(-1);
     useEffect(() => {
         setHighlightedIdx(-1);
@@ -138,11 +137,11 @@ export const AddressAutocompleteInput: React.FC<
         const newValue = e.target.value;
         setValue(newValue);
         setShowSuggestions(true);
-        setHighlightedIdx(-1);           // NEW
+        setHighlightedIdx(-1);
         if (!newValue.trim()) onAddressSelect(null, "");
     };
 
-    const total = suggestions.data.length;  // NEW helper
+    const total = suggestions.data.length;
 
     // Handle keyboard navigation and selection
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -173,7 +172,7 @@ export const AddressAutocompleteInput: React.FC<
                 } else if (value.trim()) {
                     setShowSuggestions(false);
                     await geocodeAndEmit(value);
-                    onEnterSearch?.();       // NEW
+                    onEnterSearch?.();
                 }
                 break;
             }
