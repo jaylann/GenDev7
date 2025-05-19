@@ -1,7 +1,8 @@
 from typing import List, Optional
 
-from app.models import Address
 from pydantic import Field
+
+from app.models import Address
 
 
 class WsCompareAddressRequest(Address):

@@ -9,11 +9,12 @@ from aiocache import Cache, cached
 from httpx import HTTPStatusError
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 
-from app.core.config import get_settings, Settings
+from app.core import Settings
+from app.exceptions import ProviderError
+from app.factories import ServusSpeedFactory
 from app.models import Address, Offer
-from app.utils.logger import logger as util_logger
-from .base import ProviderBase, ProviderError
-from ..factories.servusspeed_factory import ServusSpeedFactory
+from app.providers.base import ProviderBase
+from app.utils import get_settings, logger
 
 settings: Settings = get_settings()
 
@@ -48,15 +49,15 @@ async def _post_json(
             location = resp.headers.get("location")
             raise ProviderError(f"Redirected from {url} to {location}")
         resp.raise_for_status()
-        util_logger.debug(f"Received JSON from {url}")
+        logger.debug(f"Received JSON from {url}")
         return resp
     except httpx.TimeoutException as e:
-        util_logger.error(f"Timeout on POST to {url}: {e!r}")
+        logger.error(f"Timeout on POST to {url}: {e!r}")
         raise
     except (HTTPStatusError, httpx.RequestError) as e:
         status = getattr(e, "response", None)
         code = status.status_code if status is not None else "N/A"
-        util_logger.error(f"HTTP {code} on POST to {url}: {e!r}")
+        logger.error(f"HTTP {code} on POST to {url}: {e!r}")
         raise ProviderError(f"{url} → {e!r}") from e
 
 
@@ -65,28 +66,15 @@ class ServusSpeedProvider(ProviderBase):
     INTERNAL_PROVIDER_FETCH_TIMEOUT: float = 88.0
     MIN_TIME_FOR_DETAILS: float = 5.0
 
-    @cached(
-        ttl=43200,
-        cache=Cache.MEMORY,
-        key_builder=lambda f, self, address: (
-            f"servusspeed:{address.street}:{address.house_number}:{address.city}:{address.plz}:{address.country_code}"
-        ),
-    )
-    @retry(
-        stop=stop_after_attempt(2),
-        wait=wait_fixed(1),
-        retry=retry_if_exception_type((ProviderError, httpx.HTTPError)),
-        reraise=True,
-    )
     async def fetch(self, address: Address) -> List[Offer]:
         loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
         start: float = loop.time()
 
         if not settings.servusspeed_username or not settings.servusspeed_password:
-            util_logger.critical("Credentials not set; skipping Servus Speed")
+            logger.critical("Credentials not set; skipping Servus Speed")
             return []
 
-        util_logger.info(f"ServusSpeedProvider.fetch – {address}")
+        logger.info(f"ServusSpeedProvider.fetch – {address}")
 
         # build 'available-products' body via factory
         body: Dict[str, Any] = ServusSpeedFactory.build_available_products_body(address)
@@ -108,17 +96,17 @@ class ServusSpeedProvider(ProviderBase):
             )
             product_ids: List[str] = resp_avail.json().get("availableProducts", [])
         except Exception as e:
-            util_logger.error(f"Failed fetching available products: {e!r}")
+            logger.error(f"Failed fetching available products: {e!r}")
             raise
 
         if not product_ids:
-            util_logger.info("No products available")
+            logger.info("No products available")
             return []
 
         elapsed: float = loop.time() - start
         budget: float = self.INTERNAL_PROVIDER_FETCH_TIMEOUT - elapsed - 2.0
         if budget < self.MIN_TIME_FOR_DETAILS:
-            util_logger.warning("Insufficient time for details; skipping")
+            logger.warning("Insufficient time for details; skipping")
             return []
 
         # fetch details in parallel
@@ -136,7 +124,7 @@ class ServusSpeedProvider(ProviderBase):
                 if o:
                     offers.append(o)
         except asyncio.TimeoutError:
-            util_logger.warning("Timed out gathering detail tasks")
+            logger.warning("Timed out gathering detail tasks")
             for t in tasks:
                 if t.done() and not t.cancelled():
                     try:
@@ -148,10 +136,9 @@ class ServusSpeedProvider(ProviderBase):
                 elif not t.done():
                     t.cancel()
 
-        util_logger.info(f"Returning {len(offers)} offers")
+        logger.info(f"Returning {len(offers)} offers")
         return offers
 
-    @cached(ttl=43200, cache=Cache.MEMORY, key_builder=lambda f, self, pid: pid)
     async def _fetch_one_product_details(self, pid: str) -> Optional[Offer]:
         async with _sem:
             try:
@@ -170,7 +157,7 @@ class ServusSpeedProvider(ProviderBase):
     async def _fetch_details_with_retry(
         self, pid: str, body: Dict[str, Any], auth: Tuple[str, str]
     ) -> Offer:
-        util_logger.debug(f"Fetching detail for {pid}")
+        logger.debug(f"Fetching detail for {pid}")
         resp = await _post_json(
             self.client,
             f"{settings.servusspeed_base.rstrip('/')}/api/external/product-details/{pid}",

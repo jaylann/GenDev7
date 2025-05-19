@@ -1,30 +1,44 @@
+"""
+Module for retrieving and configuring network speed providers.
+
+This module exposes a factory function to initialize provider instances
+based on optional filtering criteria and configuration flags.
+"""
 from typing import List, Optional
 
-import httpx
-
+from app.providers import (
+    WebWunderProvider,
+    ByteMeProvider,
+    PingPerfectProvider,
+    ServusSpeedProvider,
+    VerbynDichProvider,
+)
 from app.providers.base import ProviderBase
-from app.providers.byteme import ByteMeProvider
-from app.providers.pingperfect import PingPerfectProvider
-from app.providers.servusspeed import ServusSpeedProvider
-from app.providers.verbyndich import VerbynDichProvider
-from app.providers.webwunder import WebWunderProvider
-from app.utils.logger import logger
-
-_shared_client = httpx.AsyncClient(timeout=httpx.Timeout(10.0))
+from app.utils import shared_client, logger
 
 
 async def get_providers(
     provider_names: Optional[List[str]] = None, wants_fiber: bool = False
 ) -> List[ProviderBase]:
+    """
+    Retrieve and initialize provider instances.
+
+    Args:
+        provider_names (Optional[List[str]]): Names of providers to include. If None, all are used.
+        wants_fiber (bool): Whether to configure providers for fiber service.
+
+    Returns:
+        List[ProviderBase]: Initialized list of provider instances.
+    """
     all_providers: List[ProviderBase] = [
-        WebWunderProvider(_shared_client),
-        ByteMeProvider(_shared_client),
-        PingPerfectProvider(_shared_client, wants_fiber=wants_fiber),
-        ServusSpeedProvider(_shared_client),
-        VerbynDichProvider(_shared_client),
+        WebWunderProvider(shared_client),
+        ByteMeProvider(shared_client),
+        PingPerfectProvider(shared_client, wants_fiber=wants_fiber),
+        ServusSpeedProvider(shared_client),
+        VerbynDichProvider(shared_client),
     ]
 
-    # if the caller gave us a whitelist, filter by name; otherwise use all
+    # Filter providers by name if a whitelist is provided
     if provider_names:
         providers: List[ProviderBase] = [
             p for p in all_providers if p.name in provider_names
@@ -32,5 +46,6 @@ async def get_providers(
     else:
         providers: List[ProviderBase] = all_providers
 
+    # Log the names of the loaded providers for debugging
     logger.info(f"Loaded providers: {[p.name for p in providers]}; ")
     return providers

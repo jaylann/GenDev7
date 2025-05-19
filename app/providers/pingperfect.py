@@ -3,14 +3,13 @@ from __future__ import annotations
 from typing import List, Dict, Any
 
 import httpx
-from loguru import logger
-
-from app.core.config import get_settings, Settings
+from app.core import Settings, RetryConfig
+from app.exceptions import ProviderError
+from app.factories import PingPerfectFactory
 from app.models import Address, Offer
-from .base import ProviderBase, ProviderError
-from ..core.retry_config import RetryConfig
-from ..factories.pingperfect_factory import PingPerfectFactory
-from ..models.providers.pingperfect_response import PingPerfectResponse
+from app.models.providers.responses import PingPerfectResponse
+from app.providers.base import ProviderBase
+from app.utils import get_settings, logger
 
 settings: Settings = get_settings()
 

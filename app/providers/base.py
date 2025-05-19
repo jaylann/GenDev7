@@ -1,16 +1,15 @@
-# app/providers/base.py
 from __future__ import annotations
 
 import abc
 from typing import List, Dict, Any
 
 import httpx
-from loguru import logger
 from tenacity import AsyncRetrying, retry_if_exception_type
 
-from app.core.retry_config import RetryConfig
-from app.exceptions.provider_error import ProviderError
+from app.core import RetryConfig
+from app.exceptions import ProviderError
 from app.models import Address, Offer
+from app.utils import logger
 
 
 class ProviderBase(abc.ABC):

@@ -4,12 +4,13 @@ import time
 from typing import List, Dict, Any
 
 from httpx import Response
-from loguru import logger
 
-from app.core.config import get_settings, Settings
+from app.core import Settings
+from app.exceptions import ProviderError
+from app.factories import WebWunderFactory
 from app.models import Address, Offer
-from .base import ProviderBase, ProviderError
-from ..factories.webwunder_factory import WebWunderFactory
+from app.providers.base import ProviderBase
+from app.utils import logger, get_settings
 
 settings: Settings = get_settings()
 

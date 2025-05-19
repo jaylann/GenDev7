@@ -3,16 +3,12 @@ from __future__ import annotations
 from typing import List, Optional, Final, Any
 
 import pandas as pd
-from loguru import logger
 
-from ..models import Offer
-from ..models.providers.byteme_response import ByteMeResponse
+from app.models import Offer
+from app.models.providers.responses import ByteMeResponse
+from app.utils import logger
 
-
-class ByteMeOfferFactory:
-    # ──────────────────────────────────────────────────
-    # Column sets & constants
-    # ──────────────────────────────────────────────────
+class ByteMeFactory:
     _ESSENTIAL_NUMERIC_COLS: Final[List[str]] = [
         "productId",
         "speed",
@@ -33,9 +29,6 @@ class ByteMeOfferFactory:
     _TV_SOURCE_COL: Final[str] = "tv"
     _TV_INCLUDED_FLAG_COL: Final[str] = "_tv_is_included_internal_"  # original name
 
-    # ──────────────────────────────────────────────────
-    # Single-row converter
-    # ──────────────────────────────────────────────────
     @classmethod
     def from_tuple(cls, row: pd.Series) -> Optional[ByteMeResponse]:
         try:
@@ -110,9 +103,6 @@ class ByteMeOfferFactory:
             )
             return None
 
-    # ──────────────────────────────────────────────────
-    # DataFrame cleaner
-    # ──────────────────────────────────────────────────
     @classmethod
     def clean_df(cls, df: pd.DataFrame) -> pd.DataFrame:
         if df.empty:
@@ -192,9 +182,6 @@ class ByteMeOfferFactory:
         )
         return df
 
-    # ──────────────────────────────────────────────────
-    # Public helpers
-    # ──────────────────────────────────────────────────
     @classmethod
     def make_responses(cls, df: pd.DataFrame) -> List[ByteMeResponse]:
         cleaned = cls.clean_df(df)

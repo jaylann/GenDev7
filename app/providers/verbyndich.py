@@ -7,7 +7,6 @@ from typing import Any
 
 import httpx
 from async_lru import alru_cache
-from loguru import logger
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -15,10 +14,12 @@ from tenacity import (
     wait_exponential,
 )
 
-from app.core.config import get_settings, Settings
+from app.core import Settings
+from app.factories import VerbynDichFactory
 from app.models import Address, Offer
-from .base import ProviderBase
-from ..factories.verbyndich_factory import VerbynDichFactory
+from app.providers.base import ProviderBase
+from app.utils import get_settings
+from app.utils import logger
 
 settings: Settings = get_settings()
 

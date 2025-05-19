@@ -1,7 +1,6 @@
 from pydantic import BaseModel, Field
 
 
-# --- New Pydantic Models for Single Offer Sharing ---
 class SingleOfferShareRequest(BaseModel):
     """
     Request model for sharing a single offer, including the originating page slug and the specific offer key.

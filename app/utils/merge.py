@@ -3,10 +3,8 @@ from __future__ import annotations
 import math
 from typing import Dict, Tuple, List
 
-from loguru import logger
-
 from app.models import Offer
-
+from app.utils.logger import logger
 
 def _key(o: Offer) -> Tuple[str, str]:
     """

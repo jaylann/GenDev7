@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from app.models.providers.servus_speed_address import ServusSpeedAddress
+from app.models.providers import ServusSpeedAddress
 
 
 class ServusSpeedRequest(BaseModel):

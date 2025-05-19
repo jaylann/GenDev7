@@ -8,9 +8,9 @@ import pytest
 from hypothesis import given, strategies as st, settings, HealthCheck
 from hypothesis.extra.pandas import data_frames, column
 
-from app.factories.byteme_factory import ByteMeOfferFactory
+from app.factories.byteme_factory import ByteMeFactory
 from app.models import Offer
-from app.models.providers.byteme_response import ByteMeResponse
+from app.models.providers.responses.byteme_response import ByteMeResponse
 
 # Base valid data dictionary, easy to override for specific test cases
 BASE_VALID_ROW_DATA: Dict[str, Any] = {
@@ -471,7 +471,7 @@ def test_process_diverse_dataframe_scenarios() -> None:
     raw_data_rows = [case["data"] for case in DIVERSE_TEST_CASES]
     input_df = _create_test_df_from_list_of_dicts(raw_data_rows)
 
-    responses = ByteMeOfferFactory.make_responses(input_df)
+    responses = ByteMeFactory.make_responses(input_df)
 
     eligible_for_dedupe: Dict[str, List[tuple[float, int, Dict[str, Any]]]] = {}
 
@@ -480,7 +480,7 @@ def test_process_diverse_dataframe_scenarios() -> None:
     for i, case in enumerate(DIVERSE_TEST_CASES):
         is_initially_valid_for_clean_df = True
         # Check essential numeric columns
-        for essential_col in ByteMeOfferFactory._ESSENTIAL_NUMERIC_COLS:
+        for essential_col in ByteMeFactory._ESSENTIAL_NUMERIC_COLS:
             val = case["data"].get(essential_col)
             try:
                 num_val = float(val) if val is not None and val != "" else np.nan
@@ -505,7 +505,7 @@ def test_process_diverse_dataframe_scenarios() -> None:
             continue  # This row would be dropped by clean_df
 
         # Check essential string columns
-        for essential_col in ByteMeOfferFactory._ESSENTIAL_STRING_COLS:
+        for essential_col in ByteMeFactory._ESSENTIAL_STRING_COLS:
             val = case["data"].get(essential_col)
             # clean_df drops if it's NaN after .astype(object).where(pd.notna(...), None)
             # So, an original np.nan or None will be dropped. Empty string "" will NOT be dropped here.
@@ -634,7 +634,7 @@ def test_process_diverse_dataframe_scenarios() -> None:
                     ), f"Response mismatch for product {product_id} (case index {i}), attribute {attr}: expected {repr(expected_value)}, got {repr(actual_value)} (Case: {case['description']})"
 
     canonical_provider_name = "TestByteMeProvider"
-    offers = ByteMeOfferFactory.make_offers(input_df, canonical_provider_name)
+    offers = ByteMeFactory.make_offers(input_df, canonical_provider_name)
 
     expected_surviving_cases_offers_indices = {
         idx
@@ -689,7 +689,7 @@ def test_clean_df_with_missing_columns() -> None:
         k: v for k, v in base_valid_data_for_missing_cols.items()
     }
     df_missing_conn = pd.DataFrame([data_missing_essential_str])
-    cleaned_df1 = ByteMeOfferFactory.clean_df(df_missing_conn)
+    cleaned_df1 = ByteMeFactory.clean_df(df_missing_conn)
     assert (
         cleaned_df1.empty
     ), "Row should be dropped if 'connectionType' column is entirely missing"
@@ -699,7 +699,7 @@ def test_clean_df_with_missing_columns() -> None:
         "connectionType": "DSL",
     }
     df_missing_optionals = pd.DataFrame([data_with_essential_str])
-    cleaned_df2 = ByteMeOfferFactory.clean_df(df_missing_optionals)
+    cleaned_df2 = ByteMeFactory.clean_df(df_missing_optionals)
 
     assert (
         len(cleaned_df2) == 1
@@ -707,13 +707,13 @@ def test_clean_df_with_missing_columns() -> None:
 
     row = cleaned_df2.iloc[0]
     assert row["installationService"] == False
-    assert row[ByteMeOfferFactory._TV_INCLUDED_FLAG_COL] == False
+    assert row[ByteMeFactory._TV_INCLUDED_FLAG_COL] == False
     assert (
-        pd.isna(row[ByteMeOfferFactory._TV_SOURCE_COL])
-        or row[ByteMeOfferFactory._TV_SOURCE_COL] is None
+            pd.isna(row[ByteMeFactory._TV_SOURCE_COL])
+            or row[ByteMeFactory._TV_SOURCE_COL] is None
     ), "Missing 'tv' col should result in tv_package_name=None"
 
-    for col in ByteMeOfferFactory._OPTIONAL_NUMERIC_COLS:
+    for col in ByteMeFactory._OPTIONAL_NUMERIC_COLS:
         assert pd.isna(
             row[col]
         ), f"Missing optional numeric column '{col}' should be pd.NA (NaN)"
@@ -815,14 +815,14 @@ VOUCHER_TYPE_STRATEGY = st.one_of(
 )
 def test_fuzz_factory_methods_robustness(df_fuzzed: pd.DataFrame) -> None:
     try:
-        responses = ByteMeOfferFactory.make_responses(df_fuzzed)
+        responses = ByteMeFactory.make_responses(df_fuzzed)
         assert isinstance(responses, list)
         for resp in responses:
             assert isinstance(resp, ByteMeResponse)
             assert resp.product_id is not None
             assert resp.provider_name is not None
 
-        offers = ByteMeOfferFactory.make_offers(df_fuzzed, provider_name="FuzzByte")
+        offers = ByteMeFactory.make_offers(df_fuzzed, provider_name="FuzzByte")
         assert isinstance(offers, list)
         for offer in offers:
             assert isinstance(offer, Offer)

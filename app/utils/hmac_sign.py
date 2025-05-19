@@ -6,7 +6,7 @@ import json
 
 from typing import Any, Dict
 
-from loguru import logger
+from app.utils.logger import logger
 from pydantic import BaseModel
 
 

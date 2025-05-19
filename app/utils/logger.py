@@ -2,7 +2,6 @@ import os
 import sys
 
 from loguru import logger
-from pathlib import Path
 
 # Determine environment and log level
 ENV = os.getenv("ENV", "production").lower()

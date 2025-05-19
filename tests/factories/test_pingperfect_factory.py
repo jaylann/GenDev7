@@ -485,7 +485,7 @@ from hypothesis import (
 )
 import uuid
 
-from app.models.providers.pingperfect_response import PingPerfectResponse
+from app.models.providers.responses.pingperfect_response import PingPerfectResponse
 
 
 # Strategies for fuzzing

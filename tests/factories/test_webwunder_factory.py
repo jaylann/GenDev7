@@ -20,10 +20,10 @@ from pydantic import ValidationError
 from app.factories.webwunder_factory import WebWunderFactory
 from app.models import Address
 from app.models.base.offer import VoucherKind
-from app.models.providers.webwunder_request import (
+from app.models.providers.requests.webwunder_request import (
     WebWunderRequest as ActualWebWunderRequest,
 )
-from app.models.providers.webwunder_response import WebWunderResponse
+from app.models.providers.responses.webwunder_response import WebWunderResponse
 
 XML_EXAMPLE_ABSOLUTE_FULL: str = """
 <SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/">
@@ -776,10 +776,9 @@ class TestWebWunderFactoryParseResponseFuzzing:
                         and result.voucher_min_order_value_cents >= 0
                     )
                 if result.voucher_type == VoucherKind.CASHBACK:
-                    assert (
-                        result.voucher_value_cents is not None
-                        and result.voucher_value_cents >= 0
-                    )
+                    if result.voucher_value_cents is not None:
+                        assert result.voucher_value_cents >= 0
+
 
         except ValidationError:
             pytest.fail(

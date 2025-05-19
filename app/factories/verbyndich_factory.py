@@ -4,11 +4,12 @@ import re
 from typing import Any, Dict, List, Optional
 
 from pydantic import ValidationError
+
 from app.models import Address
 from app.models.base.offer import VoucherKind
-from app.models.providers.verbyndich_request import VerbynDichRequest
-from app.models.providers.verbyndich_response import VerbynDichResponse
-from app.utils.logger import logger
+from app.models.providers.requests import VerbynDichRequest
+from app.models.providers.responses import VerbynDichResponse
+from app.utils import logger
 
 # Pre-compiled regexes for extraction
 _PRICE_MONTH_RE = re.compile(r"für\s*nur\s*(\d+(?:[.,]\d+)?)\s*€\s*im\s*Monat", re.I)

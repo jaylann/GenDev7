@@ -3,9 +3,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
-from app.api.http_compare import router as http_compare_router
+from app.api.routes.http_compare import router as http_compare_router
 from app.api.schemas.ws_compare_address_request import WsCompareAddressRequest
-from app.api.ws_compare import router as ws_compare_router
+from app.api.routes.ws_compare import router as ws_compare_router
 from app.utils.http import shared_client
 
 load_dotenv()

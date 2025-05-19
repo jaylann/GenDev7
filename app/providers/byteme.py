@@ -4,24 +4,26 @@ from io import StringIO
 
 import httpx
 import pandas as pd
-from loguru import logger
-
-from .base import ProviderBase, ProviderError
-from ..core.config import get_settings, Settings
-from ..factories.byteme_factory import ByteMeOfferFactory
-from ..models import Offer, Address
-from ..models.providers.byteme_request import ByteMeRequest
-
-settings: Settings = get_settings()
 from typing import List, Dict, Any
+
+from app.core import Settings
+from app.exceptions import ProviderError
+from app.factories import ByteMeFactory
+from app.models import Address, Offer
+from app.models.providers.requests import ByteMeRequest
+from app.providers.base import ProviderBase
+from app.utils import get_settings, logger
+
+
 
 
 class ByteMeProvider(ProviderBase):
     name: str = "ByteMe"
 
+
     async def fetch(self, address: Address) -> List[Offer]:
         logger.info(f"ByteMeProvider.fetch for address: {address}")
-
+        settings: Settings = get_settings()
         request: ByteMeRequest = ByteMeRequest(
             street=address.street,
             houseNumber=address.house_number,
@@ -47,6 +49,6 @@ class ByteMeProvider(ProviderBase):
 
         # Parse CSV (first row is header)
         df: pd.DataFrame = pd.read_csv(StringIO(resp.text), header=0)
-        offers: List[Offer] = ByteMeOfferFactory.make_offers(df, self.name)
+        offers: List[Offer] = ByteMeFactory.make_offers(df, self.name)
         logger.info(f"Returning {len(offers)} ByteMe offers")
         return offers

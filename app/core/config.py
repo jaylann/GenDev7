@@ -1,12 +1,16 @@
-from __future__ import annotations
+"""Application configuration loaded from environment variables."""
 
-from functools import lru_cache
+from __future__ import annotations
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # === Provider secrets / URLs ===
+    """
+    Settings for external service endpoints and API credentials.
+    Loaded from environment and cached for reuse.
+    """
+    # Provider endpoints and credentials
     webwunder_wsdl: str = (
         "https://webwunder.gendev7.check24.fun/endpunkte/soap/ws/getInternetOffers.wsdl"
     )
@@ -28,13 +32,9 @@ class Settings(BaseSettings):
     verbyndich_base: str = "https://verbyndich.gendev7.check24.fun/check24/data"
     verbyndich_api_key: str
 
-    cache_ttl_seconds: int = 24 * 60 * 60  # one hour
+    cache_ttl_seconds: int = 24 * 60 * 60  # 24 hours
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
 
-
-@lru_cache
-def get_settings() -> Settings:  # FastAPI caches deps automatically too
-    return Settings()

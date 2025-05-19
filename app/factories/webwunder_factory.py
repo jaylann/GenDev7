@@ -4,13 +4,12 @@ import xml.etree.ElementTree as ET
 from typing import List, Optional
 
 from httpx import Response
-from loguru import logger
 
 from app.models import Address
 from app.models.base.offer import VoucherKind
-from app.models.providers.webwunder_request import WebWunderRequest
-from app.models.providers.webwunder_response import WebWunderResponse
-
+from app.models.providers.requests import WebWunderRequest
+from app.models.providers.responses import WebWunderResponse
+from app.utils import logger
 
 class WebWunderFactory:
     """

@@ -5,15 +5,16 @@ import time
 from fastapi import HTTPException
 from pydantic import ValidationError
 
-from app.api.schemas.compare_response import CompareResponse
-from app.api.schemas.single_offer_share_request import SingleOfferShareRequest
-from app.api.schemas.single_offer_share_response import SingleOfferShareResponse
-from app.core.config import Settings
+from app.api.schemas import (
+    CompareResponse,
+    SingleOfferShareRequest,
+    SingleOfferShareResponse,
+)
+from app.core import Settings
 from app.models import Address
-from app.services.caching_service import get as cache_get, set as cache_set
-from app.utils.logger import logger
-from app.utils.slug import decode, encode
-
+from app.utils import decode, encode
+from app.utils import logger
+from app.services import cache_get, cache_set
 
 # --------------------------------------------------------------------------- #
 # 1. HTTP helpers                                                             #

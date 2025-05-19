@@ -1,27 +1,26 @@
-from typing import Optional
+"""
+Module for configuring Tenacity retry behavior via a Pydantic model.
+"""
+
+from typing import Any, Optional
+
 
 from pydantic import BaseModel, Field, ConfigDict
 from tenacity.retry import retry_base, retry_if_exception_type
 from tenacity.stop import stop_base, stop_after_attempt
 from tenacity.wait import wait_base, wait_exponential
 
-
+ # Pydantic model for configuring retry behavior with Tenacity
 class RetryConfig(BaseModel):
     """
-    Configuration model for Tenacity retry loops.
+    Pydantic model encapsulating Tenacity retry configuration.
 
-    Attributes
-    ----------
-    stop : StopBase
-        When to stop retrying.
-    wait : WaitBase
-        Backoff strategy between retries.
-    retry : RetryBase
-        Which exceptions trigger a retry.
-    reraise : bool
-        Whether to reraise the last exception after retries are exhausted.
-    max_attempts : Optional[int]
-        Alias for stop_after_attempt; if set, will override `stop`.
+    Attributes:
+        stop: Strategy to determine when to stop retrying.
+        wait: Strategy for wait/backoff between retries.
+        retry: Condition under which to retry.
+        reraise: Whether to reraise the final exception.
+        max_attempts: Optional alias for stop_after_attempt.
     """
 
     # Allow non-Pydantic types (tenacity stops, waits, retries)
@@ -46,8 +45,13 @@ class RetryConfig(BaseModel):
         None, description="If provided, aliases stop_after_attempt"
     )
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
+        """
+        Initialize the RetryConfig model.
+
+        Overrides the stop strategy if `max_attempts` is explicitly set.
+        """
         super().__init__(**data)
-        # if max_attempts is explicitly set, override stop
+        # Override the stop strategy when max_attempts is provided
         if self.max_attempts is not None:
             self.stop = stop_after_attempt(self.max_attempts)

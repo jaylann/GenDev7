@@ -4,10 +4,10 @@ from typing import Dict, Any, Optional
 
 from app.models import Address
 from app.models.base.offer import VoucherKind
-from ..models.providers.servus_speed_address import ServusSpeedAddress
-from ..models.providers.servus_speed_request import ServusSpeedRequest
-from ..models.providers.servusspeed_response import ServusSpeedResponse
-from ..utils.logger import logger
+from app.models.providers import ServusSpeedAddress
+from app.models.providers.requests import ServusSpeedRequest
+from app.models.providers.responses import ServusSpeedResponse
+from app.utils import logger
 
 
 class ServusSpeedFactory:

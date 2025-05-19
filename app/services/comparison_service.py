@@ -13,19 +13,14 @@ import httpx
 from fastapi import WebSocket
 from pydantic import ValidationError
 
-from app.api.dependencies import get_providers
-from app.api.schemas.ws_compare_address_request import WsCompareAddressRequest
-from app.api.schemas.ws_message import WsMessage
-from app.core.config import Settings
-from app.models import Offer, Address
+from app.api import get_providers
+from app.api.schemas import WsCompareAddressRequest, WsMessage
+from app.core import Settings
+from app.models import Address, Offer
+from app.providers import ServusSpeedProvider
 from app.providers.base import ProviderBase
-from app.providers.servusspeed import ServusSpeedProvider
-from app.services.caching_service import set as cache_set
-from app.utils.http import shared_client
-from app.utils.logger import logger
-from app.utils.merge import merge_offers
-from app.utils.slug import encode
-
+from app.utils import logger, shared_client, merge_offers, encode
+from app.services import cache_set, cache_get
 
 # --------------------------------------------------------------------------- #
 # Helper: run a provider (with its retry config inside ProviderBase           #
