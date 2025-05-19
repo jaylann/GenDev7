@@ -1,28 +1,25 @@
-# tests/conftest.py
-
 import asyncio
-import time
-from typing import List, Optional, Callable, Any, Dict, Generator, AsyncGenerator
+from typing import List, Optional, Callable, Any, Dict, Generator
+from unittest.mock import (
+    MagicMock,
+)
 
 import httpx
 import pytest
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from unittest.mock import (
-    AsyncMock,
-    MagicMock,
-)  # For mocking ServusSpeedProvider __call__
+load_dotenv(".env.test")
 
-# Ensure the app's modules are importable
-# This might require setting PYTHONPATH or specific project configurations.
-# For this example, I'll assume relative imports work or paths are set.
-from app.main import app as fastapi_app  # Assuming your FastAPI app instance is here
-from app.core.config import Settings, get_settings
+from app.core import Settings
 from app.models import Offer, Address
-from app.utils.slug import encode
-from app.api import endpoints as api_endpoints  # To access the _cache
-from app.providers.base import ProviderBase  # Assuming this base class exists
-from app.providers.servusspeed import ServusSpeedProvider
+from app.providers import ServusSpeedProvider
+from app.providers.base import ProviderBase
+from app.services import cache_set
+from app.services.caching_service import _cache
+from app.utils import get_settings, encode
+from app.utils import logger
+from main import app as fastapi_app
 
 
 @pytest.fixture(scope="session")
@@ -78,7 +75,7 @@ def clear_global_cache() -> None:
     """
     Automatically clears the global API cache before each test.
     """
-    api_endpoints._cache.clear()
+    _cache.clear()
     # logger.debug("Global API cache cleared for test.") # Optional: for debugging test setup
 
 
@@ -111,16 +108,16 @@ class MockConcreteProvider(ProviderBase):
 
     async def __call__(self, address: Address) -> List[Offer]:
         """Simulates fetching offers from a provider."""
-        api_endpoints.logger.debug(
+        logger.debug(
             f"MockProvider '{self.name}' called with delay {self.call_delay}s. Success: {self.should_succeed}"
         )
         await asyncio.sleep(self.call_delay)
         if not self.should_succeed:
-            api_endpoints.logger.error(
+            logger.error(
                 f"MockProvider '{self.name}' raising configured exception."
             )
             raise ValueError(f"Mock provider {self.name} failed as configured.")
-        api_endpoints.logger.info(
+        logger.info(
             f"MockProvider '{self.name}' returning {len(self.offers_to_return_data)} offers."
         )
         return [Offer.model_validate(data) for data in self.offers_to_return_data]
@@ -178,18 +175,18 @@ def mock_servusspeed_provider_instance_factory(
         offers_data_to_return = [o.model_dump() for o in (offers_to_return or [])]
 
         async def mock_call(address: Address) -> List[Offer]:
-            api_endpoints.logger.debug(
+            logger.debug(
                 f"Mocked ServusSpeedProvider ({instance.name}) __call__ invoked with delay {call_delay}s. Success: {should_succeed}"
             )
             await asyncio.sleep(call_delay)
             if not should_succeed:
-                api_endpoints.logger.error(
+                logger.error(
                     f"Mocked ServusSpeedProvider ({instance.name}) configured to fail."
                 )
                 raise ValueError(
                     f"Mocked ServusSpeedProvider ({instance.name}) failed as configured."
                 )
-            api_endpoints.logger.info(
+            logger.info(
                 f"Mocked ServusSpeedProvider ({instance.name}) returning {len(offers_data_to_return)} offers."
             )
             return [Offer.model_validate(data) for data in offers_data_to_return]
@@ -205,7 +202,7 @@ async def set_cache_for_test(
     slug: str, offers: List[Offer], settings: Settings
 ) -> None:
     """Helper function to set items in the API's cache for testing purposes."""
-    await api_endpoints._cache_set(slug, offers, settings.cache_ttl_seconds)
+    await cache_set(slug, offers, settings.cache_ttl_seconds)
 
 
 def create_test_api_slug(payload_data: Dict[str, Any]) -> str:
