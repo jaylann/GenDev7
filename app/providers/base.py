@@ -4,6 +4,7 @@ Abstract framework for provider adapters with retry support.
 Defines a base class that handles retrying failed lookups using Tenacity
 and delegates actual data retrieval to subclass-implemented `fetch`.
 """
+
 from __future__ import annotations
 
 import abc

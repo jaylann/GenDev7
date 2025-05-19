@@ -25,6 +25,7 @@ from app.providers.base import ProviderBase
 from app.utils import logger, shared_client, merge_offers, encode
 from app.services import cache_set, cache_get
 
+
 # Helper: run a provider (with its retry config inside ProviderBase
 async def execute_provider_fetch(
     provider: ProviderBase,

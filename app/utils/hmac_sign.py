@@ -4,6 +4,7 @@ Utilities for generating HMAC-SHA256 signatures for API payloads.
 Provides a `sign` function that serializes Pydantic models to JSON
 and prefixes them with a timestamp before computing the HMAC digest.
 """
+
 from __future__ import annotations
 
 import hashlib

@@ -4,6 +4,7 @@ Logging configuration using Loguru.
 Sets up a console sink with an environment-based log level, structured formatting,
 and enhanced error diagnostics.
 """
+
 import os
 import sys
 

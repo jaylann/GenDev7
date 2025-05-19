@@ -13,6 +13,7 @@ from tenacity.retry import retry_base, retry_if_exception_type
 from tenacity.stop import stop_base, stop_after_attempt
 from tenacity.wait import wait_base, wait_exponential
 
+
 class RetryConfig(BaseModel):
     """
     Model for configuring Tenacity retry strategies.

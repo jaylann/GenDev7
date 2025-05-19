@@ -10,6 +10,7 @@ from typing import Dict, Tuple, List
 from app.models import Offer
 from app.utils.logger import logger
 
+
 def _key(o: Offer) -> Tuple[str, str]:
     """
     Generate a deduplication key using provider and product_id (case-insensitive).

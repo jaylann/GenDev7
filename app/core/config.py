@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
     Loaded from environment variables and cached for reuse.
     """
+
     # Endpoints and credentials for external services
     webwunder_wsdl: str = (
         "https://webwunder.gendev7.check24.fun/endpunkte/soap/ws/getInternetOffers.wsdl"
@@ -42,4 +43,3 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
     )
-

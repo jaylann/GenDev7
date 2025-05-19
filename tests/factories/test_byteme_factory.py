@@ -709,8 +709,8 @@ def test_clean_df_with_missing_columns() -> None:
     assert row["installationService"] == False
     assert row[ByteMeFactory._TV_INCLUDED_FLAG_COL] == False
     assert (
-            pd.isna(row[ByteMeFactory._TV_SOURCE_COL])
-            or row[ByteMeFactory._TV_SOURCE_COL] is None
+        pd.isna(row[ByteMeFactory._TV_SOURCE_COL])
+        or row[ByteMeFactory._TV_SOURCE_COL] is None
     ), "Missing 'tv' col should result in tv_package_name=None"
 
     for col in ByteMeFactory._OPTIONAL_NUMERIC_COLS:

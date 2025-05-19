@@ -4,6 +4,7 @@ Adapter module for ByteMe provider integration.
 Defines ByteMeProvider to request address-based offers from the ByteMe API,
 parse CSV responses, and convert them into internal Offer models.
 """
+
 from __future__ import annotations
 
 from io import StringIO
@@ -21,8 +22,6 @@ from app.providers.base import ProviderBase
 from app.utils import get_settings, logger
 
 
-
-
 class ByteMeProvider(ProviderBase):
     """
     Provider adapter for the ByteMe service.
@@ -30,6 +29,7 @@ class ByteMeProvider(ProviderBase):
     Fetches offers by sending HTTP requests to the ByteMe API endpoint,
     parsing the CSV response, and producing a list of Offer instances.
     """
+
     name: str = "ByteMe"
 
     def __init__(

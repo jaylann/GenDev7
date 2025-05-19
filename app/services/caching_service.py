@@ -12,6 +12,7 @@ from typing import Dict, List, Optional, Tuple
 
 from app.models import Offer
 from app.utils import logger
+
 # slug  -> (expires_ts, offers)
 _cache: Dict[str, Tuple[float, List[Offer]]] = {}
 

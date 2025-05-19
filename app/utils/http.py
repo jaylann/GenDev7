@@ -2,6 +2,7 @@
 Provides a shared httpx AsyncClient instance for the application,
 configured with connection pooling limits, timeouts, and default headers.
 """
+
 import httpx
 
 # Configure connection pooling and keepalive settings

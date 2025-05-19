@@ -24,7 +24,6 @@ class PingPerfectFactory:
     and computing derived fields like a deterministic UUID and normalization flags.
     """
 
-
     @staticmethod
     def build_payload(
         address: Address,
@@ -63,7 +62,6 @@ class PingPerfectFactory:
             "Content-Type": "application/json",
         }
         return payload_json, headers
-
 
     @staticmethod
     def _installation_included(val: Any) -> bool:

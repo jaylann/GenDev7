@@ -4,6 +4,7 @@ Factory and utilities for ByteMe provider data.
 Parses raw DataFrame rows into structured ByteMeResponse objects,
 cleans and filters data, and creates Offer models.
 """
+
 from __future__ import annotations
 
 from typing import List, Optional, Final, Any
@@ -14,11 +15,13 @@ from app.models import Offer
 from app.models.providers.responses import ByteMeResponse
 from app.utils import logger
 
+
 class ByteMeFactory:
     """
     Provides methods to clean raw data, parse responses, and generate offers
     for the ByteMe provider.
     """
+
     _ESSENTIAL_NUMERIC_COLS: Final[List[str]] = [
         "productId",
         "speed",
@@ -101,7 +104,9 @@ class ByteMeFactory:
                 price_cents_month_regular=row.afterTwoYearsMonthlyCost,
                 contract_duration_months=row.durationInMonths,
                 connection_type=row.connectionType,
-                installation_service_included=getattr(row, "installationService", False),
+                installation_service_included=getattr(
+                    row, "installationService", False
+                ),
                 tv_included=tv_included,
                 tv_package_name=tv_package_name,
                 data_cap_gb=getattr(row, "limitFrom", None),

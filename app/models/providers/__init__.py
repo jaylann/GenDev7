@@ -1,4 +1,3 @@
-
 from .servus_speed_address import ServusSpeedAddress
 
 from . import requests

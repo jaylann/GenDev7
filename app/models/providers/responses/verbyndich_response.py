@@ -20,6 +20,7 @@ class VerbynDichResponse(BaseModel):
 
     Includes custom validators for field cleaning and conversion to the internal Offer model.
     """
+
     valid: bool
     last: bool
 

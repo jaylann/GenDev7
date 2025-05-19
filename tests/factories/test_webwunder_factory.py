@@ -779,7 +779,6 @@ class TestWebWunderFactoryParseResponseFuzzing:
                     if result.voucher_value_cents is not None:
                         assert result.voucher_value_cents >= 0
 
-
         except ValidationError:
             pytest.fail(
                 f"Pydantic ValidationError leaked from parse_response. XML: {xml_str}"

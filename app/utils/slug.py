@@ -4,6 +4,7 @@ Utilities for serializing and compressing JSON payloads into compact, URL-safe s
 Provides functions to encode Python payloads into base64-encoded, zlib-compressed strings
 and to decode them back into Python objects.
 """
+
 from __future__ import annotations
 
 import base64

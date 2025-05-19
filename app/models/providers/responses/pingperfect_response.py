@@ -13,6 +13,7 @@ class PingPerfectResponse(BaseModel):
 
     Provides validated fields for provider data and transforms into an internal Offer.
     """
+
     provider_name: constr(strip_whitespace=True, min_length=1)
     product_id: constr(strip_whitespace=True, min_length=1)
     speed_down_mbit: PositiveInt

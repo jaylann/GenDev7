@@ -4,6 +4,7 @@ Service functions for creating and retrieving shared offer comparisons.
 Encodes and decodes shareable slugs, interacts with cache for storing and fetching offers,
 and validates input before responding with API schemas.
 """
+
 from __future__ import annotations
 
 import time
@@ -21,6 +22,8 @@ from app.models import Address
 from app.utils import decode, encode
 from app.utils import logger
 from app.services import cache_get, cache_set
+
+
 async def get_comparison_by_slug(slug: str) -> CompareResponse:
     """
     Retrieve comparison data using an encoded slug.

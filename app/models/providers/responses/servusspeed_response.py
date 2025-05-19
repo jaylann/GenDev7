@@ -13,6 +13,7 @@ class ServusSpeedResponse(BaseModel):
 
     Includes validators to normalize optional fields and ensure integer conversion where needed.
     """
+
     provider_name: constr(strip_whitespace=True, min_length=1)
     product_id: constr(strip_whitespace=True, min_length=1)
     speed_down_mbit: PositiveInt

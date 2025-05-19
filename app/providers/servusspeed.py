@@ -4,6 +4,7 @@ Asynchronous provider implementation for ServusSpeed.
 Defines HTTP helpers and a provider class to retrieve available products
 and detailed offers using concurrent requests with retry support.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -121,7 +122,10 @@ class ServusSpeedProvider(ProviderBase):
         loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
         start: float = loop.time()
 
-        if not self.settings.servusspeed_username or not self.settings.servusspeed_password:
+        if (
+            not self.settings.servusspeed_username
+            or not self.settings.servusspeed_password
+        ):
             logger.critical("Credentials not set; skipping Servus Speed")
             return []
 

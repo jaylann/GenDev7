@@ -11,6 +11,7 @@ from app.models.providers.requests import WebWunderRequest
 from app.models.providers.responses import WebWunderResponse
 from app.utils import logger
 
+
 class WebWunderFactory:
     """
     Factory for building WebWunder SOAP requests and parsing responses into WebWunderResponse models.

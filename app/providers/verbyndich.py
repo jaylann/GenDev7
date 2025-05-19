@@ -4,6 +4,7 @@ Provider for fetching broadband offers from the VerbynDich API.
 Supports paginated requests with retry and caching to efficiently
 retrieve available offers for a given address.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -85,6 +86,7 @@ class VerbynDichProvider(ProviderBase):
 
     Implements paginated retrieval, converting raw responses into Offer models.
     """
+
     name: str = "VerbynDich"
 
     def __init__(

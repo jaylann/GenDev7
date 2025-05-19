@@ -1,6 +1,7 @@
 """
 API routes for retrieving comparison results and generating shareable links.
 """
+
 from fastapi import APIRouter, Depends
 
 from app.api.schemas import (
@@ -27,7 +28,6 @@ async def compare_by_slug(slug: str) -> CompareResponse:
         CompareResponse: The comparison data.
     """
     return await get_comparison_by_slug(slug)
-
 
 
 @router.post("/offers/share-link", response_model=SingleOfferShareResponse)

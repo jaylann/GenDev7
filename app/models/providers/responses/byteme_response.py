@@ -21,6 +21,7 @@ class ByteMeResponse(BaseModel):
 
     Includes validators to clean and normalize input, and conversion to the internal Offer type.
     """
+
     provider_name: constr(strip_whitespace=True, min_length=1)
     product_id: constr(strip_whitespace=True, min_length=1)
     speed_down_mbit: PositiveInt

@@ -2,6 +2,7 @@
 Provider implementation for PingPerfect, fetching and converting offers
 for given addresses using HTTP API.
 """
+
 from __future__ import annotations
 
 from typing import List, Dict, Any
@@ -21,6 +22,7 @@ class PingPerfectProvider(ProviderBase):
     Adapter for PingPerfect service, extends ProviderBase to retrieve
     network offers for a specific address.
     """
+
     name: str = "PingPerfect"
 
     def __init__(

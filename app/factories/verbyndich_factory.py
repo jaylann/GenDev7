@@ -4,6 +4,7 @@ Utilities for building request bodies and parsing responses from the VerbynDich 
 Constructs API payloads and transforms raw provider data into validated
 VerbynDichResponse models, filtering out invalid or duplicate offers.
 """
+
 from __future__ import annotations
 
 import re

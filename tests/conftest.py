@@ -9,6 +9,7 @@ import pytest
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+
 load_dotenv(".env.test")
 
 from app.core import Settings
@@ -113,9 +114,7 @@ class MockConcreteProvider(ProviderBase):
         )
         await asyncio.sleep(self.call_delay)
         if not self.should_succeed:
-            logger.error(
-                f"MockProvider '{self.name}' raising configured exception."
-            )
+            logger.error(f"MockProvider '{self.name}' raising configured exception.")
             raise ValueError(f"Mock provider {self.name} failed as configured.")
         logger.info(
             f"MockProvider '{self.name}' returning {len(self.offers_to_return_data)} offers."
