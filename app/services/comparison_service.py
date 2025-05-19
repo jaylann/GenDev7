@@ -22,8 +22,8 @@ from app.core import Settings
 from app.models import Address, Offer
 from app.providers import ServusSpeedProvider
 from app.providers.base import ProviderBase
+from app.services import cache_set
 from app.utils import logger, shared_client, merge_offers, encode
-from app.services import cache_set, cache_get
 
 
 # Helper: run a provider (with its retry config inside ProviderBase

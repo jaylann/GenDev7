@@ -8,8 +8,6 @@ retrieve available offers for a given address.
 from __future__ import annotations
 
 import asyncio
-import json
-import os
 from typing import Any
 
 import httpx
@@ -21,7 +19,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from app.core import Settings, RetryConfig
+from app.core import RetryConfig
 from app.factories import VerbynDichFactory
 from app.models import Address, Offer
 from app.providers.base import ProviderBase

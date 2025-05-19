@@ -8,21 +8,18 @@ and detailed offers using concurrent requests with retry support.
 from __future__ import annotations
 
 import asyncio
-import json
 from typing import List, Tuple, Optional, Dict, Any
 
 import httpx
-from aiocache import Cache, cached
 from httpx import HTTPStatusError
-from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
+from tenacity import retry, stop_after_attempt, retry_if_exception_type
 
-from app.core import Settings, RetryConfig
+from app.core import RetryConfig
 from app.exceptions import ProviderError
 from app.factories import ServusSpeedFactory
 from app.models import Address, Offer
 from app.providers.base import ProviderBase
 from app.utils import get_settings, logger
-
 
 # concurrency & timeout constants
 MAX_PARALLEL = 3

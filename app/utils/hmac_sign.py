@@ -10,11 +10,11 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
-
 from typing import Any, Dict
 
-from app.utils.logger import logger
 from pydantic import BaseModel
+
+from app.utils.logger import logger
 
 
 def sign(payload_obj: BaseModel, timestamp: str, secret: str) -> str:

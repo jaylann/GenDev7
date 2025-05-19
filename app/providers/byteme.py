@@ -8,12 +8,12 @@ parse CSV responses, and convert them into internal Offer models.
 from __future__ import annotations
 
 from io import StringIO
+from typing import List, Dict, Any
 
 import httpx
 import pandas as pd
-from typing import List, Dict, Any
 
-from app.core import Settings, RetryConfig
+from app.core import RetryConfig
 from app.exceptions import ProviderError
 from app.factories import ByteMeFactory
 from app.models import Address, Offer

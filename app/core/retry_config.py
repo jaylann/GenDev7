@@ -7,7 +7,6 @@ with optional aliasing of max_attempts.
 
 from typing import Any, Optional
 
-
 from pydantic import BaseModel, Field, ConfigDict
 from tenacity.retry import retry_base, retry_if_exception_type
 from tenacity.stop import stop_base, stop_after_attempt

@@ -4,10 +4,9 @@ import time
 from typing import List, Dict, Any
 
 import httpx
-
 from httpx import Response
 
-from app.core import Settings, RetryConfig
+from app.core import RetryConfig
 from app.exceptions import ProviderError
 from app.factories import WebWunderFactory
 from app.models import Address, Offer

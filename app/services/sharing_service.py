@@ -19,9 +19,9 @@ from app.api.schemas import (
 )
 from app.core import Settings
 from app.models import Address
+from app.services import cache_get, cache_set
 from app.utils import decode, encode
 from app.utils import logger
-from app.services import cache_get, cache_set
 
 
 async def get_comparison_by_slug(slug: str) -> CompareResponse:
