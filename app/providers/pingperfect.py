@@ -15,8 +15,6 @@ from app.models.providers.responses import PingPerfectResponse
 from app.providers.base import ProviderBase
 from app.utils import get_settings, logger
 
-settings: Settings = get_settings()
-
 
 class PingPerfectProvider(ProviderBase):
     """
@@ -42,6 +40,8 @@ class PingPerfectProvider(ProviderBase):
             wants_fiber (bool): Whether to request fiber-specific offers.
         """
         super().__init__(client, retry_config=retry_config)
+        # load settings per instance
+        self.settings = get_settings()
         self.wants_fiber: bool = wants_fiber
 
     async def fetch(self, address: Address) -> List[Offer]:
@@ -67,7 +67,7 @@ class PingPerfectProvider(ProviderBase):
 
         try:
             resp = await self.client.post(
-                url=settings.pingperfect_endpoint,
+                url=self.settings.pingperfect_endpoint,
                 content=payload_json,
                 headers=headers,
                 timeout=10,

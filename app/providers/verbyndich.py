@@ -20,14 +20,12 @@ from tenacity import (
     wait_exponential,
 )
 
-from app.core import Settings
+from app.core import Settings, RetryConfig
 from app.factories import VerbynDichFactory
 from app.models import Address, Offer
 from app.providers.base import ProviderBase
 from app.utils import get_settings
 from app.utils import logger
-
-settings: Settings = get_settings()
 
 # Pagination/cache constants
 MAX_PAGES = 20
@@ -48,12 +46,20 @@ PAGE_FETCH_RETRY_EXP_MAX_WAIT = 10
     retry=retry_if_exception_type((httpx.TimeoutException, httpx.HTTPStatusError)),
     reraise=True,
 )
-async def _fetch_page(client: httpx.AsyncClient, body: str, page: int) -> dict:
+async def _fetch_page(
+    client: httpx.AsyncClient,
+    base: str,
+    api_key: str,
+    body: str,
+    page: int,
+) -> dict:
     """
     Retrieve a single page of offer data with retry and in-memory caching.
 
     Args:
         client (httpx.AsyncClient): HTTP client for making the POST request.
+        base (str): Base URL for the API.
+        api_key (str): API key for authentication.
         body (str): Serialized request payload.
         page (int): Page index to fetch.
 
@@ -64,8 +70,8 @@ async def _fetch_page(client: httpx.AsyncClient, body: str, page: int) -> dict:
         httpx.HTTPError: If the HTTP request fails after retries.
     """
     r = await client.post(
-        settings.verbyndich_base,
-        params={"apiKey": settings.verbyndich_api_key, "page": page},
+        base,
+        params={"apiKey": api_key, "page": page},
         content=body,
         timeout=PAGE_TMO,
     )
@@ -80,6 +86,19 @@ class VerbynDichProvider(ProviderBase):
     Implements paginated retrieval, converting raw responses into Offer models.
     """
     name: str = "VerbynDich"
+
+    def __init__(
+        self,
+        client: httpx.AsyncClient,
+        *,
+        retry_config: RetryConfig | None = None,
+    ) -> None:
+        """
+        Initialize VerbynDichProvider with HTTP client and optional retry_config.
+        """
+        super().__init__(client, retry_config=retry_config)
+        # load settings per instance
+        self.settings = get_settings()
 
     async def fetch(self, address: Address) -> list[Offer]:
         """
@@ -101,7 +120,13 @@ class VerbynDichProvider(ProviderBase):
 
         async def _one(page: int) -> tuple[int, dict[str, Any]]:
             async with semaphore:
-                return page, await _fetch_page(self.client, body, page)
+                return page, await _fetch_page(
+                    self.client,
+                    self.settings.verbyndich_base,
+                    self.settings.verbyndich_api_key,
+                    body,
+                    page,
+                )
 
         # Fire off the first batch
         pending: set[asyncio.Task[tuple[int, dict[str, Any]]]] = {

@@ -3,16 +3,16 @@ from __future__ import annotations
 import time
 from typing import List, Dict, Any
 
+import httpx
+
 from httpx import Response
 
-from app.core import Settings
+from app.core import Settings, RetryConfig
 from app.exceptions import ProviderError
 from app.factories import WebWunderFactory
 from app.models import Address, Offer
 from app.providers.base import ProviderBase
 from app.utils import logger, get_settings
-
-settings: Settings = get_settings()
 
 
 class WebWunderProvider(ProviderBase):
@@ -23,6 +23,19 @@ class WebWunderProvider(ProviderBase):
     """
 
     name: str = "WebWunder"
+
+    def __init__(
+        self,
+        client: httpx.AsyncClient,
+        *,
+        retry_config: RetryConfig | None = None,
+    ) -> None:
+        """
+        Initialize WebWunderProvider with HTTP client and optional retry_config.
+        """
+        super().__init__(client, retry_config=retry_config)
+        # load settings per instance
+        self.settings = get_settings()
 
     async def fetch(self, address: Address) -> List[Offer]:
         """
@@ -44,14 +57,14 @@ class WebWunderProvider(ProviderBase):
         xml_request: str = WebWunderFactory.build_xml(address)
         headers: Dict[str, str] = {
             "Content-Type": "text/xml; charset=utf-8",
-            "X-Api-Key": settings.webwunder_api_key,
+            "X-Api-Key": self.settings.webwunder_api_key,
             "SOAPAction": "legacyGetInternetOffers",
         }
 
         start: float = time.perf_counter()
         try:
             resp: Response = await self.client.post(
-                settings.webwunder_wsdl,
+                self.settings.webwunder_wsdl,
                 content=xml_request,
                 headers=headers,
                 timeout=10,

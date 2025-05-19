@@ -15,14 +15,13 @@ from aiocache import Cache, cached
 from httpx import HTTPStatusError
 from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 
-from app.core import Settings
+from app.core import Settings, RetryConfig
 from app.exceptions import ProviderError
 from app.factories import ServusSpeedFactory
 from app.models import Address, Offer
 from app.providers.base import ProviderBase
 from app.utils import get_settings, logger
 
-settings: Settings = get_settings()
 
 # concurrency & timeout constants
 MAX_PARALLEL = 3
@@ -90,6 +89,22 @@ class ServusSpeedProvider(ProviderBase):
     INTERNAL_PROVIDER_FETCH_TIMEOUT: float = 88.0
     MIN_TIME_FOR_DETAILS: float = 5.0
 
+    def __init__(
+        self,
+        client: httpx.AsyncClient,
+        *,
+        retry_config: RetryConfig | None = None,
+    ) -> None:
+        """
+        Initialize ServusSpeedProvider with HTTP client and optional retry_config.
+        """
+        super().__init__(client, retry_config=retry_config)
+        # load settings per instance
+        self.settings = get_settings()
+        # initialize attributes for later assignment
+        self._servus_body: Optional[Dict[str, Any]] = None
+        self._servus_auth: Optional[Tuple[str, str]] = None
+
     async def fetch(self, address: Address) -> List[Offer]:
         """
         Retrieve available product IDs and fetch their details.
@@ -106,7 +121,7 @@ class ServusSpeedProvider(ProviderBase):
         loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
         start: float = loop.time()
 
-        if not settings.servusspeed_username or not settings.servusspeed_password:
+        if not self.settings.servusspeed_username or not self.settings.servusspeed_password:
             logger.critical("Credentials not set; skipping Servus Speed")
             return []
 
@@ -115,8 +130,8 @@ class ServusSpeedProvider(ProviderBase):
         # build 'available-products' body via factory
         body: Dict[str, Any] = ServusSpeedFactory.build_available_products_body(address)
         auth: Tuple[str, str] = (
-            settings.servusspeed_username,
-            settings.servusspeed_password,
+            self.settings.servusspeed_username,
+            self.settings.servusspeed_password,
         )
         self._servus_body = body
         self._servus_auth = auth
@@ -125,7 +140,7 @@ class ServusSpeedProvider(ProviderBase):
         try:
             resp_avail = await _post_json(
                 self.client,
-                f"{settings.servusspeed_base.rstrip('/')}/api/external/available-products",
+                f"{self.settings.servusspeed_base.rstrip('/')}/api/external/available-products",
                 body,
                 auth,
                 AVAILABLE_PRODUCTS_TIMEOUT,
@@ -222,7 +237,7 @@ class ServusSpeedProvider(ProviderBase):
         logger.debug(f"Fetching detail for {pid}")
         resp = await _post_json(
             self.client,
-            f"{settings.servusspeed_base.rstrip('/')}/api/external/product-details/{pid}",
+            f"{self.settings.servusspeed_base.rstrip('/')}/api/external/product-details/{pid}",
             body,
             auth,
             PRODUCT_DETAILS_TIMEOUT,

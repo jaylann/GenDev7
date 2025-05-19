@@ -12,7 +12,7 @@ import httpx
 import pandas as pd
 from typing import List, Dict, Any
 
-from app.core import Settings
+from app.core import Settings, RetryConfig
 from app.exceptions import ProviderError
 from app.factories import ByteMeFactory
 from app.models import Address, Offer
@@ -32,6 +32,19 @@ class ByteMeProvider(ProviderBase):
     """
     name: str = "ByteMe"
 
+    def __init__(
+        self,
+        client: httpx.AsyncClient,
+        *,
+        retry_config: RetryConfig | None = None,
+    ) -> None:
+        """
+        Initialize ByteMeProvider with HTTP client and optional retry_config.
+        """
+        super().__init__(client, retry_config=retry_config)
+        # load settings per instance
+        self.settings = get_settings()
+
     async def fetch(self, address: Address) -> List[Offer]:
         """
         Perform data retrieval from the ByteMe API for a given address.
@@ -50,7 +63,6 @@ class ByteMeProvider(ProviderBase):
             ProviderError: If the HTTP request fails or CSV parsing errors occur.
         """
         logger.info(f"ByteMeProvider.fetch for address: {address}")
-        settings: Settings = get_settings()
         request: ByteMeRequest = ByteMeRequest(
             street=address.street,
             houseNumber=address.house_number,
@@ -58,11 +70,11 @@ class ByteMeProvider(ProviderBase):
             plz=address.plz,
         )
         params: Dict[str, Any] = request.model_dump()
-        headers: Dict[str, str] = {"X-Api-Key": settings.byteme_api_key}
+        headers: Dict[str, str] = {"X-Api-Key": self.settings.byteme_api_key}
 
         try:
             resp = await self.client.get(
-                settings.byteme_endpoint,
+                self.settings.byteme_endpoint,
                 params=params,
                 headers=headers,
                 timeout=10,
