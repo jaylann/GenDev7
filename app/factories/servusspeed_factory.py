@@ -12,12 +12,23 @@ from app.utils import logger
 
 class ServusSpeedFactory:
     """
-    Factory for building Servus Speed request payloads and parsing
-    individual product-detail responses into ServusSpeedResponse models.
+    Factory for creating request payloads and parsing responses for Servus Speed service.
+
+    This class provides methods to build request bodies for available products
+    and to parse detail payloads into ServusSpeedResponse objects.
     """
 
     @staticmethod
     def build_available_products_body(address: Address) -> Dict[str, Any]:
+        """
+        Build request payload to retrieve available products.
+
+        Args:
+            address (Address): Address model with street, house_number, plz, city, country_code.
+
+        Returns:
+            Dict[str, Any]: Payload dictionary for the ServusSpeedRequest.
+        """
         s_addr: ServusSpeedAddress = ServusSpeedAddress(
             strasse=address.street,
             hausnummer=address.house_number,
@@ -31,12 +42,21 @@ class ServusSpeedFactory:
     @staticmethod
     def parse_detail_response(pid: str, payload: Any) -> Optional[ServusSpeedResponse]:
         """
-        Safely parse one product-detail payload into a ServusSpeedResponse.
-        Returns None on any malformed or missing data.
+        Parse a product-detail payload into a ServusSpeedResponse.
+
+        Safely transforms payload into a ServusSpeedResponse model, returning
+        None if required fields are missing or invalid.
+
+        Args:
+            pid (str): Identifier of the product.
+            payload (Any): Raw response payload to parse.
+
+        Returns:
+            Optional[ServusSpeedResponse]: Parsed response model or None on failure.
         """
         try:
             if not isinstance(payload, dict):
-                # Escape braces in payload for logging, as payload itself might contain them
+                # Escape braces for logging
                 logger.error(
                     f"Invalid payload type for pid {pid}: expected dict, got {type(payload).__name__}"
                 )
@@ -95,7 +115,7 @@ class ServusSpeedFactory:
                 return None
 
             tv_value = info.get("tv")
-            # Corrected tv_package_name logic: strip whitespace and ensure non-empty for package name
+            # Normalize TV package name
             tv_package_name_candidate = tv_value if isinstance(tv_value, str) else None
             if tv_package_name_candidate:
                 tv_package_name_candidate = tv_package_name_candidate.strip()
@@ -118,6 +138,7 @@ class ServusSpeedFactory:
                 except ValueError:
                     max_age = None
 
+            # Determine installation service inclusion
             installation_val = price.get("installationService", False)
             if isinstance(installation_val, bool):
                 installation_service_included = installation_val
@@ -159,7 +180,7 @@ class ServusSpeedFactory:
                 f"Type error parsing Servus Speed response for pid {pid}: {e}"
             )
             return None
-        except Exception as e:  # Catch any other unexpected error
+        except Exception as e:
             logger.warning(
                 f"Unexpected error parsing Servus Speed response for pid {pid}: {e}"
             )

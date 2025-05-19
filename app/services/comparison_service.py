@@ -1,6 +1,9 @@
 """
-Business logic for comparing offers (HTTP + WebSocket) – keeps
-FastAPI endpoints slim and declarative.
+Business logic for comparing network service offers via HTTP and WebSocket.
+
+Provides helper functions to execute provider fetches, manage a two-phase
+comparison flow over WebSocket (initial and final offers), and handle
+ServusSpeed-only scenarios with caching.
 """
 
 from __future__ import annotations
@@ -22,18 +25,22 @@ from app.providers.base import ProviderBase
 from app.utils import logger, shared_client, merge_offers, encode
 from app.services import cache_set, cache_get
 
-# --------------------------------------------------------------------------- #
-# Helper: run a provider (with its retry config inside ProviderBase           #
-# --------------------------------------------------------------------------- #
+# Helper: run a provider (with its retry config inside ProviderBase
 async def execute_provider_fetch(
     provider: ProviderBase,
     address: Address,
     client: httpx.AsyncClient,
 ) -> Tuple[str, List[Offer], bool]:
     """
-    Execute a provider call.
+    Execute a provider fetch and capture its result.
 
-    Returns (provider_name, offers, success_flag).
+    Args:
+        provider (ProviderBase): The provider instance to call.
+        address (Address): The address to look up.
+        client (httpx.AsyncClient): HTTP client to use for the request.
+
+    Returns:
+        Tuple[str, List[Offer], bool]: Provider name, list of offers, and success flag.
     """
     provider.client = client
     try:
@@ -46,9 +53,7 @@ async def execute_provider_fetch(
         return provider.name, [], False
 
 
-# --------------------------------------------------------------------------- #
-# 2. WebSocket helpers                                                        #
-# --------------------------------------------------------------------------- #
+# 2. WebSocket helpers
 PHASE_1_TIMEOUT = 15.0
 
 
@@ -58,10 +63,15 @@ async def websocket_comparison_flow(
     settings: Settings,
 ) -> None:
     """
-    Full 2-phase WebSocket comparison flow.
+    Run the two-phase comparison flow over a WebSocket connection.
 
-    Reads `payload` (already received), coordinates providers, streams INITIAL_*
-    and FINAL_* messages back to the client.
+    Args:
+        websocket (WebSocket): The WebSocket to send messages on.
+        payload (dict): The incoming comparison request payload.
+        settings (Settings): Application settings, including cache TTL.
+
+    Returns:
+        None: Streams INITIAL_OFFERS and FINAL_OFFERS messages, then closes.
     """
     try:
         address = WsCompareAddressRequest(**payload)
@@ -177,15 +187,27 @@ async def websocket_comparison_flow(
     )
 
 
-# --------------------------------------------------------------------------- #
-# Helper for “ServusSpeed-only” scenario                                      #
-# --------------------------------------------------------------------------- #
+# Helper for “ServusSpeed-only” scenario
 async def _send_final_for_servus_only(
     websocket: WebSocket,
     servus: ServusSpeedProvider,
     address: Address,
     settings: Settings,
 ) -> None:
+    """
+    Handle the scenario where only ServusSpeedProvider is used.
+
+    Fetches, merges, and caches offers, then sends a FINAL_OFFERS message.
+
+    Args:
+        websocket (WebSocket): The WebSocket connection to send on.
+        servus (ServusSpeedProvider): The ServusSpeedProvider instance.
+        address (Address): The address model to query.
+        settings (Settings): Application settings, for cache TTL.
+
+    Returns:
+        None
+    """
     _, offers, ok = await execute_provider_fetch(servus, address, shared_client)
     merged = merge_offers(offers) if ok else []
     slug = None

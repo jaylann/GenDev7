@@ -1,3 +1,9 @@
+"""
+Abstract framework for provider adapters with retry support.
+
+Defines a base class that handles retrying failed lookups using Tenacity
+and delegates actual data retrieval to subclass-implemented `fetch`.
+"""
 from __future__ import annotations
 
 import abc
@@ -14,8 +20,10 @@ from app.utils import logger
 
 class ProviderBase(abc.ABC):
     """
-    Base class for all provider adapters. Subclasses must implement `fetch`.
-    Wraps `fetch` in a Tenacity retry loop using `retry_config`.
+    Abstract base class for network service provider adapters.
+
+    Provides a retry-wrapped entry point and requires subclasses to implement
+    provider-specific fetch logic.
     """
 
     name: str  # override in subclass, e.g. "WebWunder"
@@ -29,13 +37,32 @@ class ProviderBase(abc.ABC):
         *,
         retry_config: RetryConfig | None = None,
     ) -> None:
+        """
+        Initialize the provider adapter.
+
+        Args:
+            client (httpx.AsyncClient): HTTP client for making requests.
+            retry_config (Optional[RetryConfig]): Custom retry settings;
+                defaults to class-level `retry_config` if not provided.
+        """
         self.client = client
         if retry_config is not None:
             self.retry_config = retry_config
 
     async def __call__(self, address: Address) -> List[Offer]:
         """
-        Entry point that wraps `self.fetch` in a Tenacity retry loop.
+        Execute provider fetch within a retry loop.
+
+        Wraps the `fetch` method in Tenacity retry logic using configured settings.
+
+        Args:
+            address (Address): Target address for the provider lookup.
+
+        Returns:
+            List[Offer]: Offers returned by the provider.
+
+        Raises:
+            ProviderError: If retries are exhausted and error is reraised.
         """
         settings: Dict[str, Any] = self.retry_config.model_dump()
         logger.debug(f"Provider {self.name} retry settings: {settings}")
@@ -57,6 +84,17 @@ class ProviderBase(abc.ABC):
     @abc.abstractmethod
     async def fetch(self, address: Address) -> List[Offer]:  # pragma: no cover
         """
-        Perform provider-specific lookup. Raise ProviderError on failure.
+        Perform the provider-specific data retrieval.
+
+        Subclasses must implement this to fetch offers for the given address.
+
+        Args:
+            address (Address): The address to look up.
+
+        Returns:
+            List[Offer]: List of offers from this provider.
+
+        Raises:
+            ProviderError: If the lookup fails or response is invalid.
         """
         ...

@@ -1,3 +1,7 @@
+"""
+Provider implementation for PingPerfect, fetching and converting offers
+for given addresses using HTTP API.
+"""
 from __future__ import annotations
 
 from typing import List, Dict, Any
@@ -15,6 +19,10 @@ settings: Settings = get_settings()
 
 
 class PingPerfectProvider(ProviderBase):
+    """
+    Adapter for PingPerfect service, extends ProviderBase to retrieve
+    network offers for a specific address.
+    """
     name: str = "PingPerfect"
 
     def __init__(
@@ -25,14 +33,29 @@ class PingPerfectProvider(ProviderBase):
         wants_fiber: bool = False,
     ) -> None:
         """
-        Initialize the PingPerfectProvider with an HTTP client and optional fiber preference.
+        Initialize the PingPerfect provider adapter.
+
+        Args:
+            client (httpx.AsyncClient): HTTP client for making API requests.
+            retry_config (Optional[RetryConfig]): Custom retry settings;
+                defaults to base class configuration if not provided.
+            wants_fiber (bool): Whether to request fiber-specific offers.
         """
         super().__init__(client, retry_config=retry_config)
         self.wants_fiber: bool = wants_fiber
 
     async def fetch(self, address: Address) -> List[Offer]:
         """
-        Fetch available offers for the given address from PingPerfect.
+        Fetch available offers from PingPerfect API for a given address.
+
+        Args:
+            address (Address): Target address for which to fetch offers.
+
+        Returns:
+            List[Offer]: A list of Offer models based on API response.
+
+        Raises:
+            ProviderError: If the HTTP request fails or response validation fails.
         """
         logger.info(f"PingPerfectProvider.fetch – address={address}")
 

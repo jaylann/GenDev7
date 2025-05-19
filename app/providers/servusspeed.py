@@ -1,3 +1,9 @@
+"""
+Asynchronous provider implementation for ServusSpeed.
+
+Defines HTTP helpers and a provider class to retrieve available products
+and detailed offers using concurrent requests with retry support.
+"""
 from __future__ import annotations
 
 import asyncio
@@ -37,6 +43,24 @@ async def _post_json(
     auth: Tuple[str, str],
     timeout: httpx.Timeout,
 ) -> httpx.Response:
+    """
+    Perform a JSON HTTP POST with authentication and timeout handling.
+
+    Args:
+        client (httpx.AsyncClient): HTTP client instance.
+        url (str): The endpoint URL.
+        payload (Dict[str, Any]): JSON-serializable request body.
+        auth (Tuple[str, str]): Basic auth credentials (username, password).
+        timeout (httpx.Timeout): Timeout settings for the request.
+
+    Returns:
+        httpx.Response: The successful HTTP response.
+
+    Raises:
+        ProviderError: On HTTP status errors or unexpected redirects.
+        httpx.TimeoutException: On request timeout.
+        httpx.RequestError: On other request failures.
+    """
     try:
         resp = await client.post(
             url,
@@ -67,6 +91,18 @@ class ServusSpeedProvider(ProviderBase):
     MIN_TIME_FOR_DETAILS: float = 5.0
 
     async def fetch(self, address: Address) -> List[Offer]:
+        """
+        Retrieve available product IDs and fetch their details.
+
+        Performs credential checks, builds request bodies, and gathers detailed
+        offers in parallel within a time budget.
+
+        Args:
+            address (Address): The target address for lookup.
+
+        Returns:
+            List[Offer]: List of retrieved offers, may be empty on errors or timeouts.
+        """
         loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
         start: float = loop.time()
 
@@ -140,6 +176,17 @@ class ServusSpeedProvider(ProviderBase):
         return offers
 
     async def _fetch_one_product_details(self, pid: str) -> Optional[Offer]:
+        """
+        Fetch product details for a single product ID under concurrency control.
+
+        Acquires a semaphore to limit parallel requests and invokes the retrying fetch.
+
+        Args:
+            pid (str): The product identifier.
+
+        Returns:
+            Optional[Offer]: The Offer if successful, or None on failure.
+        """
         async with _sem:
             try:
                 offer = await self._fetch_details_with_retry(
@@ -157,6 +204,21 @@ class ServusSpeedProvider(ProviderBase):
     async def _fetch_details_with_retry(
         self, pid: str, body: Dict[str, Any], auth: Tuple[str, str]
     ) -> Offer:
+        """
+        Fetch product details with a single retry attempt on network errors.
+
+        Args:
+            pid (str): Product identifier.
+            body (Dict[str, Any]): Request body from available-products.
+            auth (Tuple[str, str]): Authentication credentials.
+
+        Returns:
+            Offer: The parsed offer model.
+
+        Raises:
+            httpx.TimeoutException: On request timeout.
+            httpx.RequestError: On other network failures.
+        """
         logger.debug(f"Fetching detail for {pid}")
         resp = await _post_json(
             self.client,

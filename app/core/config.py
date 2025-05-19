@@ -1,4 +1,8 @@
-"""Application configuration loaded from environment variables."""
+"""
+Application settings loaded from environment variables.
+
+Includes endpoints and credentials for external services.
+"""
 
 from __future__ import annotations
 
@@ -7,10 +11,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     """
-    Settings for external service endpoints and API credentials.
-    Loaded from environment and cached for reuse.
+    Application settings for service endpoints and API credentials.
+
+    Loaded from environment variables and cached for reuse.
     """
-    # Provider endpoints and credentials
+    # Endpoints and credentials for external services
     webwunder_wsdl: str = (
         "https://webwunder.gendev7.check24.fun/endpunkte/soap/ws/getInternetOffers.wsdl"
     )
@@ -32,7 +37,7 @@ class Settings(BaseSettings):
     verbyndich_base: str = "https://verbyndich.gendev7.check24.fun/check24/data"
     verbyndich_api_key: str
 
-    cache_ttl_seconds: int = 24 * 60 * 60  # 24 hours
+    cache_ttl_seconds: int = 24 * 60 * 60  # Cache duration in seconds (24 hours)
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"

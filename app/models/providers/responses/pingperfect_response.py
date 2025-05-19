@@ -8,6 +8,11 @@ from app.models.base.offer import VoucherKind, Offer
 
 
 class PingPerfectResponse(BaseModel):
+    """
+    Pydantic model for PingPerfect API responses.
+
+    Provides validated fields for provider data and transforms into an internal Offer.
+    """
     provider_name: constr(strip_whitespace=True, min_length=1)
     product_id: constr(strip_whitespace=True, min_length=1)
     speed_down_mbit: PositiveInt
@@ -24,6 +29,18 @@ class PingPerfectResponse(BaseModel):
 
     @field_validator("provider_name", "product_id", "connection_type", mode="before")
     def must_not_be_blank(cls, v):
+        """
+        Ensure that a string field is not empty or whitespace.
+
+        Args:
+            v (Any): The value to validate.
+
+        Returns:
+            str: The stripped non-empty string.
+
+        Raises:
+            ValueError: If the input is blank or all whitespace.
+        """
         s = str(v).strip()
         if not s:
             raise ValueError("must contain at least one non-whitespace character")
@@ -31,6 +48,15 @@ class PingPerfectResponse(BaseModel):
 
     @field_validator("connection_type", "tv_package_name", mode="before")
     def empty_string_to_none(cls, v):
+        """
+        Convert empty string values to None for optional fields.
+
+        Args:
+            v (Any): The input value.
+
+        Returns:
+            Optional[str]: None if the input is an empty string, otherwise the original value.
+        """
         if v == "":
             return None
         return v
@@ -38,7 +64,13 @@ class PingPerfectResponse(BaseModel):
     @field_validator("speed_down_mbit", mode="before")
     def validate_speed_down_mbit(cls, v):
         """
-        Ensure speed_down_mbit is a positive integer.
+        Validate and coerce the downstream speed to a positive integer.
+
+        Args:
+            v (Any): The raw speed value to validate.
+
+        Returns:
+            Optional[int]: Rounded positive integer speed, or None if invalid.
         """
         if v is None:
             return None
@@ -60,7 +92,14 @@ class PingPerfectResponse(BaseModel):
     )
     def validate_positive_int_fields(cls, v, info):
         """
-        Ensure positive integer fields are positive. If not, set to None to avoid validation error.
+        Validate that numeric fields are positive integers.
+
+        Args:
+            v (Any): The raw numeric value.
+            info (ModelField): Field metadata (ignored).
+
+        Returns:
+            Optional[int]: The integer value if positive, otherwise None.
         """
         if v is None:
             return None
@@ -77,6 +116,15 @@ class PingPerfectResponse(BaseModel):
         return int_v
 
     def to_offer(self, provider_name: str) -> Offer:
+        """
+        Convert this response into an internal Offer model.
+
+        Args:
+            provider_name (str): The name of the provider for the Offer.
+
+        Returns:
+            Offer: The constructed Offer instance.
+        """
         return Offer(
             provider=provider_name,
             plan_name=self.provider_name,

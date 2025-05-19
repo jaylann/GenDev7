@@ -17,17 +17,13 @@ from app.utils import logger
 
 class PingPerfectFactory:
     """
-    Build PingPerfect API requests and translate responses into
-    :class:`PingPerfectResponse` models.
+    Factory for building PingPerfect API requests and parsing responses.
 
-    All value-checking and coercion now lives in the Pydantic model,
-    so this class only deals with transport concerns and a handful
-    of derived fields (UUID, installation-included flag, …).
+    This class handles request construction and translates API responses
+    into PingPerfectResponse models, focusing on transport concerns
+    and computing derived fields like a deterministic UUID and normalization flags.
     """
 
-    # --------------------------------------------------------------------- #
-    # Outbound request helpers
-    # --------------------------------------------------------------------- #
 
     @staticmethod
     def build_payload(
@@ -35,7 +31,14 @@ class PingPerfectFactory:
         wants_fiber: bool = False,
     ) -> Tuple[str, Dict[str, str]]:
         """
-        Return ``(json_payload, headers)`` for the PingPerfect availability endpoint.
+        Build the JSON payload and HTTP headers for the PingPerfect availability endpoint.
+
+        Args:
+            address (Address): The address to check availability for.
+            wants_fiber (bool): Whether to request fiber availability.
+
+        Returns:
+            Tuple[str, Dict[str, str]]: JSON payload string and HTTP headers.
         """
         req = PingPerfectRequest(
             street=address.street,
@@ -45,7 +48,7 @@ class PingPerfectFactory:
             wantsFiber=wants_fiber,
         )
 
-        # Pydantic v2 model_dump_json no longer supports separators; serialize manually
+        # Serialize to compact JSON
         payload_json: str = json.dumps(req.model_dump(), separators=(",", ":"))
         logger.debug(f"PingPerfectFactory.build_payload → {payload_json}")
 
@@ -61,24 +64,33 @@ class PingPerfectFactory:
         }
         return payload_json, headers
 
-    # --------------------------------------------------------------------- #
-    # Inbound response helpers
-    # --------------------------------------------------------------------- #
 
     @staticmethod
     def _installation_included(val: Any) -> bool:
         """
-        Normalise vendor strings like ``"Yes"`` / ``"included"`` → ``True``.
+        Normalize installation service indicator to boolean.
+
+        Args:
+            val (Any): Raw installation service value.
+
+        Returns:
+            bool: True if installation is included.
         """
         return str(val).strip().lower() in {"yes", "included", "true", "1"}
 
     @staticmethod
     def parse_response(item: Dict[str, Any]) -> Optional[PingPerfectResponse]:
         """
-        Convert a single JSON item to a :class:`PingPerfectResponse`.
+        Parse a raw JSON item into a PingPerfectResponse model.
 
-        Let the Pydantic model decide what’s valid; we only pre-compute the
-        deterministic ``product_id`` and simplify a few booleans.
+        Pre-computes a deterministic product_id and normalizes boolean fields,
+        deferring full validation to the Pydantic model.
+
+        Args:
+            item (Dict[str, Any]): Raw JSON item from the API.
+
+        Returns:
+            Optional[PingPerfectResponse]: Parsed response or None if invalid.
         """
         logger.debug(f"PingPerfectFactory.parse_response → {item}")
 
@@ -127,8 +139,13 @@ class PingPerfectFactory:
     @staticmethod
     def parse_responses(raw_items: List[Dict[str, Any]]) -> List[PingPerfectResponse]:
         """
-        Transform a list of raw JSON items into validated ``PingPerfectResponse``s,
-        skipping anything that fails model validation.
+        Parse multiple JSON items into PingPerfectResponse models.
+
+        Args:
+            raw_items (List[Dict[str, Any]]): List of raw JSON items.
+
+        Returns:
+            List[PingPerfectResponse]: Successfully parsed responses.
         """
         responses: List[PingPerfectResponse] = []
         for item in raw_items:

@@ -8,6 +8,11 @@ from app.models.base.offer import VoucherKind, Offer
 
 
 class ServusSpeedResponse(BaseModel):
+    """
+    Data model for ServusSpeed API responses, mapping raw fields to the internal Offer model.
+
+    Includes validators to normalize optional fields and ensure integer conversion where needed.
+    """
     provider_name: constr(strip_whitespace=True, min_length=1)
     product_id: constr(strip_whitespace=True, min_length=1)
     speed_down_mbit: PositiveInt
@@ -24,6 +29,15 @@ class ServusSpeedResponse(BaseModel):
 
     @field_validator("tv_package_name", "voucher_type", mode="before")
     def empty_string_to_none(cls, v):
+        """
+        Convert empty string inputs to None for optional fields.
+
+        Args:
+            v (Any): The incoming value.
+
+        Returns:
+            Optional[str]: None if the input was an empty string, otherwise the original value.
+        """
         if v == "":
             return None
         return v
@@ -71,6 +85,15 @@ class ServusSpeedResponse(BaseModel):
         return int_v
 
     def to_offer(self, provider_name: str) -> Offer:
+        """
+        Convert this response into an internal Offer instance.
+
+        Args:
+            provider_name (str): Name of the provider for context.
+
+        Returns:
+            Offer: Populated Offer object based on this response data.
+        """
         return Offer(
             provider=provider_name,
             plan_name=self.provider_name,

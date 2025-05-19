@@ -18,11 +18,25 @@ settings: Settings = get_settings()
 class WebWunderProvider(ProviderBase):
     """
     Adapter for the WebWunder SOAP interface.
+
+    Sends SOAP requests and parses responses into Offer models.
     """
 
     name: str = "WebWunder"
 
     async def fetch(self, address: Address) -> List[Offer]:
+        """
+        Fetch broadband offers for a given address via WebWunder SOAP service.
+
+        Args:
+            address (Address): Target address for lookup.
+
+        Returns:
+            List[Offer]: List of available offers.
+
+        Raises:
+            ProviderError: On HTTP or parsing failures.
+        """
         logger.info(
             f"WebWunderProvider.fetch – {address.street} {address.house_number}, {address.plz} {address.city}"
         )
@@ -49,14 +63,14 @@ class WebWunderProvider(ProviderBase):
         duration: float = time.perf_counter() - start
         logger.info(f"WebWunderProvider HTTP {resp.status_code} in {duration:.2f}s")
 
-        # parse XML and extract <products> nodes
+        # Parse XML and extract <products> nodes
         root: Any = WebWunderFactory.postprocess_response(resp)
         product_elems: List[Any] = list(root.iterfind(".//{*}products"))
         logger.info(f"WebWunderProvider → found {len(product_elems)} <products> nodes")
         if not product_elems:
             raise ProviderError("WebWunder response contained no products")
 
-        # get Pydantic‐validated responses, then map to Offer
+        # Convert parsed responses to Offer models
         responses: List[Any] = WebWunderFactory.parse_responses(product_elems)
         offers: List[Offer] = [r.to_offer(self.name) for r in responses]
 

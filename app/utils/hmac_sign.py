@@ -1,3 +1,9 @@
+"""
+Utilities for generating HMAC-SHA256 signatures for API payloads.
+
+Provides a `sign` function that serializes Pydantic models to JSON
+and prefixes them with a timestamp before computing the HMAC digest.
+"""
 from __future__ import annotations
 
 import hashlib
@@ -37,7 +43,7 @@ def sign(payload_obj: BaseModel, timestamp: str, secret: str) -> str:
         raise TypeError("`secret` must be a non-empty str")
 
     try:
-        # Pydantic→dict, then compact JSON
+        # Serialize Pydantic model to a compact JSON string
         data: Dict[str, Any] = payload_obj.model_dump(by_alias=True)
         payload_json: str = json.dumps(data, separators=(",", ":"))
     except Exception:
@@ -52,5 +58,6 @@ def sign(payload_obj: BaseModel, timestamp: str, secret: str) -> str:
         logger.debug("sign(): generated signature {}", signature)
         return signature
     except Exception:
+        # Log and propagate unexpected HMAC computation errors
         logger.exception("sign(): unexpected error during HMAC computation")
         raise RuntimeError("Failed to compute HMAC signature")

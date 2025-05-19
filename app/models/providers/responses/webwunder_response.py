@@ -14,7 +14,9 @@ from app.models.base.offer import VoucherKind, Offer
 
 class WebWunderResponse(BaseModel):
     """
-    Response DTO from WebWunder; convertible into our domain Offer.
+    Data transfer object for WebWunder API responses.
+
+    Parses and validates raw fields from the service, and converts into our Offer model.
     """
 
     provider_name: constr(strip_whitespace=True, min_length=1) = Field(
@@ -57,7 +59,9 @@ class WebWunderResponse(BaseModel):
     @field_validator("voucher_value_percent", mode="before")
     def validate_positive_float_fields(cls, v, info):
         """
-        Ensure positive integer fields are positive. If not, set to None to avoid validation error.
+        Normalize and validate percentage voucher values.
+
+        Converts raw input to float, treating zero and invalid values as None.
         """
         if v is None:
             return None
@@ -72,12 +76,27 @@ class WebWunderResponse(BaseModel):
 
     @field_validator("voucher_type", mode="before")
     def empty_string_to_none(cls, v):
+        """
+        Convert empty voucher type strings to None.
+
+        Args:
+            v: Raw voucher type value, potentially an empty string.
+
+        Returns:
+            Optional[VoucherKind]: None if input is empty string, else original.
+        """
         if isinstance(v, str) and v == "":
             return None
         return v
 
     @field_validator("provider_name", "product_id", "connection_type", mode="before")
     def must_not_be_blank(cls, v):
+        """
+        Ensure critical string fields are not blank.
+
+        Raises:
+            ValueError: If the input string is empty or whitespace.
+        """
         s = str(v).strip()
         if not s:
             raise ValueError("must contain at least one non-whitespace character")
@@ -86,7 +105,9 @@ class WebWunderResponse(BaseModel):
     @field_validator("speed_down_mbit", mode="before")
     def validate_speed_down_mbit(cls, v):
         """
-        Ensure speed_down_mbit is a positive integer.
+        Coerce download speed to positive integer.
+
+        Rounds floats and filters out non-positive values by returning None.
         """
         if v is None:
             return None
@@ -109,7 +130,9 @@ class WebWunderResponse(BaseModel):
     )
     def validate_positive_int_fields(cls, v, info):
         """
-        Ensure positive integer fields are positive. If not, set to None to avoid validation error.
+        Normalize and validate integer pricing and contract fields.
+
+        Converts raw input to int, using float fallback, and rejects non-positive values.
         """
         if v is None:
             return None
@@ -127,8 +150,13 @@ class WebWunderResponse(BaseModel):
 
     def to_offer(self, provider: str) -> Offer:
         """
-        Convert this response DTO into our core Offer model,
-        carrying over all voucher fields.
+        Convert response DTO into an Offer instance.
+
+        Args:
+            provider (str): Provider name context for the generated Offer.
+
+        Returns:
+            Offer: Fully populated domain Offer object.
         """
         return Offer(
             provider=provider,

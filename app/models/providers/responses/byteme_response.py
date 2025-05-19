@@ -16,6 +16,11 @@ from app.models.base.offer import VoucherKind
 
 
 class ByteMeResponse(BaseModel):
+    """
+    Data model for ByteMe API responses, mapping raw fields to a validated Pydantic model.
+
+    Includes validators to clean and normalize input, and conversion to the internal Offer type.
+    """
     provider_name: constr(strip_whitespace=True, min_length=1)
     product_id: constr(strip_whitespace=True, min_length=1)
     speed_down_mbit: PositiveInt
@@ -34,6 +39,12 @@ class ByteMeResponse(BaseModel):
 
     @field_validator("provider_name", "product_id", "connection_type", mode="before")
     def must_not_be_blank(cls, v):
+        """
+        Validator to ensure required string fields contain non-whitespace characters.
+
+        Raises:
+            ValueError: If the input is empty or only whitespace.
+        """
         s = str(v).strip()
         if not s:
             raise ValueError("must contain at least one non-whitespace character")
@@ -41,6 +52,12 @@ class ByteMeResponse(BaseModel):
 
     @field_validator("tv_package_name", "voucher_type", mode="before")
     def empty_string_to_none(cls, v):
+        """
+        Validator to convert empty strings to None for optional string fields.
+
+        Returns:
+            Optional[str]: None if input is an empty string, otherwise the original value.
+        """
         if v == "":
             return None
         return v
@@ -88,6 +105,15 @@ class ByteMeResponse(BaseModel):
         return int_v
 
     def to_offer(self, provider_name: str) -> Offer:
+        """
+        Convert this ByteMeResponse into the internal Offer model.
+
+        Args:
+            provider_name (str): Name of the provider context for the Offer.
+
+        Returns:
+            Offer: Populated Offer instance based on this response.
+        """
         return Offer(
             provider=provider_name,
             plan_name=self.provider_name,

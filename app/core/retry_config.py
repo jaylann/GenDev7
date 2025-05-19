@@ -1,5 +1,8 @@
 """
-Module for configuring Tenacity retry behavior via a Pydantic model.
+Provides a Pydantic model to configure Tenacity retry behavior.
+
+Defines RetryConfig, which encapsulates stop, wait, and retry strategies,
+with optional aliasing of max_attempts.
 """
 
 from typing import Any, Optional
@@ -10,20 +13,22 @@ from tenacity.retry import retry_base, retry_if_exception_type
 from tenacity.stop import stop_base, stop_after_attempt
 from tenacity.wait import wait_base, wait_exponential
 
- # Pydantic model for configuring retry behavior with Tenacity
 class RetryConfig(BaseModel):
     """
-    Pydantic model encapsulating Tenacity retry configuration.
+    Model for configuring Tenacity retry strategies.
+
+    Encapsulates stop, wait, and retry behaviors, and optionally reraise
+    exceptions. Use max_attempts to override the stop strategy.
 
     Attributes:
-        stop: Strategy to determine when to stop retrying.
-        wait: Strategy for wait/backoff between retries.
-        retry: Condition under which to retry.
-        reraise: Whether to reraise the final exception.
-        max_attempts: Optional alias for stop_after_attempt.
+        stop (stop_base): Determines when to stop retrying.
+        wait (wait_base): Backoff strategy between retries.
+        retry (retry_base): Conditions under which to retry.
+        reraise (bool): If True, raises the last exception after retries.
+        max_attempts (Optional[int]): Alias for stop_after_attempt.
     """
 
-    # Allow non-Pydantic types (tenacity stops, waits, retries)
+    # Enable arbitrary Tenacity strategy types
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     stop: stop_base = Field(
@@ -47,11 +52,11 @@ class RetryConfig(BaseModel):
 
     def __init__(self, **data: Any) -> None:
         """
-        Initialize the RetryConfig model.
+        Initialize the model, overriding stop strategy if max_attempts is set.
 
-        Overrides the stop strategy if `max_attempts` is explicitly set.
+        Args:
+            **data: Initialization values, including optional max_attempts.
         """
         super().__init__(**data)
-        # Override the stop strategy when max_attempts is provided
         if self.max_attempts is not None:
             self.stop = stop_after_attempt(self.max_attempts)

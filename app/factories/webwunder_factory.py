@@ -18,6 +18,15 @@ class WebWunderFactory:
 
     @staticmethod
     def build_xml(address: Address) -> str:
+        """
+        Build SOAP XML payload for a given address.
+
+        Args:
+            address (Address): The address to use for building the request.
+
+        Returns:
+            str: Serialized XML string for the WebWunder SOAP request.
+        """
         req = WebWunderRequest(
             street=address.street,
             house_number=address.house_number,
@@ -31,6 +40,19 @@ class WebWunderFactory:
 
     @staticmethod
     def postprocess_response(resp: Response) -> ET.Element:
+        """
+        Validate HTTP response and parse its XML content.
+
+        Args:
+            resp (Response): The HTTP response from the WebWunder service.
+
+        Returns:
+            ET.Element: Root XML element of the parsed response.
+
+        Raises:
+            httpx.HTTPStatusError: If the response status code indicates an error.
+            ET.ParseError: If the response body is invalid XML.
+        """
         try:
             resp.raise_for_status()
         except Exception as exc:
@@ -46,12 +68,34 @@ class WebWunderFactory:
     @staticmethod
     def parse_response(elem: ET.Element) -> Optional[WebWunderResponse]:
         """
-        Parse a single <products> element into a WebWunderResponse.
+        Parse a <products> XML element into a WebWunderResponse.
+
+        Extracts required fields such as provider name and product ID, then
+        parses optional details like speed, pricing, contract term, connection
+        type, and voucher information.
+
+        Args:
+            elem (ET.Element): The XML element representing a product node.
+
+        Returns:
+            Optional[WebWunderResponse]: The parsed response model, or None if
+                required fields are missing or instantiation fails.
         """
 
         def get_text_from_node(
             search_root: ET.Element, tag: str, default: str = ""
         ) -> str:
+            """
+            Retrieve and normalize text content of a child node.
+
+            Args:
+                search_root (ET.Element): The XML element to search.
+                tag (str): The tag name of the node to find.
+                default (str): The value to return if the node or text is missing.
+
+            Returns:
+                str: The trimmed text content, or default if not found.
+            """
             node = search_root.find(f".//{{*}}{tag}")
             return node.text.strip() if node is not None and node.text else default
 
@@ -123,6 +167,15 @@ class WebWunderFactory:
 
     @staticmethod
     def parse_responses(elems: List[ET.Element]) -> List[WebWunderResponse]:
+        """
+        Parse multiple <products> XML elements into WebWunderResponse models.
+
+        Args:
+            elems (List[ET.Element]): List of XML elements to convert.
+
+        Returns:
+            List[WebWunderResponse]: List of successfully parsed response models.
+        """
         responses: List[WebWunderResponse] = []
         for el in elems:
             resp = WebWunderFactory.parse_response(el)

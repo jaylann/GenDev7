@@ -1,3 +1,9 @@
+"""
+Provider for fetching broadband offers from the VerbynDich API.
+
+Supports paginated requests with retry and caching to efficiently
+retrieve available offers for a given address.
+"""
 from __future__ import annotations
 
 import asyncio
@@ -43,6 +49,20 @@ PAGE_FETCH_RETRY_EXP_MAX_WAIT = 10
     reraise=True,
 )
 async def _fetch_page(client: httpx.AsyncClient, body: str, page: int) -> dict:
+    """
+    Retrieve a single page of offer data with retry and in-memory caching.
+
+    Args:
+        client (httpx.AsyncClient): HTTP client for making the POST request.
+        body (str): Serialized request payload.
+        page (int): Page index to fetch.
+
+    Returns:
+        dict: Parsed JSON response for the specified page.
+
+    Raises:
+        httpx.HTTPError: If the HTTP request fails after retries.
+    """
     r = await client.post(
         settings.verbyndich_base,
         params={"apiKey": settings.verbyndich_api_key, "page": page},
@@ -54,25 +74,25 @@ async def _fetch_page(client: httpx.AsyncClient, body: str, page: int) -> dict:
 
 
 class VerbynDichProvider(ProviderBase):
+    """
+    Adapter for VerbynDich service to fetch broadband offers.
+
+    Implements paginated retrieval, converting raw responses into Offer models.
+    """
     name: str = "VerbynDich"
 
     async def fetch(self, address: Address) -> list[Offer]:
         """
-        Fetch all VerbynDich offers available at *address*.
+        Retrieve all offers from VerbynDich for the specified address.
 
-        The algorithm
+        Builds the request payload, fetches pages concurrently up to PARALLEL,
+        stops when the last page is encountered, and accumulates Offer instances.
 
-        1.  Builds the request body with :pyclass:`VerbynDichFactory`.
-        2.  Starts ``PARALLEL`` page-fetch tasks.
-        3.  As pages return, parses them into :pyclass:`Offer` objects.
-        4.  **Immediately cancels every still-running task after the first
-            response whose ``last`` flag is *True*.**
-        5.  Persists the raw JSON for observability.
+        Args:
+            address (Address): The address to query offers for.
 
-        Returns
-        -------
-        list[Offer]
-            All successfully parsed offers.
+        Returns:
+            List[Offer]: Offers available at the given address.
         """
         body: str = VerbynDichFactory.build_body(address)
         semaphore = asyncio.Semaphore(PARALLEL)

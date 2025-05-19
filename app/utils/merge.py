@@ -1,3 +1,7 @@
+"""
+Utilities to deduplicate and sort Offer objects based on their effective price.
+"""
+
 from __future__ import annotations
 
 import math
@@ -32,14 +36,14 @@ def _effective_price(o: Offer) -> int:
         o: The Offer.
 
     Returns:
-        The price in cents used for comparison/sorting.
+        int: Effective monthly price in cents, prioritizing intro then regular;
+             returns math.inf if no price is available.
     """
     if o.price_cents_month_intro is not None:
         return o.price_cents_month_intro
     if o.price_cents_month_regular is not None:
         return o.price_cents_month_regular
-    # missing both prices => sort at the end
-    return math.inf  # type: ignore[return-value]
+    return math.inf
 
 
 def merge_offers(raw: List[Offer]) -> List[Offer]:
@@ -58,24 +62,23 @@ def merge_offers(raw: List[Offer]) -> List[Offer]:
     seen: Dict[Tuple[str, str], Offer] = {}
 
     for offer in raw:
-        offer: Offer
-        key: Tuple[str, str] = _key(offer)
+        key = _key(offer)
         offer_price: int = _effective_price(offer)
         existing: Offer | None = seen.get(key)
 
         if existing is None:
             seen[key] = offer
-            logger.debug(f"Added offer for {key}", extra={"price": offer_price})
+            logger.debug(f"Added offer {key}", extra={"price": offer_price})
         else:
             existing_price: int = _effective_price(existing)
             if offer_price < existing_price:
                 seen[key] = offer
                 logger.debug(
-                    f"Replaced offer for {key}: {existing_price}¢ → {offer_price}¢"
+                    f"Replaced offer {key}: {existing_price}¢ → {offer_price}¢"
                 )
             else:
                 logger.debug(
-                    f"Kept existing offer for {key}: {existing_price}¢ ≤ {offer_price}¢"
+                    f"Kept existing offer {key}: {existing_price}¢ ≤ {offer_price}¢"
                 )
     merged: List[Offer] = list(seen.values())
     merged.sort(key=_effective_price)

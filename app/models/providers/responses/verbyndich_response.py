@@ -15,6 +15,11 @@ from app.models.base.offer import VoucherKind, Offer
 
 
 class VerbynDichResponse(BaseModel):
+    """
+    Pydantic model for VerbynDich API responses, validating and normalizing plan data.
+
+    Includes custom validators for field cleaning and conversion to the internal Offer model.
+    """
     valid: bool
     last: bool
 
@@ -39,8 +44,13 @@ class VerbynDichResponse(BaseModel):
 
     @field_validator("plan_name", mode="before")
     def must_not_be_blank(cls, v):
+        """
+        Clean the plan name by stripping whitespace and removing the 'verbyndich ' prefix.
+
+        Raises:
+            ValueError: If the resulting name is empty.
+        """
         s = str(v).strip()
-        # Remove leading "verbyndich " prefix if present (case-insensitive)
         prefix = "verbyndich "
         if s.lower().startswith(prefix):
             s = s[len(prefix) :].lstrip()
@@ -50,6 +60,15 @@ class VerbynDichResponse(BaseModel):
 
     @field_validator("tv_package_name", mode="before")
     def empty_string_to_none(cls, v, info):
+        """
+        Convert empty TV package names to None for optional handling.
+
+        Args:
+            v (Any): The raw input value.
+
+        Returns:
+            Optional[str]: None if the input is an empty string, otherwise the original value.
+        """
         if v == "":
             return None
         return v
@@ -57,7 +76,15 @@ class VerbynDichResponse(BaseModel):
     @field_validator("speed_down_mbit", mode="before")
     def validate_speed_down_mbit(cls, v):
         """
-        Ensure speed_down_mbit is a positive integer.
+        Validate and normalize the download speed value.
+
+        Attempts to convert the input to a positive integer, returning None on failure or non-positive values.
+
+        Args:
+            v (Any): The raw speed value.
+
+        Returns:
+            Optional[int]: The rounded positive integer speed, or None.
         """
         if v is None:
             return None
@@ -84,14 +111,20 @@ class VerbynDichResponse(BaseModel):
     )
     def validate_positive_int_fields(cls, v, info):
         """
-        Ensure positive integer fields are positive. If not, set to None to avoid validation error.
+        Ensure multiple numeric fields are positive integers or set to None.
+
+        Converts various input types to int, returning None for invalid or non-positive values.
+
+        Args:
+            v (Any): The raw input value.
+        Returns:
+            Optional[int]: A positive integer or None.
         """
         if v is None:
             return None
         try:
             int_v = int(v)
         except (TypeError, ValueError):
-            # if that fails, try float→int
             try:
                 int_v = int(float(v))
             except (TypeError, ValueError):
@@ -101,6 +134,15 @@ class VerbynDichResponse(BaseModel):
         return int_v
 
     def to_offer(self, provider_name: str) -> Offer:
+        """
+        Convert this model into the internal Offer representation.
+
+        Args:
+            provider_name (str): Name of the provider for the generated Offer.
+
+        Returns:
+            Offer: An Offer instance populated with response data.
+        """
         return Offer(
             provider=provider_name,
             plan_name=self.plan_name,

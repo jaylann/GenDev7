@@ -1,3 +1,9 @@
+"""
+Logging configuration using Loguru.
+
+Sets up a console sink with an environment-based log level, structured formatting,
+and enhanced error diagnostics.
+"""
 import os
 import sys
 
@@ -11,7 +17,7 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", DEFAULT_LEVEL).upper()
 # Remove any default handlers
 logger.remove()
 
-# Single console sink: always log to stdout and stderr
+# Configure Loguru console sink with environment-based level and structured formatting
 logger.add(
     sys.stdout,
     level=LOG_LEVEL,
