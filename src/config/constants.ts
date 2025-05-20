@@ -17,17 +17,11 @@ import { ConnectionType } from "@/types/connection-type";
 import { SortOption } from "@/types/sort-option";
 
 /**
- * Base URL for REST API calls.
- * Falls back to localhost when NEXT_PUBLIC_API_URL is not defined.
- */
-export const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL?.trim() ?? "http://localhost:8000";
-/**
  * WebSocket endpoint for real-time comparison updates.
  * Derived from API_BASE_URL by replacing http(s) with ws(s).
  */
 export const WEBSOCKET_URL =
-    API_BASE_URL.replace(/^https/i, "ws") + "/ws/compare";
+    "ws://lizard-lucky-unlikely.ngrok-free.app/ws/compare";
 /**
  * Google Maps API key loaded from environment.
  * Used for address autocomplete and map rendering.

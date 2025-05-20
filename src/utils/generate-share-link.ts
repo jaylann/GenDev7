@@ -5,7 +5,6 @@
  * Exports:
  *  - generateShareLink: Sends a request to the backend to generate a share slug.
  */
-import { API_BASE_URL } from "@/config/constants";
 
 /**
  * Generates a shareable slug for a given offer.
@@ -20,7 +19,7 @@ export async function generateShareLink(
     offer_key: string,
 ): Promise<{ shared_slug: string }> {
     // Send POST request to backend to generate a share link
-    const response = await fetch(`${API_BASE_URL}/offers/share-link`, {
+    const response = await fetch(`https://lizard-lucky-unlikely.ngrok-free.app/offers/share-link`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ original_page_slug, offer_key }),
