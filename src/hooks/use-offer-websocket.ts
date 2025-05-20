@@ -11,7 +11,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import type { ParsedAddress } from "@/components/compare/address-autocomplete-input";
 import type { Offer } from "@/types/offer";
-import { WEBSOCKET_URL } from "@/config/constants";
 import type { WebSocketMessage } from "@/types/web-socket-message";
 
 /**
@@ -134,7 +133,7 @@ export const useOfferWebSocket = ({
         onPromptOpenChange(false);
 
         // Establish WebSocket connection
-        const sock = new WebSocket(WEBSOCKET_URL);
+        const sock = new WebSocket("/api/ws/compare");
         ws.current = sock;
 
         /* ---------------- open → immediately transmit query --------------- */
