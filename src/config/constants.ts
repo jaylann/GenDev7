@@ -21,7 +21,7 @@ import { SortOption } from "@/types/sort-option";
  * Derived from API_BASE_URL by replacing http(s) with ws(s).
  */
 export const WEBSOCKET_URL =
-    "ws://lizard-lucky-unlikely.ngrok-free.app/ws/compare";
+    "wss://lizard-lucky-unlikely.ngrok-free.app/ws/compare";
 /**
  * Google Maps API key loaded from environment.
  * Used for address autocomplete and map rendering.
