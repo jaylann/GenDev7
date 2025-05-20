@@ -1,14 +1,23 @@
+from contextlib import asynccontextmanager
+
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from app.api.routes.http_compare import router as http_compare_router
-from app.api.schemas.ws_compare_address_request import WsCompareAddressRequest
 from app.api.routes.ws_compare import router as ws_compare_router
+from app.api.schemas.ws_compare_address_request import WsCompareAddressRequest
 from app.utils.http import shared_client
 
 load_dotenv()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    # shutdown: close shared HTTP client
+    await shared_client.aclose()
 
 
 def create_app() -> FastAPI:
@@ -17,6 +26,7 @@ def create_app() -> FastAPI:
         version="1.0.0",
         docs_url="/docs",
         redoc_url="/redoc",
+        lifespan=lifespan,  # use the new lifespan handler
     )
 
     @app.get("/health")
@@ -31,14 +41,9 @@ def create_app() -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["GET", "POST", "OPTIONS"], #TODO: Fix and tighten
         allow_headers=["*"],
     )
-
-    # ---------- shutdown: close shared HTTP client -----------------
-    @app.on_event("shutdown")
-    async def _close_shared_client():
-        await shared_client.aclose()
 
     # ---------- Override OpenAPI to document WebSocket endpoint ----
     def custom_openapi() -> dict:
@@ -50,16 +55,12 @@ def create_app() -> FastAPI:
             routes=app.routes,
         )
 
-        # Ensure components.schemas exists
         components = openapi_schema.setdefault("components", {})
         schemas = components.setdefault("schemas", {})
-
-        # Include WebSocket request schema
         schemas["WsCompareAddressRequest"] = WsCompareAddressRequest.model_json_schema(
             ref_template="#/components/schemas/{model}"
         )
 
-        # Add WebSocket path as HTTP GET upgrade operation
         paths = openapi_schema.setdefault("paths", {})
         paths["/ws/compare"] = {
             "get": {
@@ -87,7 +88,7 @@ def create_app() -> FastAPI:
         app.openapi_schema = openapi_schema
         return app.openapi_schema
 
-    app.openapi = custom_openapi  # type: ignore
+    app.openapi = custom_openapi
 
     return app
 
