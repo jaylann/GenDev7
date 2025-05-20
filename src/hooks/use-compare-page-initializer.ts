@@ -9,6 +9,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 
 import {
+    API_BASE_URL,
     DEFAULT_FILTERS,
     SORT_OPTIONS,
 } from "@/config/constants";
@@ -110,7 +111,7 @@ export const useComparePageInitializer = ({
             (async () => {
                 try {
                     const res = await fetch(
-                        `/api/compare/${slugFromUrl}`,
+                        `${API_BASE_URL}/compare/${slugFromUrl}`,
                         {
                             headers: { Accept: "application/json" },
                             cache: "no-store",
