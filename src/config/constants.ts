@@ -27,7 +27,7 @@ export const API_BASE_URL =
  * Derived from API_BASE_URL by replacing http(s) with ws(s).
  */
 export const WEBSOCKET_URL =
-    API_BASE_URL.replace(/^http/i, "ws") + "/ws/compare";
+    API_BASE_URL.replace(/^https/i, "ws") + "/ws/compare";
 /**
  * Google Maps API key loaded from environment.
  * Used for address autocomplete and map rendering.
