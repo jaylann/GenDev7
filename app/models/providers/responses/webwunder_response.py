@@ -1,163 +1,27 @@
-from typing import Optional
+from __future__ import annotations
 
-from pydantic import (
-    BaseModel,
-    PositiveInt,
-    Field,
-    constr,
-    field_validator,
-    PositiveFloat,
-)
+from pydantic import BaseModel, Field
 
 from app.models.base.offer import VoucherKind, Offer
+from app.utils import NonBlankStr, PosInt, OptStrClean, OptPosInt, OptPercent
 
 
 class WebWunderResponse(BaseModel):
-    """
-    Data transfer object for WebWunder API responses.
+    provider_name: NonBlankStr = Field(..., description="Marketing name of the plan")
+    product_id: NonBlankStr = Field(..., description="Provider-internal plan identifier")
+    speed_down_mbit: PosInt = Field(..., description="Downstream bandwidth (Mbit/s)")
+    price_cents_month_intro: PosInt = Field(..., description="Introductory monthly price in cents")
+    price_cents_month_regular: PosInt = Field(..., description="Regular monthly price in cents")
+    contract_duration_months: PosInt = Field(..., description="Minimum contract term in months")
+    connection_type: NonBlankStr = Field(..., description="Physical medium (DSL, Cable, Fiber, Mobile)")
 
-    Parses and validates raw fields from the service, and converts into our Offer model.
-    """
-
-    provider_name: constr(strip_whitespace=True, min_length=1) = Field(
-        ..., description="Marketing name of the plan"
-    )
-    product_id: constr(strip_whitespace=True, min_length=1) = Field(
-        ..., description="Provider-internal plan identifier"
-    )
-    speed_down_mbit: PositiveInt = Field(
-        ..., description="Downstream bandwidth (Mbit/s)"
-    )
-    price_cents_month_intro: PositiveInt = Field(
-        ..., description="Introductory monthly price in cents"
-    )
-    price_cents_month_regular: PositiveInt = Field(
-        ..., description="Regular monthly price in cents after promo"
-    )
-    contract_duration_months: PositiveInt = Field(
-        ..., description="Minimum contract term in months"
-    )
-    connection_type: constr(strip_whitespace=True, min_length=1) = Field(
-        ..., description="Physical medium (DSL, Cable, Fiber, Mobile)"
-    )
-    voucher_type: Optional[VoucherKind] = Field(
-        None, description="Type of voucher/incentive"
-    )
-    voucher_value_cents: Optional[PositiveInt] = Field(
-        None, description="Absolute voucher value in cents or cashback amount"
-    )
-    voucher_value_percent: Optional[PositiveFloat] = Field(
-        None, ge=0, le=100, description="Percentage voucher value (0–100%)"
-    )
-    voucher_min_order_value_cents: Optional[PositiveInt] = Field(
-        None, description="Minimum order value in cents to apply voucher"
-    )
-    voucher_max_value_cents: Optional[PositiveInt] = Field(
-        None, description="Maximum discount/applyable voucher value in cents"
-    )
-
-    @field_validator("voucher_value_percent", mode="before")
-    def validate_positive_float_fields(cls, v, info):
-        """
-        Normalize and validate percentage voucher values.
-
-        Converts raw input to float, treating zero and invalid values as None.
-        """
-        if v is None:
-            return None
-        try:
-            float_v = float(v)
-            epsilon = 1e-6
-        except (TypeError, ValueError):
-            return None
-        if abs(float_v) < epsilon:
-            return None
-        return float_v
-
-    @field_validator("voucher_type", mode="before")
-    def empty_string_to_none(cls, v):
-        """
-        Convert empty voucher type strings to None.
-
-        Args:
-            v: Raw voucher type value, potentially an empty string.
-
-        Returns:
-            Optional[VoucherKind]: None if input is empty string, else original.
-        """
-        if isinstance(v, str) and v == "":
-            return None
-        return v
-
-    @field_validator("provider_name", "product_id", "connection_type", mode="before")
-    def must_not_be_blank(cls, v):
-        """
-        Ensure critical string fields are not blank.
-
-        Raises:
-            ValueError: If the input string is empty or whitespace.
-        """
-        s = str(v).strip()
-        if not s:
-            raise ValueError("must contain at least one non-whitespace character")
-        return s
-
-    @field_validator("speed_down_mbit", mode="before")
-    def validate_speed_down_mbit(cls, v):
-        """
-        Coerce download speed to positive integer.
-
-        Rounds floats and filters out non-positive values by returning None.
-        """
-        if v is None:
-            return None
-        try:
-            int_v = int(round(float(v)))
-        except (TypeError, ValueError):
-            return None
-        if int_v <= 0:
-            return None
-        return int_v
-
-    @field_validator(
-        "price_cents_month_intro",
-        "price_cents_month_regular",
-        "contract_duration_months",
-        "voucher_value_cents",
-        "voucher_min_order_value_cents",
-        "voucher_max_value_cents",
-        mode="before",
-    )
-    def validate_positive_int_fields(cls, v, info):
-        """
-        Normalize and validate integer pricing and contract fields.
-
-        Converts raw input to int, using float fallback, and rejects non-positive values.
-        """
-        if v is None:
-            return None
-        try:
-            int_v = int(v)
-        except (TypeError, ValueError):
-            # if that fails, try float→int
-            try:
-                int_v = int(float(v))
-            except (TypeError, ValueError):
-                return None
-        if int_v <= 0:
-            return None
-        return int_v
+    voucher_type: OptStrClean | VoucherKind = Field(None, description="Type of voucher/incentive")
+    voucher_value_cents: OptPosInt = Field(None, description="Absolute voucher value in cents or cashback amount")
+    voucher_value_percent: OptPercent = Field(None, ge=0, le=100, description="Percentage voucher value (0–100%)")
+    voucher_min_order_value_cents: OptPosInt = Field(None, description="Minimum order value in cents to apply voucher")
+    voucher_max_value_cents: OptPosInt = Field(None, description="Maximum voucher value in cents")
 
     def to_offer(self, provider: str) -> Offer:
-        """
-        Convert response DTO into an Offer instance.
-
-        Args:
-            provider (str): Provider name context for the generated Offer.
-
-        Returns:
-            Offer: Fully populated domain Offer object.
-        """
         return Offer(
             provider=provider,
             plan_name=self.provider_name,

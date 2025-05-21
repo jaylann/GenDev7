@@ -100,8 +100,8 @@ class WebWunderFactory:
             node = search_root.find(f".//{{*}}{tag}")
             return node.text.strip() if node is not None and node.text else default
 
-        provider_name = get_text_from_node(elem, "providerName")
-        product_id = get_text_from_node(elem, "productId")
+        provider_name: str = get_text_from_node(elem, "providerName")
+        product_id: str = get_text_from_node(elem, "productId")
         if not provider_name or not product_id:
             logger.warning(
                 f"WebWunderFactory.parse_response → missing critical field: "
@@ -110,11 +110,11 @@ class WebWunderFactory:
             return None
 
         # grab raw strings for Pydantic to coerce and validate
-        speed = get_text_from_node(elem, "speed")
-        price_intro = get_text_from_node(elem, "monthlyCostInCent")
-        price_regular = get_text_from_node(elem, "monthlyCostInCentFrom25thMonth")
-        contract_term = get_text_from_node(elem, "contractDurationInMonths")
-        connection_type = get_text_from_node(elem, "connectionType", "DSL")
+        speed: str = get_text_from_node(elem, "speed")
+        price_intro: str = get_text_from_node(elem, "monthlyCostInCent")
+        price_regular: str = get_text_from_node(elem, "monthlyCostInCentFrom25thMonth")
+        contract_term: str = get_text_from_node(elem, "contractDurationInMonths")
+        connection_type: str = get_text_from_node(elem, "connectionType", "DSL")
 
         voucher_type: Optional[VoucherKind] = None
         voucher_value_cents: Optional[str] = None
@@ -122,9 +122,9 @@ class WebWunderFactory:
         voucher_min_order_value_cents: Optional[str] = None
         voucher_max_value_cents: Optional[str] = None
 
-        voucher_elem = elem.find(".//{*}voucher")
+        voucher_elem: Optional[ET.Element] = elem.find(".//{*}voucher")
         if voucher_elem is not None:
-            xsi_type = voucher_elem.attrib.get(
+            xsi_type: str = voucher_elem.attrib.get(
                 "{http://www.w3.org/2001/XMLSchema-instance}type", ""
             ).lower()
 

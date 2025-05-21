@@ -248,6 +248,7 @@ def test_merge_offers_deduplication_and_sorting_specific_case() -> None:
             "speed_down_mbit": 50,
             "connection_type": "DSL",
             "price_cents_month_intro": 1000,
+            "price_cents_month_regular": 1000,
             "contract_duration_months": 24,
         }
     )
@@ -259,6 +260,7 @@ def test_merge_offers_deduplication_and_sorting_specific_case() -> None:
             "speed_down_mbit": 50,
             "connection_type": "DSL",
             "price_cents_month_intro": 1200,
+            "price_cents_month_regular": 1200,
             "contract_duration_months": 24,
         }
     )
@@ -292,6 +294,7 @@ def test_merge_offers_deduplication_and_sorting_specific_case() -> None:
             "speed_down_mbit": 50,
             "connection_type": "DSL",
             "price_cents_month_regular": 900,
+            "price_cents_month_intro": 900,
             "contract_duration_months": 24,
         }
     )

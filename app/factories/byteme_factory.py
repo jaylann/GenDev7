@@ -7,7 +7,7 @@ cleans and filters data, and creates Offer models.
 
 from __future__ import annotations
 
-from typing import List, Optional, Final, Any
+from typing import List, Optional, Final, Union
 
 import pandas as pd
 
@@ -55,8 +55,8 @@ class ByteMeFactory:
         """
         try:
             # Extract provider name
-            raw_provider = getattr(row, cls._PROVIDER_NAME_COL, None)
-            provider_name = (
+            raw_provider: Optional[str] = getattr(row, cls._PROVIDER_NAME_COL, None)
+            provider_name: Optional[str] = (
                 str(raw_provider).split(",", 1)[0].strip()
                 if pd.notna(raw_provider) and str(raw_provider).strip()
                 else None
@@ -65,6 +65,7 @@ class ByteMeFactory:
                 return None
 
             # Normalize product ID
+            product_id: str
             try:
                 product_id = str(int(float(row.productId)))
             except (TypeError, ValueError):
@@ -73,14 +74,14 @@ class ByteMeFactory:
                 return None
 
             # Handle TV package fields
-            tv_package_name = getattr(row, cls._TV_SOURCE_COL, None)
+            tv_package_name: Optional[str] = getattr(row, cls._TV_SOURCE_COL, None)
             if isinstance(tv_package_name, str) and not tv_package_name.strip():
                 tv_package_name = None
-            tv_included = bool(getattr(row, cls._TV_INCLUDED_FLAG_COL, False))
+            tv_included: bool = bool(getattr(row, cls._TV_INCLUDED_FLAG_COL, False))
 
             # Extract voucher details
-            voucher_type_raw: Any = getattr(row, "voucherType", None)
-            voucher_value_raw: Any = getattr(row, "voucherValue", None)
+            voucher_type_raw: Optional[str] = getattr(row, "voucherType", None)
+            voucher_value_raw: Optional[Union[str, float, int]] = getattr(row, "voucherValue", None)
 
             voucher_type: Optional[str] = (
                 str(voucher_type_raw).strip().lower()
@@ -90,7 +91,7 @@ class ByteMeFactory:
             voucher_value_cents: Optional[int] = None
             voucher_value_percent: Optional[float] = None
             if pd.notna(voucher_value_raw):
-                numeric_val = float(voucher_value_raw)
+                numeric_val: float = float(voucher_value_raw)
                 if voucher_type == "percentage":
                     voucher_value_percent = numeric_val
                 else:
@@ -151,15 +152,15 @@ class ByteMeFactory:
         if df.empty:
             return df.copy()
 
-        df = df.copy()
+        df: pd.DataFrame = df.copy()
 
         if cls._TV_SOURCE_COL in df.columns:
-            raw_tv = df[cls._TV_SOURCE_COL].fillna("").astype(str).str.strip()
-            lower_tv = raw_tv.str.lower()
-            is_true = lower_tv == "true"
-            is_false = lower_tv == "false"
-            is_empty = raw_tv == ""
-            is_package = ~(is_true | is_false | is_empty)
+            raw_tv: pd.Series = df[cls._TV_SOURCE_COL].fillna("").astype(str).str.strip()
+            lower_tv: pd.Series = raw_tv.str.lower()
+            is_true: pd.Series = lower_tv == "true"
+            is_false: pd.Series = lower_tv == "false"
+            is_empty: pd.Series = raw_tv == ""
+            is_package: pd.Series = ~(is_true | is_false | is_empty)
             df[cls._TV_INCLUDED_FLAG_COL] = (is_true | is_package).astype(bool)
             df[cls._TV_SOURCE_COL] = raw_tv.where(is_package, None)
         else:
@@ -230,13 +231,13 @@ class ByteMeFactory:
         Returns:
             List[ByteMeResponse]: Parsed responses ready for offer creation.
         """
-        cleaned = cls.clean_df(df)
+        cleaned: pd.DataFrame = cls.clean_df(df)
         if cleaned.empty:
             return []
         responses: List[ByteMeResponse] = []
         for row_tuple in cleaned.itertuples(index=False):
-            series_row = pd.Series(data=row_tuple, index=cleaned.columns)
-            resp = cls.from_tuple(series_row)
+            series_row: pd.Series = pd.Series(data=row_tuple, index=cleaned.columns)
+            resp: Optional[ByteMeResponse] = cls.from_tuple(series_row)
             if resp is not None:
                 responses.append(resp)
         return responses

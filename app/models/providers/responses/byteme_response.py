@@ -1,120 +1,29 @@
 from __future__ import annotations
 
-from typing import Optional
+from pydantic import BaseModel, Field
 
-from pydantic import (
-    BaseModel,
-    PositiveInt,
-    NonNegativeFloat,
-    Field,
-    constr,
-    field_validator,
-)
-
-from app.models import Offer
-from app.models.base.offer import VoucherKind
+from app.models.base.offer import VoucherKind, Offer
+from app.utils import NonBlankStr, PosInt, OptStrClean, OptPosInt, OptPercent
 
 
 class ByteMeResponse(BaseModel):
-    """
-    Data model for ByteMe API responses, mapping raw fields to a validated Pydantic model.
-
-    Includes validators to clean and normalize input, and conversion to the internal Offer type.
-    """
-
-    provider_name: constr(strip_whitespace=True, min_length=1)
-    product_id: constr(strip_whitespace=True, min_length=1)
-    speed_down_mbit: PositiveInt
-    price_cents_month_intro: Optional[PositiveInt] = Field(default=None)
-    price_cents_month_regular: Optional[PositiveInt] = Field(default=None)
-    contract_duration_months: PositiveInt
-    connection_type: constr(strip_whitespace=True, min_length=1)
-    installation_service_included: bool = False
-    tv_included: bool = False
-    tv_package_name: Optional[constr(strip_whitespace=True, min_length=1)]
-    data_cap_gb: Optional[PositiveInt]
-    voucher_type: Optional[VoucherKind]
-    voucher_value_cents: Optional[PositiveInt]
-    voucher_value_percent: Optional[NonNegativeFloat]
-    max_age: Optional[PositiveInt]
-
-    @field_validator("provider_name", "product_id", "connection_type", mode="before")
-    def must_not_be_blank(cls, v):
-        """
-        Validator to ensure required string fields contain non-whitespace characters.
-
-        Raises:
-            ValueError: If the input is empty or only whitespace.
-        """
-        s = str(v).strip()
-        if not s:
-            raise ValueError("must contain at least one non-whitespace character")
-        return s
-
-    @field_validator("tv_package_name", "voucher_type", mode="before")
-    def empty_string_to_none(cls, v):
-        """
-        Validator to convert empty strings to None for optional string fields.
-
-        Returns:
-            Optional[str]: None if input is an empty string, otherwise the original value.
-        """
-        if v == "":
-            return None
-        return v
-
-    @field_validator("speed_down_mbit", mode="before")
-    def validate_speed_down_mbit(cls, v):
-        """
-        Ensure speed_down_mbit is a positive integer.
-        """
-        if v is None:
-            return None
-        try:
-            int_v = int(round(float(v)))
-        except (TypeError, ValueError):
-            return None
-        if int_v <= 0:
-            return None
-        return int_v
-
-    @field_validator(
-        "price_cents_month_intro",
-        "price_cents_month_regular",
-        "contract_duration_months",
-        "voucher_value_cents",
-        "max_age",
-        "data_cap_gb",
-        mode="before",
-    )
-    def validate_positive_int_fields(cls, v, info):
-        """
-        Ensure positive integer fields are positive. If not, set to None to avoid validation error.
-        """
-        if v is None:
-            return None
-        try:
-            int_v = int(v)
-        except (TypeError, ValueError):
-            # if that fails, try float→int
-            try:
-                int_v = int(float(v))
-            except (TypeError, ValueError):
-                return None
-        if int_v <= 0:
-            return None
-        return int_v
+    provider_name: NonBlankStr = Field(..., description="Marketing name of the plan")
+    product_id: NonBlankStr = Field(..., description="Provider-internal plan identifier")
+    speed_down_mbit: PosInt = Field(..., description="Downstream bandwidth (Mbit/s)")
+    price_cents_month_intro: OptPosInt = Field(default=None, description="Introductory monthly price in cents")
+    price_cents_month_regular: OptPosInt = Field(default=None, description="Regular monthly price in cents")
+    contract_duration_months: PosInt = Field(..., description="Minimum contract term in months")
+    connection_type: NonBlankStr = Field(..., description="Physical medium (DSL, Cable, Fiber, Mobile)")
+    installation_service_included: bool = Field(default=False, description="Whether installation service is included")
+    tv_included: bool = Field(default=False, description="Whether TV is included")
+    tv_package_name: OptStrClean = Field(default=None, description="Name of the TV package if included")
+    data_cap_gb: OptPosInt = Field(default=None, description="Data cap in GB")
+    voucher_type: OptStrClean | VoucherKind = Field(default=None, description="Type of voucher/incentive")
+    voucher_value_cents: OptPosInt = Field(default=None, description="Absolute voucher value in cents or cashback amount")
+    voucher_value_percent: OptPercent = Field(default=None, description="Percentage voucher value (0–100%)")
+    max_age: OptPosInt = Field(default=None, description="Maximum customer age to qualify for voucher")
 
     def to_offer(self, provider_name: str) -> Offer:
-        """
-        Convert this ByteMeResponse into the internal Offer model.
-
-        Args:
-            provider_name (str): Name of the provider context for the Offer.
-
-        Returns:
-            Offer: Populated Offer instance based on this response.
-        """
         return Offer(
             provider=provider_name,
             plan_name=self.provider_name,

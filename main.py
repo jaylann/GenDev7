@@ -1,4 +1,11 @@
+"""
+Entry point for the BetterSurf Internet-Provider Comparison API.
+Defines application creation, health check endpoint, CORS settings,
+and custom OpenAPI schema extensions for WebSocket routes.
+"""
+
 from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -14,13 +21,26 @@ load_dotenv()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """
+    Async context manager for application lifespan.
+
+    Yields control to application startup, and ensures the shared HTTP client
+    is closed on shutdown.
+    """
     yield
-    # shutdown: close shared HTTP client
+    # On shutdown: close shared HTTP client session to free resources
     await shared_client.aclose()
 
 
 def create_app() -> FastAPI:
+    """
+    Create and configure the FastAPI application instance.
+
+    Returns:
+        A FastAPI app configured with routers, CORS, health check,
+        and custom OpenAPI schema for WebSocket endpoints.
+    """
     app = FastAPI(
         title="BetterSurf Internet-Provider Comparison",
         version="1.0.0",
@@ -30,23 +50,38 @@ def create_app() -> FastAPI:
     )
 
     @app.get("/health")
-    async def health():
+    async def health() -> dict[str, str]:
+        """
+        Health check endpoint.
+
+        Returns:
+            A JSON object indicating the service status.
+        """
         return {"status": "ok"}
 
-    # ---------- include your modular routers ---------------------
+    # ---------- Register modular routers for HTTP and WebSocket endpoints ----------
     app.include_router(http_compare_router, prefix="")
     app.include_router(ws_compare_router, prefix="")
 
-    # ---------- CORS (tighten origins in prod!) ------------------
+    # ---------- CORS (configure allowed origins and methods; restrict in production) ----------
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
-        allow_methods=["GET", "POST", "OPTIONS"], #TODO: Fix and tighten
+        # In production, restrict allowed_methods and origins for security
+        allow_methods=["GET", "POST", "OPTIONS"],  # Consider restricting to only required methods
         allow_headers=["*"],
     )
 
-    # ---------- Override OpenAPI to document WebSocket endpoint ----
-    def custom_openapi() -> dict:
+    # ---------- Override OpenAPI schema to document WebSocket endpoint ----------
+    def custom_openapi() -> dict[str, any]:
+        """
+        Generate a custom OpenAPI schema that includes WebSocket /ws/compare.
+
+        Caches the schema on first generation.
+
+        Returns:
+            The OpenAPI schema dictionary.
+        """
         if app.openapi_schema:
             return app.openapi_schema
         openapi_schema = get_openapi(
@@ -55,12 +90,14 @@ def create_app() -> FastAPI:
             routes=app.routes,
         )
 
+        # Ensure WsCompareAddressRequest schema is included for documentation
         components = openapi_schema.setdefault("components", {})
         schemas = components.setdefault("schemas", {})
         schemas["WsCompareAddressRequest"] = WsCompareAddressRequest.model_json_schema(
             ref_template="#/components/schemas/{model}"
         )
 
+        # Document the /ws/compare WebSocket endpoint in OpenAPI
         paths = openapi_schema.setdefault("paths", {})
         paths["/ws/compare"] = {
             "get": {

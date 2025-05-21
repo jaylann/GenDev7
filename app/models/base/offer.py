@@ -212,3 +212,21 @@ class Offer(BaseModel):
                 "Either price_cents_month_intro or price_cents_month_regular must be provided"
             )
         return values
+
+    @model_validator(mode="after")
+    @classmethod
+    def _validate_contract_regular_price(cls, values: Offer) -> Offer:
+        """
+        If contract_regular_months is provided and differs from contract_duration_months,
+        ensure both price_cents_month_intro and price_cents_month_regular are provided.
+        """
+        if (
+            values.contract_regular_months is not None
+            and values.contract_regular_months != values.contract_duration_months
+        ):
+            if values.price_cents_month_intro is None or values.price_cents_month_regular is None:
+                raise ValueError(
+                    "Both price_cents_month_intro and price_cents_month_regular must be provided "
+                    "when contract_regular_months differs from contract_duration_months"
+                )
+        return values

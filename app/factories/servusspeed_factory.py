@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, Any, Optional
+from typing import Dict, Optional
 
 from app.models import Address
 from app.models.base.offer import VoucherKind
@@ -19,7 +19,7 @@ class ServusSpeedFactory:
     """
 
     @staticmethod
-    def build_available_products_body(address: Address) -> Dict[str, Any]:
+    def build_available_products_body(address: Address) -> Dict[str, object]:
         """
         Build request payload to retrieve available products.
 
@@ -27,7 +27,7 @@ class ServusSpeedFactory:
             address (Address): Address model with street, house_number, plz, city, country_code.
 
         Returns:
-            Dict[str, Any]: Payload dictionary for the ServusSpeedRequest.
+            Dict[str, object]: Payload dictionary for the ServusSpeedRequest.
         """
         s_addr: ServusSpeedAddress = ServusSpeedAddress(
             strasse=address.street,
@@ -36,11 +36,11 @@ class ServusSpeedFactory:
             stadt=address.city,
             land=address.country_code,
         )
-        body: Dict[str, Any] = ServusSpeedRequest(address=s_addr).model_dump()
+        body: Dict[str, object] = ServusSpeedRequest(address=s_addr).model_dump()
         return body
 
     @staticmethod
-    def parse_detail_response(pid: str, payload: Any) -> Optional[ServusSpeedResponse]:
+    def parse_detail_response(pid: str, payload: object) -> Optional[ServusSpeedResponse]:
         """
         Parse a product-detail payload into a ServusSpeedResponse.
 
@@ -49,7 +49,7 @@ class ServusSpeedFactory:
 
         Args:
             pid (str): Identifier of the product.
-            payload (Any): Raw response payload to parse.
+            payload (object): Raw response payload to parse.
 
         Returns:
             Optional[ServusSpeedResponse]: Parsed response model or None on failure.
@@ -62,98 +62,105 @@ class ServusSpeedFactory:
                 )
                 return None
 
-            prod = payload.get("servusSpeedProduct")
-            if not isinstance(prod, dict):
+            prod_raw: object = payload.get("servusSpeedProduct")
+            if not isinstance(prod_raw, dict):
                 logger.error(
                     f"Invalid payload for pid {pid}: missing or invalid 'servusSpeedProduct'"
                 )
                 return None
+            prod: Dict[str, object] = prod_raw
 
-            info = prod.get("productInfo")
-            if not isinstance(info, dict):
+            info_raw: object = prod.get("productInfo")
+            if not isinstance(info_raw, dict):
                 logger.error(
                     f"Invalid payload for pid {pid}: missing or invalid 'productInfo'"
                 )
                 return None
+            info: Dict[str, object] = info_raw
 
-            price = prod.get("pricingDetails")
-            if not isinstance(price, dict):
+            price_raw: object = prod.get("pricingDetails")
+            if not isinstance(price_raw, dict):
                 logger.error(
                     f"Invalid payload for pid {pid}: missing or invalid 'pricingDetails'"
                 )
                 return None
+            price: Dict[str, object] = price_raw
 
-            def to_int(value, name):
+            def to_int(value: object, name: str) -> int:
                 try:
                     return int(value)
                 except (TypeError, ValueError) as e:
-                    # Escape braces in value for logging
                     logger.warning(
                         f"Invalid integer '{value}' for field '{name}' in pid {pid}"
                     )
                     raise ValueError(f"Invalid integer for field '{name}'") from e
 
-            provider_name = prod.get("providerName")
-            if not isinstance(provider_name, str):
-                logger.error(f"Invalid providerName '{provider_name}' for pid {pid}")
+            provider_name_raw: object = prod.get("providerName")
+            if not isinstance(provider_name_raw, str):
+                logger.error(f"Invalid providerName '{provider_name_raw}' for pid {pid}")
                 return None
+            provider_name: str = provider_name_raw
 
-            speed = int(round(float(info.get("speed"))))
-            contract_duration = to_int(
-                info.get("contractDurationInMonths"), "contractDurationInMonths"
-            )
-            monthly_cost = to_int(price.get("monthlyCostInCent"), "monthlyCostInCent")
+            speed_raw: object = info.get("speed")
+            speed: int = int(round(float(speed_raw)))  # type: ignore[arg-type]
 
-            connection_type = info.get("connectionType")
-            if not isinstance(connection_type, str):
-                connection_type_str = (
-                    str(connection_type).replace("{", "{{").replace("}", "}}")
+            contract_duration_raw: object = info.get("contractDurationInMonths")
+            contract_duration: int = to_int(contract_duration_raw, "contractDurationInMonths")
+
+            monthly_cost_raw: object = price.get("monthlyCostInCent")
+            monthly_cost: int = to_int(monthly_cost_raw, "monthlyCostInCent")
+
+            connection_type_raw: object = info.get("connectionType")
+            if not isinstance(connection_type_raw, str):
+                connection_type_str: str = (
+                    str(connection_type_raw).replace("{", "{{").replace("}", "}}")
                 )
                 logger.error(
                     f"Invalid connectionType '{connection_type_str}' for pid {pid}"
                 )
                 return None
+            connection_type: str = connection_type_raw
 
-            tv_value = info.get("tv")
-            # Normalize TV package name
-            tv_package_name_candidate = tv_value if isinstance(tv_value, str) else None
-            if tv_package_name_candidate:
-                tv_package_name_candidate = tv_package_name_candidate.strip()
-            tv_package_name = (
-                tv_package_name_candidate if tv_package_name_candidate else None
+            tv_value_raw: object = info.get("tv")
+            tv_package_name_candidate: Optional[str] = (
+                tv_value_raw.strip()
+                if isinstance(tv_value_raw, str) and tv_value_raw.strip()
+                else None
             )
-            tv_included = bool(tv_package_name)
+            tv_package_name: Optional[str] = tv_package_name_candidate
+            tv_included: bool = bool(tv_package_name)
 
-            data_cap = None
+            data_cap: Optional[int] = None
             if "limitFrom" in info:
+                limit_from_raw: object = info.get("limitFrom")
                 try:
-                    data_cap = to_int(info.get("limitFrom"), "limitFrom")
+                    data_cap = to_int(limit_from_raw, "limitFrom")
                 except ValueError:
                     data_cap = None
 
-            max_age = None
+            max_age: Optional[int] = None
             if "maxAge" in info:
+                max_age_raw: object = info.get("maxAge")
                 try:
-                    max_age = to_int(info.get("maxAge"), "maxAge")
+                    max_age = to_int(max_age_raw, "maxAge")
                 except ValueError:
                     max_age = None
 
-            # Determine installation service inclusion
-            installation_val = price.get("installationService", False)
-            if isinstance(installation_val, bool):
-                installation_service_included = installation_val
+            installation_val_raw: object = price.get("installationService", False)
+            if isinstance(installation_val_raw, bool):
+                installation_service_included: bool = installation_val_raw
             else:
-                installation_service_included = str(
-                    installation_val
+                installation_service_included: bool = str(
+                    installation_val_raw
                 ).strip().lower() in ("yes", "true", "included")
 
-            discount_val = prod.get("discount", 0)
+            discount_val_raw: object = prod.get("discount", 0)
             try:
-                discount = to_int(discount_val, "discount")
+                discount: int = to_int(discount_val_raw, "discount")
             except ValueError:
                 discount = 0
 
-            response = ServusSpeedResponse(
+            response: ServusSpeedResponse = ServusSpeedResponse(
                 provider_name=provider_name,
                 product_id=pid,
                 speed_down_mbit=speed,

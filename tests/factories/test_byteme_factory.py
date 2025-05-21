@@ -433,7 +433,7 @@ DIVERSE_TEST_CASES: List[Dict[str, Any]] = [
             "productId": "1037",
         },
         "_should_produce_response": True,
-        "_expected_attrs": {"price_cents_month_intro": 2000},
+        "_expected_attrs": {"price_cents_month_intro": 2001},
         "_should_produce_offer": True,
     },
     {

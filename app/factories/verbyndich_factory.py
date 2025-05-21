@@ -8,7 +8,7 @@ VerbynDichResponse models, filtering out invalid or duplicate offers.
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import ValidationError
 
@@ -37,7 +37,7 @@ _PROMO_PRICE_RE = re.compile(
     re.I,
 )
 _MIN_ORDER_RE = re.compile(r"Mindestbestellwert\s*beträgt\s*(\d+)\s*€", re.I)
-
+_REGULAR_MONTH_RE = re.compile(r"Ab\s*dem\s*(\d+)\.?\s*Monat", re.I)
 
 class VerbynDichFactory:
     """
@@ -67,7 +67,7 @@ class VerbynDichFactory:
         return req.to_body()
 
     @staticmethod
-    def parse_response(data: Dict[str, Any]) -> Optional[VerbynDichResponse]:
+    def parse_response(data: Dict[str, object]) -> Optional[VerbynDichResponse]:
         """
         Parses raw provider data into a VerbynDichResponse model.
 
@@ -85,31 +85,39 @@ class VerbynDichFactory:
             return None
 
         try:
-            desc = data.get("description", "")
-            raw_product = data.get("product", "")
+            desc: str = data.get("description", "") or ""
+            raw_product: str = data.get("product", "") or ""
 
             def _match_first(pattern: re.Pattern[str]) -> Optional[str]:
                 m = pattern.search(desc)
                 return m.group(1) if m else None
 
             # Determine monthly price in cents
-            price_cents = 0
+            price_cents: int = 0
             if m := _match_first(_PRICE_MONTH_RE):
                 try:
-                    price_cents = int(float(m.replace(",", ".")) * 100)
+                    price_cents = int(round(float(m.replace(",", ".")) * 100))
                 except ValueError:
                     pass
 
-            # Default core field values for coercion
-            speed_down = _match_first(_SPEED_RE) or "16"
-            contract_duration_months = _match_first(_DURATION_RE) or "24"
-            max_age = _match_first(_MAX_AGE_RE)
+            # Extract and coerce download speed to integer Mbit, rounding decimals
+            raw_speed = _match_first(_SPEED_RE)
+            try:
+                speed_down_mbit = int(round(float(raw_speed.replace(",", ".")))) if raw_speed else 16
+            except ValueError:
+                speed_down_mbit = None
+
+            # Default contract duration in months (string coerced by Pydantic)
+            contract_duration_months: str = _match_first(_DURATION_RE) or "24"
+
+            # Extract maximum age if present
+            max_age: Optional[str] = _match_first(_MAX_AGE_RE)
 
             # Determine voucher details
-            voucher_type = None
-            voucher_value_percent = None
-            voucher_value_cap = None
-            voucher_value_cents = None
+            voucher_type: Optional[VoucherKind] = None
+            voucher_value_percent: Optional[float] = None
+            voucher_value_cap: Optional[int] = None
+            voucher_value_cents: Optional[int] = None
 
             if perc := _match_first(_VOUCHER_PERC_RE):
                 try:
@@ -131,11 +139,11 @@ class VerbynDichFactory:
                 except ValueError:
                     pass
 
-            voucher_until_month = _match_first(_VOUCHER_UNTIL_RE)
+            voucher_until_month: Optional[str] = _match_first(_VOUCHER_UNTIL_RE)
 
             # Normalize connection type
-            conn = _match_first(_CONN_RE)
-            conn_map = {
+            conn: Optional[str] = _match_first(_CONN_RE)
+            conn_map: Dict[str, str] = {
                 "dsl": "DSL",
                 "cable": "Cable",
                 "kabel": "Cable",
@@ -143,19 +151,21 @@ class VerbynDichFactory:
                 "glasfaser": "Fiber",
                 "mobile": "Mobile",
             }
-            connection_type = conn_map.get(conn.lower(), "DSL") if conn else "DSL"
+            connection_type: str = conn_map.get(conn.lower(), "DSL") if conn else "DSL"
 
             # Extract TV package names
-            tv_pkgs = _TV_PKG_RE.findall(desc)
-            tv_package_name = ", ".join(dict.fromkeys(tv_pkgs)) if tv_pkgs else None
-            tv_included = bool(tv_pkgs)
+            tv_pkgs: List[str] = _TV_PKG_RE.findall(desc)
+            tv_package_name: Optional[str] = (
+                ", ".join(dict.fromkeys(tv_pkgs)) if tv_pkgs else None
+            )
+            tv_included: bool = bool(tv_pkgs)
 
             # Extract data cap in GB
-            data_cap_gb = _match_first(_DATA_CAP_RE)
+            data_cap_gb: Optional[str] = _match_first(_DATA_CAP_RE)
 
             # Determine promotional price
-            promo_month = None
-            promo_price_cents = None
+            promo_month: Optional[str] = None
+            promo_price_cents: Optional[int] = None
             if promo := _PROMO_PRICE_RE.search(desc):
                 promo_month = promo.group(1)
                 try:
@@ -166,15 +176,17 @@ class VerbynDichFactory:
                     pass
 
             # Determine minimum order value
-            min_order_cents = None
+            min_order_cents: Optional[int] = None
             if mo := _match_first(_MIN_ORDER_RE):
                 try:
                     min_order_cents = int(mo) * 100
                 except ValueError:
                     pass
 
+            contract_regular_months: Optional[str] = _match_first(_REGULAR_MONTH_RE)
+
             # Simplify plan name
-            plan_name = raw_product
+            plan_name: str = raw_product
             if plan_name.lower().startswith("verbyndich"):
                 parts = plan_name.split(" ", 1)
                 if len(parts) > 1:
@@ -185,7 +197,7 @@ class VerbynDichFactory:
                 valid=True,
                 last=data.get("last", False),
                 price_cents_month=price_cents,
-                speed_down_mbit=speed_down,
+                speed_down_mbit=speed_down_mbit,
                 contract_duration_months=contract_duration_months,
                 max_age=max_age,
                 voucher_type=voucher_type,
@@ -200,6 +212,7 @@ class VerbynDichFactory:
                 promo_month=promo_month,
                 promo_price_cents=promo_price_cents,
                 min_order_cents=min_order_cents,
+                contract_regular_months=contract_regular_months,
                 plan_name=plan_name,
             )
         except (ValidationError, Exception) as e:
@@ -209,7 +222,7 @@ class VerbynDichFactory:
             return None
 
     @staticmethod
-    def parse_responses(raw_items: List[Dict[str, Any]]) -> List[VerbynDichResponse]:
+    def parse_responses(raw_items: List[Dict[str, object]]) -> List[VerbynDichResponse]:
         """
         Parse multiple raw provider response dictionaries into VerbynDichResponse models.
 
@@ -223,7 +236,7 @@ class VerbynDichFactory:
             List[VerbynDichResponse]: List of unique, parsed provider responses.
         """
         responses: List[VerbynDichResponse] = []
-        seen = set()
+        seen: set[tuple[str, int]] = set()
         for item in raw_items:
             if resp := VerbynDichFactory.parse_response(item):
                 key = (resp.product, resp.price_cents_month)
