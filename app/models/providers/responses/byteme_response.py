@@ -30,7 +30,7 @@ class ByteMeResponse(BaseModel):
             product_id=self.product_id,
             speed_down_mbit=self.speed_down_mbit,
             price_cents_month_intro=self.price_cents_month_intro,
-            price_cents_month_regular=self.price_cents_month_regular,
+            price_cents_month_regular=self.price_cents_month_regular or self.price_cents_month_intro,
             contract_duration_months=self.contract_duration_months,
             contract_regular_months=24,
             connection_type=self.connection_type,

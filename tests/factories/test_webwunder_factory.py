@@ -366,7 +366,7 @@ class TestWebWunderFactoryParseResponse:
             ("providerName", "remove_tag", None, True, None),
             ("speed", "change_text", "abc", True, None),
             ("monthlyCostInCent", "change_text", "xyz", True, None),
-            ("monthlyCostInCentFrom25thMonth", "change_text", "---", True, None),
+            ("monthlyCostInCentFrom25thMonth", "change_text", "---", False, None),
             ("contractDurationInMonths", "change_text", "twelve", True, None),
             ("discountInCent", "change_text", "bad", False, None),
             (

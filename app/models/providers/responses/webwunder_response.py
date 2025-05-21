@@ -10,8 +10,8 @@ class WebWunderResponse(BaseModel):
     provider_name: NonBlankStr = Field(..., description="Marketing name of the plan")
     product_id: NonBlankStr = Field(..., description="Provider-internal plan identifier")
     speed_down_mbit: PosInt = Field(..., description="Downstream bandwidth (Mbit/s)")
-    price_cents_month_intro: PosInt = Field(..., description="Introductory monthly price in cents")
-    price_cents_month_regular: PosInt = Field(..., description="Regular monthly price in cents")
+    price_cents_month_intro: PosInt = Field(None, description="Introductory monthly price in cents")
+    price_cents_month_regular: OptPosInt = Field(..., description="Regular monthly price in cents")
     contract_duration_months: PosInt = Field(..., description="Minimum contract term in months")
     connection_type: NonBlankStr = Field(..., description="Physical medium (DSL, Cable, Fiber, Mobile)")
 
@@ -31,7 +31,7 @@ class WebWunderResponse(BaseModel):
             connection_type=self.connection_type,
             contract_regular_months=24,
             price_cents_month_intro=self.price_cents_month_intro,
-            price_cents_month_regular=self.price_cents_month_regular,
+            price_cents_month_regular=self.price_cents_month_regular or self.price_cents_month_intro,
             contract_duration_months=self.contract_duration_months,
             installation_service_included=True,
             tv_included=False,
