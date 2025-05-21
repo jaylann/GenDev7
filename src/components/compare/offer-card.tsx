@@ -259,6 +259,25 @@ export const OfferCard: FC<OfferCardProps> = ({
 
     const introPriceSection = useMemo<JSX.Element | null>(() => {
         if (price_cents_month_intro != null && price_cents_month_intro > 0) {
+            // If intro price equals regular price, show just the regular price as "Price:"
+            if (
+                price_cents_month_regular != null &&
+                price_cents_month_regular === price_cents_month_intro
+            ) {
+                return (
+                    <div>
+                        <span className="text-[0.7rem] text-slate-400 block mb-0">
+                            Price:
+                        </span>
+                        <p className="text-lg sm:text-xl font-semibold text-white leading-tight">
+                            {formatEur(price_cents_month_intro)}{" "}
+                            <span className="text-sm sm:text-base font-normal text-slate-400">
+                                /mo
+                            </span>
+                        </p>
+                    </div>
+                );
+            }
             const durationText =
                 introPriceDuration > 0
                     ? `first ${introPriceDuration} months`
@@ -281,7 +300,7 @@ export const OfferCard: FC<OfferCardProps> = ({
             );
         }
         return null;
-    }, [price_cents_month_intro, introPriceDuration]);
+    }, [price_cents_month_intro, introPriceDuration, price_cents_month_regular]);
 
     const regularPriceSection = useMemo<JSX.Element | null>(() => {
         if (
