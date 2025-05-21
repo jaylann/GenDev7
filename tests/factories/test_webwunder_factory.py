@@ -19,7 +19,7 @@ from pydantic import ValidationError
 
 from app.factories.webwunder_factory import WebWunderFactory
 from app.models import Address
-from app.models.base.offer import VoucherKind
+from app.models.base import VoucherKind
 from app.models.providers.requests.webwunder_request import (
     WebWunderRequest as ActualWebWunderRequest,
 )

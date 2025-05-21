@@ -11,7 +11,7 @@ from hypothesis import (
 )
 from pydantic import ValidationError, FieldValidationInfo
 
-from app.models.base.offer import VoucherKind, Offer
+from app.models.base import VoucherKind, Offer
 
 # --- Hypothesis Strategies
 st_non_empty_text = st.text(

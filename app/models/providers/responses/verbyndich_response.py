@@ -4,8 +4,8 @@ import uuid
 
 from pydantic import BaseModel, Field, field_validator
 
-from app.models.base.offer import VoucherKind, Offer
-from app.utils import NonBlankStr, PosInt, OptStrClean, OptPosInt, OptPercent
+from app.models.base import VoucherKind, Offer
+from app.models.validators import NonBlankStr, PosInt, OptStrClean, OptPosInt, OptPercent
 
 
 class VerbynDichResponse(BaseModel):

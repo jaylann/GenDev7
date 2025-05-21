@@ -6,7 +6,7 @@ from typing import List, Optional
 from httpx import Response
 
 from app.models import Address
-from app.models.base.offer import VoucherKind
+from app.models.base import VoucherKind
 from app.models.providers.requests import WebWunderRequest
 from app.models.providers.responses import WebWunderResponse
 from app.utils import logger

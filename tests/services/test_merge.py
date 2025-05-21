@@ -8,7 +8,7 @@ from pydantic import (
     ValidationError,
 )
 
-from app.models.base.offer import VoucherKind, Offer
+from app.models.base import VoucherKind, Offer
 from app.utils.merge import _key, _effective_price, merge_offers
 
 # --- Hypothesis Strategies ---

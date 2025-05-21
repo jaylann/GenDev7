@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, Field
 
-from app.models.base.offer import VoucherKind, Offer
-from app.utils import NonBlankStr, PosInt, OptStrClean, OptPosInt
+from app.models.base import VoucherKind, Offer
+from app.models.validators import NonBlankStr, PosInt, OptStrClean, OptPosInt
 
 
 class ServusSpeedResponse(BaseModel):

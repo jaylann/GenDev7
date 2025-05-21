@@ -6,7 +6,7 @@ from hypothesis import given, strategies as st, settings, HealthCheck, assume
 
 from app.factories.servusspeed_factory import ServusSpeedFactory
 from app.models import Address
-from app.models.base.offer import VoucherKind
+from app.models.base import VoucherKind
 from app.models.providers.responses.servusspeed_response import ServusSpeedResponse
 
 

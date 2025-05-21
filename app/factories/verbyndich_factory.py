@@ -13,7 +13,7 @@ from typing import Dict, List, Optional
 from pydantic import ValidationError
 
 from app.models import Address
-from app.models.base.offer import VoucherKind
+from app.models.base import VoucherKind
 from app.models.providers.requests import VerbynDichRequest
 from app.models.providers.responses import VerbynDichResponse
 from app.utils import logger

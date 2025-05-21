@@ -1,25 +1,17 @@
 from __future__ import annotations
 
-from enum import Enum
 from typing import Optional, Literal
 
 from pydantic import (
     BaseModel,
     Field,
-    PositiveInt,
     field_validator,
     model_validator,
+    NonNegativeFloat,
+    PositiveInt,
 )
-from pydantic import NonNegativeFloat
 
-
-class VoucherKind(str, Enum):
-    """Canonical voucher / incentive categories we support."""
-
-    ABSOLUTE = "absolute"  # e.g. 10 € cash-back
-    PERCENTAGE = "percentage"  # e.g. 10 % off
-    CASHBACK = "cashback"  # provider pays X € back after activation
-    DISCOUNT = "discount"  # generic discount that doesn’t fit the others
+from app.models.base.voucher_kind import VoucherKind
 
 
 class Offer(BaseModel):
@@ -191,7 +183,7 @@ class Offer(BaseModel):
         Derive tv_included from tv_package_name if not explicitly set.
         """
         if (
-            values.tv_package_name or values.tv_included
+                values.tv_package_name or values.tv_included
         ):  # If tv_package_name is truthy (not None, not empty string)
             values.tv_included = True
         else:  # If tv_package_name is None or empty
@@ -205,8 +197,8 @@ class Offer(BaseModel):
         Ensure that either price_cents_month_intro or price_cents_month_regular is provided.
         """
         if (
-            values.price_cents_month_intro is None
-            and values.price_cents_month_regular is None
+                values.price_cents_month_intro is None
+                and values.price_cents_month_regular is None
         ):
             raise ValueError(
                 "Either price_cents_month_intro or price_cents_month_regular must be provided"
@@ -221,8 +213,8 @@ class Offer(BaseModel):
         ensure both price_cents_month_intro and price_cents_month_regular are provided.
         """
         if (
-            values.contract_regular_months is not None
-            and values.contract_regular_months != values.contract_duration_months
+                values.contract_regular_months is not None
+                and values.contract_regular_months != values.contract_duration_months
         ):
             if values.price_cents_month_intro is None or values.price_cents_month_regular is None:
                 raise ValueError(

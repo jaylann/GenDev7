@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Dict, Optional
 
 from app.models import Address
-from app.models.base.offer import VoucherKind
+from app.models.base import VoucherKind
 from app.models.providers import ServusSpeedAddress
 from app.models.providers.requests import ServusSpeedRequest
 from app.models.providers.responses import ServusSpeedResponse
