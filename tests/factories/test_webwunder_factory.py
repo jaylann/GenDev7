@@ -753,7 +753,7 @@ class TestWebWunderFactoryParseResponseFuzzing:
                 assert isinstance(result.product_id, str) and len(result.product_id) > 0
                 assert result.speed_down_mbit >= 0
                 assert result.price_cents_month_intro >= 0
-                assert result.price_cents_month_regular >= 0
+                assert result.price_cents_month_regular is None or result.price_cents_month_regular >= 0
                 assert result.contract_duration_months >= 0
                 if result.voucher_type == VoucherKind.PERCENTAGE:
                     assert result.voucher_value_percent is not None

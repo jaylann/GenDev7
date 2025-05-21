@@ -9,6 +9,7 @@ from pydantic import (
 )
 
 from app.models.base import VoucherKind, Offer
+# noinspection PyProtectedMember
 from app.utils.merge import _key, _effective_price, merge_offers
 
 # --- Hypothesis Strategies ---
@@ -55,23 +56,19 @@ connection_type_input_strategy = st.sampled_from(
 
 @st.composite
 def offer_constructor_args_strategy(draw: st.DrawFn) -> Dict[str, Any]:
-    args: Dict[str, Any] = {
-        "provider": draw(id_text_strategy),
-        "plan_name": draw(general_text_strategy),
-        "product_id": draw(id_text_strategy),
-        "speed_down_mbit": draw(required_positive_int_generic_strategy),
-        "data_cap_gb": draw(optional_positive_int_generic_strategy),
-        "connection_type": draw(connection_type_input_strategy),
-        "contract_duration_months": draw(required_positive_int_generic_strategy),
-        "contract_regular_months": draw(
-            st.one_of(st.none(), required_positive_int_generic_strategy)
-        ),
-        "installation_service_included": draw(st.booleans()),
-        "tv_package_name": draw(st.one_of(st.none(), general_text_strategy)),
-        "tv_included": draw(st.one_of(st.none(), st.booleans())),
-        "max_age": draw(optional_positive_int_generic_strategy),
-    }
-    args["voucher_value_percent"] = draw(optional_non_negative_float_strategy)
+    args: Dict[str, Any] = {"provider": draw(id_text_strategy), "plan_name": draw(general_text_strategy),
+                            "product_id": draw(id_text_strategy),
+                            "speed_down_mbit": draw(required_positive_int_generic_strategy),
+                            "data_cap_gb": draw(optional_positive_int_generic_strategy),
+                            "connection_type": draw(connection_type_input_strategy),
+                            "contract_duration_months": draw(required_positive_int_generic_strategy),
+                            "contract_regular_months": draw(
+                                st.one_of(st.none(), required_positive_int_generic_strategy)
+                            ), "installation_service_included": draw(st.booleans()),
+                            "tv_package_name": draw(st.one_of(st.none(), general_text_strategy)),
+                            "tv_included": draw(st.one_of(st.none(), st.booleans())),
+                            "max_age": draw(optional_positive_int_generic_strategy),
+                            "voucher_value_percent": draw(optional_non_negative_float_strategy)}
     if args["voucher_value_percent"] is not None:
         args["voucher_type"] = draw(
             st.one_of(

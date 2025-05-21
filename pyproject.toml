@@ -12,6 +12,7 @@ dependencies = [
     "httpx[http2]>=0.27,<0.28",
     "hypothesis>=6.131.17",
     "loguru>=0.7.3",
+    "mypy>=1.15.0",
     "pandas>=2.2.3",
     "pydantic>=2.11.4",
     "pydantic-settings>=2.9.1",
@@ -25,3 +26,6 @@ dependencies = [
     "uvicorn[standard]>=0.34.2",
     "zeep>=4.3.1",
 ]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]

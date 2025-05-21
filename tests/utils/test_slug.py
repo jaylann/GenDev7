@@ -4,6 +4,7 @@ import zlib
 
 import pytest
 
+# noinspection PyProtectedMember
 from app.utils.slug import _b64encode, _b64decode, encode, decode
 
 

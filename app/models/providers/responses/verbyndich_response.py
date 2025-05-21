@@ -54,6 +54,7 @@ class VerbynDichResponse(BaseModel):
     plan_name: NonBlankStr
 
     @field_validator("plan_name", mode="before")
+    @classmethod
     def strip_prefix(cls, v: str) -> str:
         s = v.strip()
         prefix = "verbyndich "

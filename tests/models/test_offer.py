@@ -9,6 +9,7 @@ from hypothesis import (
     settings,
     HealthCheck,
 )
+# noinspection PyProtectedMember
 from pydantic import ValidationError, FieldValidationInfo
 
 from app.models.base import VoucherKind, Offer
