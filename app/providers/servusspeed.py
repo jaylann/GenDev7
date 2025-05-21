@@ -183,8 +183,9 @@ class ServusSpeedProvider(ProviderBase):
                         res = t.result()
                         if res:
                             offers.append(res)
-                    except Exception:
-                        pass
+                    except ProviderError as e:
+                        logger.error(f"Product detail parsing error: {e!r}")
+                        # ignore individual product detail parsing errors
                 elif not t.done():
                     t.cancel()
 

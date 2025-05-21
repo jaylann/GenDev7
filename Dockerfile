@@ -5,9 +5,11 @@ FROM python:3.12-slim AS base
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-# Add a non-root user for better security
-RUN addgroup --system app && adduser --system --ingroup app app
-RUN apt-get update && apt-get install -y curl --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN addgroup --system app \
+    && adduser --system --ingroup app app \
+    && apt-get update \
+    && apt-get install -y curl --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 # --- dependency layer ------------------------------------------------------

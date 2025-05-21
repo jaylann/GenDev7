@@ -5,7 +5,7 @@ and custom OpenAPI schema extensions for WebSocket routes.
 """
 
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Any
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -21,7 +21,7 @@ load_dotenv()
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     """
     Async context manager for application lifespan.
 
@@ -41,15 +41,17 @@ def create_app() -> FastAPI:
         A FastAPI app configured with routers, CORS, health check,
         and custom OpenAPI schema for WebSocket endpoints.
     """
-    app = FastAPI(
-        title="BetterSurf Internet-Provider Comparison",
-        version="1.0.0",
+    app_title = "BetterSurf Internet-Provider Comparison"
+    app_version = "1.0.0"
+    fast_api_app = FastAPI(
+        title=app_title,
+        version=app_version,
         docs_url="/docs",
         redoc_url="/redoc",
         lifespan=lifespan,  # use the new lifespan handler
     )
 
-    @app.get("/health")
+    @fast_api_app.get("/health")
     async def health() -> dict[str, str]:
         """
         Health check endpoint.
@@ -60,11 +62,11 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     # ---------- Register modular routers for HTTP and WebSocket endpoints ----------
-    app.include_router(http_compare_router, prefix="")
-    app.include_router(ws_compare_router, prefix="")
+    fast_api_app.include_router(http_compare_router, prefix="")
+    fast_api_app.include_router(ws_compare_router, prefix="")
 
     # ---------- CORS (configure allowed origins and methods; restrict in production) ----------
-    app.add_middleware(
+    fast_api_app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
         # In production, restrict allowed_methods and origins for security
@@ -73,7 +75,7 @@ def create_app() -> FastAPI:
     )
 
     # ---------- Override OpenAPI schema to document WebSocket endpoint ----------
-    def custom_openapi() -> dict[str, any]:
+    def custom_openapi() -> dict[str, Any]:
         """
         Generate a custom OpenAPI schema that includes WebSocket /ws/compare.
 
@@ -82,12 +84,12 @@ def create_app() -> FastAPI:
         Returns:
             The OpenAPI schema dictionary.
         """
-        if app.openapi_schema:
-            return app.openapi_schema
+        if fast_api_app.openapi_schema:
+            return fast_api_app.openapi_schema
         openapi_schema = get_openapi(
-            title=app.title,
-            version=app.version,
-            routes=app.routes,
+            title=app_title,
+            version=app_version,
+            routes=fast_api_app.routes,
         )
 
         # Ensure WsCompareAddressRequest schema is included for documentation
@@ -122,12 +124,12 @@ def create_app() -> FastAPI:
                 "tags": ["WebSocket"],
             }
         }
-        app.openapi_schema = openapi_schema
-        return app.openapi_schema
+        fast_api_app.openapi_schema = openapi_schema
+        return fast_api_app.openapi_schema
 
-    app.openapi = custom_openapi
+    fast_api_app.openapi = custom_openapi
 
-    return app
+    return fast_api_app
 
 
 app = create_app()

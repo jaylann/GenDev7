@@ -832,7 +832,6 @@ def test_fuzz_factory_methods_robustness(df_fuzzed: pd.DataFrame) -> None:
         print(
             f"Pandas ParserError during fuzzing (likely acceptable due to extreme inputs for to_numeric): {pe}"
         )
-        pass
     except Exception as e:
         if isinstance(e, AssertionError):
             raise

@@ -85,7 +85,7 @@ def test_sign_hmac_error(monkeypatch):
     secret = "sec"
 
     # Simulate HMAC computation failure
-    def fake_new(key, msg, digestmod):
+    def fake_new(_key, _msg, _digestmod):
         raise RuntimeError("hmac failure")
 
     monkeypatch.setattr(hmac, "new", fake_new)

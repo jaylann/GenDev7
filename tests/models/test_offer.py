@@ -21,7 +21,7 @@ st_non_empty_text = st.text(
     alphabet=st.characters(
         min_codepoint=32, max_codepoint=126, blacklist_characters="{}"
     ),
-)
+).filter(lambda s: s.strip() != "")
 st_optional_text = st.one_of(st.none(), st_non_empty_text)
 MAX_INT_VALUE = 10**9
 st_positive_int_val = st.integers(min_value=1, max_value=MAX_INT_VALUE)

@@ -421,20 +421,12 @@ class TestParseDetailResponseHappyPath:
             }
         }
         response = ServusSpeedFactory.parse_detail_response(pid, payload)
-        # if value is dict, response might be None due to outer error.
-        if isinstance(value, dict) and field_name == "maxAge":
-            # The response object *should* still be created.
-            assert response is not None
-            if field_name == "limitFrom":
-                assert response.data_cap_gb is None
-            elif field_name == "maxAge":
-                assert response.max_age is None
-        else:
-            assert response is not None
-            if field_name == "limitFrom":
-                assert response.data_cap_gb is None
-            elif field_name == "maxAge":
-                assert response.max_age is None
+        # Response object should always be created and the malformed numeric field becomes None
+        assert response is not None
+        if field_name == "limitFrom":
+            assert response.data_cap_gb is None
+        elif field_name == "maxAge":
+            assert response.max_age is None
 
 
 class TestParseDetailResponseEdgeCasesAndFailures:
@@ -736,22 +728,11 @@ class TestParseDetailResponseFuzzing:
                 except (ValueError, TypeError):
                     pass
 
-            if value is None:
-                # explicit None yields a valid response
-                assert isinstance(result, ServusSpeedResponse)
-                assert result.data_cap_gb is None
-            elif can_be_int:
-                if expected_data_cap_gb > 0:
-                    # positive int yields valid response
-                    assert isinstance(result, ServusSpeedResponse)
-                    assert result.data_cap_gb == expected_data_cap_gb
-                else:
-                    # non-positive int yields response with data_cap_gb None
-                    assert isinstance(result, ServusSpeedResponse)
-                    assert result.data_cap_gb is None
+            # data_cap_gb should be positive integer or None otherwise
+            assert isinstance(result, ServusSpeedResponse)
+            if can_be_int and expected_data_cap_gb > 0:
+                assert result.data_cap_gb == expected_data_cap_gb
             else:
-                # non-parseable values still yield a response with data_cap_gb=None
-                assert isinstance(result, ServusSpeedResponse)
                 assert result.data_cap_gb is None
         except Exception as e:
             pytest.fail(

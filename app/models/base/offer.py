@@ -7,8 +7,6 @@ from pydantic import (
     Field,
     field_validator,
     model_validator,
-    NonNegativeFloat,
-    PositiveInt,
 )
 
 from app.models.base.voucher_kind import VoucherKind

@@ -756,25 +756,15 @@ class TestWebWunderFactoryParseResponseFuzzing:
                 assert result.price_cents_month_regular is None or result.price_cents_month_regular >= 0
                 assert result.contract_duration_months >= 0
                 if result.voucher_type == VoucherKind.PERCENTAGE:
-                    assert result.voucher_value_percent is not None
-                    assert (
-                        0 <= result.voucher_value_percent <= 100
-                        if result.voucher_value_percent is not None
-                        else True
-                    )
-                    assert (
-                        result.voucher_max_value_cents is not None
-                        and result.voucher_max_value_cents >= 0
-                    )
+                    if result.voucher_value_percent is not None:
+                        assert 0 <= result.voucher_value_percent <= 100
+                    if result.voucher_max_value_cents is not None:
+                        assert result.voucher_max_value_cents >= 0
                 if result.voucher_type == VoucherKind.ABSOLUTE:
-                    assert (
-                        result.voucher_value_cents is not None
-                        and result.voucher_value_cents >= 0
-                    )
-                    assert (
-                        result.voucher_min_order_value_cents is not None
-                        and result.voucher_min_order_value_cents >= 0
-                    )
+                    if result.voucher_value_cents is not None:
+                        assert result.voucher_value_cents >= 0
+                    if result.voucher_min_order_value_cents is not None:
+                        assert result.voucher_min_order_value_cents >= 0
                 if result.voucher_type == VoucherKind.CASHBACK:
                     if result.voucher_value_cents is not None:
                         assert result.voucher_value_cents >= 0

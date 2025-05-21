@@ -111,7 +111,7 @@ def valid_offer_strategy(draw: st.DrawFn) -> Offer:
         try:
             offer = Offer.model_validate(args)
             return offer
-        except ValidationError as e:
+        except ValidationError:
             # This is expected for inputs like "UnknownTech" for connection_type.
             # Hypothesis will retry with different inputs from offer_constructor_args_strategy.
             # We use 'assume(False)' to tell Hypothesis this example is invalid for this specific strategy

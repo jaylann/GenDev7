@@ -89,11 +89,11 @@ class ServusSpeedFactory:
             def to_int(value: object, name: str) -> int:
                 try:
                     return int(value)
-                except (TypeError, ValueError) as e:
+                except (TypeError, ValueError) as exc:
                     logger.warning(
                         f"Invalid integer '{value}' for field '{name}' in pid {pid}"
                     )
-                    raise ValueError(f"Invalid integer for field '{name}'") from e
+                    raise ValueError(f"Invalid integer for field '{name}'") from exc
 
             provider_name_raw: object = prod.get("providerName")
             if not isinstance(provider_name_raw, str):

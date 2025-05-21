@@ -89,8 +89,8 @@ class VerbynDichFactory:
             raw_product: str = data.get("product", "") or ""
 
             def _match_first(pattern: re.Pattern[str]) -> Optional[str]:
-                m = pattern.search(desc)
-                return m.group(1) if m else None
+                match = pattern.search(desc)
+                return match.group(1) if match else None
 
             # Determine monthly price in cents
             price_cents: int = 0
@@ -215,7 +215,12 @@ class VerbynDichFactory:
                 contract_regular_months=contract_regular_months,
                 plan_name=plan_name,
             )
-        except (ValidationError, Exception) as e:
+        except ValidationError as e:
+            logger.warning(
+                f"VerbynDichFactory.parse_response ValidationError: {e}", exc_info=True
+            )
+            return None
+        except Exception as e:
             logger.warning(
                 f"VerbynDichFactory.parse_response exception: {e}", exc_info=True
             )
