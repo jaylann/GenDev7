@@ -115,23 +115,23 @@ class TestOfferModel:
                 },
             ),
             (
+                # non-numeric strings now get coerced to None by our BeforeValidator
+                # and then Pydantic complains about the wrong type → int_type
                 "speed_down_mbit",
                 "abc",
                 {
-                    "error_type": "int_parsing",
+                    "error_type": "int_type",
                     "error_loc": ("speed_down_mbit",),
                     "msg_part": "Input should be a valid integer",
                 },
             ),
             ("voucher_value_percent", -0.1, {"final_value": None}),
             (
+                # >100 is coerced to None by our BeforeValidator,
+                # so the final value is None rather than a le=100 error
                 "voucher_value_percent",
                 100.1,
-                {
-                    "error_type": "less_than_equal",
-                    "error_loc": ("voucher_value_percent",),
-                    "msg_part": "Input should be less than or equal to 100",
-                },
+                {"final_value": None},
             ),
             ("data_cap_gb", 0, {"final_value": None}),
         ],
