@@ -28,7 +28,6 @@ export default function ComparePage(): JSX.Element {
     // Obtain current page state and action handlers from our custom hook
     const { state, actions } = useComparePageState();
 
-    // Remove any backend “Refining …” status messages before displaying to users
     const cleanedStatus = state.statusMessage
         .toLowerCase()
         .startsWith("refining")

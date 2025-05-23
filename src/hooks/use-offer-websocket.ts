@@ -192,44 +192,41 @@ export const useOfferWebSocket = ({
                 }
                 // FINAL_OFFERS message
                 case "FINAL_OFFERS": {
-                    /*  ‑ Quick‑final heuristic (arrives ≤ 3 s after initial)  */
                     const initialTs = initialOffersTimestampRef.current;
-                    const isQuickFinal =
-                        !!initialTs && Date.now() - initialTs <= 3000;
+                    const prevOffers = offersRef.current;
+                    const isQuickFinal = !!initialTs && Date.now() - initialTs <= 3000;
 
                     // Never expect another refinement after FINAL
                     expectingRefinementRef.current = false;
 
-                    // Slug update (may be identical to initial or new)
+                    // Update slug if provided
                     if (data.slug) onWebSocketSlugReceived(data.slug, "FINAL");
 
-                    if (isQuickFinal) {
-                        /* Quick-final ⟶ switch immediately */
+                    // If we had no initial offers, or it arrived “quickly”, just switch immediately
+                    if (prevOffers.length === 0 || isQuickFinal) {
                         offersRef.current = offers;
                         onOffersReceived(offers, "FINAL_OFFERS", false);
                         onStatusUpdate(
-                            data.message ??
-                                `Search complete. ${offers.length} offers found.`,
+                            data.message ?? `Search complete. ${offers.length} offers found.`
                         );
+
                     } else {
-                        /* Late final – only bother the user if something changed */
+                        // Late final – only bother the user if there’s something new *and* we had shown something before
                         const hasNewOffers =
-                            offers.length > 0 &&
-                            offers.length !== offersRef.current.length;
+                            offers.length > 0 && offers.length !== prevOffers.length;
 
                         if (hasNewOffers) {
                             onPendingOffersUpdate(offers);
                             onPromptOpenChange(true);
                             onStatusUpdate(
                                 data.message ??
-                                    `Search finished – ${offers.length} refined offers ready.`,
+                                `Search finished – ${offers.length} refined offers ready.`
                             );
                         } else {
-                            /* Nothing new – silently finish the cycle */
+                            // Nothing new – silently finish
                             onOffersReceived(offers, "FINAL_OFFERS", false);
                             onStatusUpdate(
-                                data.message ??
-                                    "Search finished – no additional offers found.",
+                                data.message ?? "Search finished – no additional offers found."
                             );
                         }
                     }
