@@ -14,12 +14,12 @@ import httpx
 from httpx import HTTPStatusError
 from tenacity import retry, stop_after_attempt, retry_if_exception_type
 
-from app.core import RetryConfig
+from app.core import RetryConfig, get_settings
 from app.exceptions import ProviderError
 from app.factories import ServusSpeedFactory
 from app.models import Address, Offer
 from app.providers.base import ProviderBase
-from app.utils import get_settings, logger
+from app.utils import logger
 
 # concurrency & timeout constants
 MAX_PARALLEL = 3

@@ -9,13 +9,13 @@ from typing import List, Dict, Any
 
 import httpx
 
-from app.core import RetryConfig
+from app.core import RetryConfig, get_settings
 from app.exceptions import ProviderError
 from app.factories import PingPerfectFactory
 from app.models import Address, Offer
 from app.models.providers.responses import PingPerfectResponse
 from app.providers.base import ProviderBase
-from app.utils import get_settings, logger
+from app.utils import logger
 
 
 class PingPerfectProvider(ProviderBase):

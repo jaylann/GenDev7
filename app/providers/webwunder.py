@@ -6,12 +6,12 @@ from typing import List, Dict, Any
 import httpx
 from httpx import Response
 
-from app.core import RetryConfig
+from app.core import RetryConfig, get_settings
 from app.exceptions import ProviderError
 from app.factories import WebWunderFactory
 from app.models import Address, Offer
 from app.providers.base import ProviderBase
-from app.utils import logger, get_settings
+from app.utils import logger
 
 
 class WebWunderProvider(ProviderBase):

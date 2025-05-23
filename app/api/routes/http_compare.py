@@ -9,9 +9,8 @@ from app.api.schemas import (
     SingleOfferShareResponse,
     SingleOfferShareRequest,
 )
-from app.core import Settings
+from app.core import Settings, get_settings
 from app.services import get_comparison_by_slug, generate_share_link
-from app.utils import get_settings
 
 router = APIRouter()
 

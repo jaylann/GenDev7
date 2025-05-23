@@ -28,6 +28,8 @@ click==8.2.0
     # via
     #   black
     #   uvicorn
+coverage==7.8.1
+    # via gendev (pyproject.toml)
 fastapi==0.115.12
     # via gendev (pyproject.toml)
 gunicorn==23.0.0
@@ -63,19 +65,29 @@ loguru==0.7.3
     # via gendev (pyproject.toml)
 lxml==5.4.0
     # via zeep
+mypy==1.15.0
+    # via gendev (pyproject.toml)
 mypy-extensions==1.1.0
-    # via black
+    # via
+    #   black
+    #   mypy
 numpy==2.2.5
-    # via pandas
+    # via
+    #   pandas
+    #   pgeocode
 packaging==25.0
     # via
     #   black
     #   gunicorn
     #   pytest
 pandas==2.2.3
-    # via gendev (pyproject.toml)
+    # via
+    #   gendev (pyproject.toml)
+    #   pgeocode
 pathspec==0.12.1
     # via black
+pgeocode==0.5.0
+    # via gendev (pyproject.toml)
 platformdirs==4.3.8
     # via
     #   black
@@ -119,6 +131,7 @@ redis==6.0.0
     # via gendev (pyproject.toml)
 requests==2.32.3
     # via
+    #   pgeocode
     #   requests-file
     #   requests-toolbelt
     #   zeep
@@ -141,6 +154,7 @@ tenacity==9.1.2
 typing-extensions==4.13.2
     # via
     #   fastapi
+    #   mypy
     #   pydantic
     #   pydantic-core
     #   typing-inspection

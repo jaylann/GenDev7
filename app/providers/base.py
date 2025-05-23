@@ -14,6 +14,7 @@ import httpx
 from tenacity import AsyncRetrying, retry_if_exception_type
 
 from app.core import RetryConfig
+from app.core.circuit_breaker import circuit_protected
 from app.exceptions import ProviderError
 from app.models import Address, Offer
 from app.utils import logger
@@ -83,11 +84,13 @@ class ProviderBase(abc.ABC):
         raise ProviderError(f"Exhausted retries for {self.name}")
 
     @abc.abstractmethod
+    @circuit_protected
     async def fetch(self, address: Address) -> List[Offer]:  # pragma: no cover
         """
         Perform the provider-specific data retrieval.
 
         Subclasses must implement this to fetch offers for the given address.
+        Protected by circuit breaker to prevent repeated calls to failing providers.
 
         Args:
             address (Address): The address to look up.

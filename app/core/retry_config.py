@@ -32,7 +32,7 @@ class RetryConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     stop: stop_base = Field(
-        default_factory=lambda: stop_after_attempt(4),
+        default_factory=lambda: stop_after_attempt(8),
         description="Stop after this many attempts",
     )
     wait: wait_base = Field(

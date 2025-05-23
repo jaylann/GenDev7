@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -53,4 +53,14 @@ class WsMessage(BaseModel):
         None,
         description="Flag indicating whether further refinement messages will follow",
         examples=[False],
+    )
+    elapsed_ms: Optional[int] = Field(
+        None,
+        description="Time elapsed in milliseconds since request start",
+        examples=[2500],
+    )
+    validation_issues: Optional[Dict[str, str]] = Field(
+        None,
+        description="Validation issues found in the address",
+        examples=[{"postal_code": "Postal code 12345 is not valid for Berlin"}],
     )

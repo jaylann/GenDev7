@@ -3,6 +3,9 @@ Entry point for the BetterSurf Internet-Provider Comparison API.
 Defines application creation, health check endpoint, CORS settings,
 and custom OpenAPI schema extensions for WebSocket routes.
 """
+# Ensure the default HTTPS context factory is a callable that creates a context using certifi's CA bundle
+import ssl, certifi
+ssl._create_default_https_context = lambda: ssl.create_default_context(cafile=certifi.where())
 
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator, Any
@@ -19,16 +22,20 @@ from app.utils.http import shared_client
 
 load_dotenv()
 
-
 @asynccontextmanager
 async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     """
     Async context manager for application lifespan.
 
-    Yields control to application startup, and ensures the shared HTTP client
+    Initializes circuit breakers at startup and ensures the shared HTTP client
     is closed on shutdown.
     """
+    # Initialize circuit breakers for all providers
+    from app.core.circuit_breaker import reset_all_breakers
+    reset_all_breakers()
+    
     yield
+    
     # On shutdown: close shared HTTP client session to free resources
     await shared_client.aclose()
 

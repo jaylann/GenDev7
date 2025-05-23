@@ -7,11 +7,11 @@ from typing import Dict, List, Optional, Tuple, Union
 
 from pydantic import ValidationError
 
-from app.core import Settings
+from app.core import Settings, get_settings
 from app.models import Address
 from app.models.providers.requests import PingPerfectRequest
 from app.models.providers.responses import PingPerfectResponse
-from app.utils import get_settings, sign
+from app.utils import sign
 from app.utils import logger
 
 

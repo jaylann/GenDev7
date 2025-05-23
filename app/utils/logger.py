@@ -12,7 +12,7 @@ from loguru import logger
 
 # Determine environment and log level
 ENV = os.getenv("ENV", "production").lower()
-DEFAULT_LEVEL = "DEBUG" if ENV in ("development", "staging") else "INFO"
+DEFAULT_LEVEL = "DEBUG"
 LOG_LEVEL = os.getenv("LOG_LEVEL", DEFAULT_LEVEL).upper()
 
 # Remove any default handlers

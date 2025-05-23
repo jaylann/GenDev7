@@ -19,20 +19,19 @@ from tenacity import (
     wait_exponential,
 )
 
-from app.core import RetryConfig
+from app.core import RetryConfig, get_settings
 from app.factories import VerbynDichFactory
 from app.models import Address, Offer
 from app.providers.base import ProviderBase
-from app.utils import get_settings
 from app.utils import logger
 
 # Pagination/cache constants
-MAX_PAGES = 20
+MAX_PAGES = 30
 PARALLEL = 10
 PAGE_TMO = 15
-PAGE_FETCH_RETRY_ATTEMPTS = 3
+PAGE_FETCH_RETRY_ATTEMPTS = 5
 PAGE_FETCH_RETRY_EXP_MULTIPLIER = 1
-PAGE_FETCH_RETRY_EXP_MAX_WAIT = 10
+PAGE_FETCH_RETRY_EXP_MAX_WAIT = 1
 
 
 @alru_cache(maxsize=128)

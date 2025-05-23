@@ -5,8 +5,9 @@ from fastapi import APIRouter
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from app.api.schemas import WsMessage
+from app.core import get_settings
 from app.services import websocket_comparison_flow
-from app.utils import get_settings, logger
+from app.utils import logger
 
 router = APIRouter()
 
@@ -33,7 +34,7 @@ async def compare_websocket(websocket: WebSocket) -> None:
         await websocket.close(code=1003)
         return
     except Exception as e:
-        logger.error("Unexpected error while reading websocket message: %s", e)
+        logger.error(f"Unexpected error while reading websocket message: {e}")
         await websocket.send_json(
             WsMessage(type="ERROR", message="Failed to read request.").model_dump()
         )
