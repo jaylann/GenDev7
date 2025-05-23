@@ -10,22 +10,22 @@ import pgeocode  # type: ignore
 from app.models.base.address import Address
 from app.utils.logger import logger
 
-# Extended German postal code ranges for fallback when pgeocode lookup fails
+# German postal code ranges for fallback when pgeocode lookup fails
 POSTAL_CODE_REGIONS = {
-    "Berlin":      (10115, 14199),
-    "München":     (80331, 81929),
-    "Hamburg":     (20095, 22769),
-    "Köln":        (50667, 51149),
-    "Frankfurt":   (60306, 60599),
-    "Stuttgart":   (70173, 70619),
-    "Düsseldorf":  (40210, 40629),
-    "Leipzig":     (4003, 4357),    # covers 04003–04357
-    "Dresden":     (1067, 1328),    # covers 01067–01328
-    "Hannover":    (30159, 30659),
-    "Nürnberg":    (90402, 90491),
-    "Bremen":      (28195, 28779),
-    "Essen":       (45127, 45359),
-    "Dortmund":    (44135, 44388),
+    "Berlin": (10115, 14199),
+    "München": (80331, 81929),
+    "Hamburg": (20095, 22769),
+    "Köln": (50667, 51149),
+    "Frankfurt": (60306, 60599),
+    "Stuttgart": (70173, 70619),
+    "Düsseldorf": (40210, 40629),
+    "Leipzig": (4003, 4357),  # covers 04003–04357
+    "Dresden": (1067, 1328),  # covers 01067–01328
+    "Hannover": (30159, 30659),
+    "Nürnberg": (90402, 90491),
+    "Bremen": (28195, 28779),
+    "Essen": (45127, 45359),
+    "Dortmund": (44135, 44388),
 }
 
 
@@ -39,12 +39,14 @@ def _ascii_low(s: str) -> str:
         .strip()
     )
 
+
 # Attempt offline initialization; fallback gracefully
 try:
     _nom: Optional[pgeocode.Nominatim] = pgeocode.Nominatim("de")
 except Exception as exc:  # pragma: no cover
     logger.warning(f"pgeocode initialization failed, using fallback only: {exc}")
     _nom = None
+
 
 @lru_cache(maxsize=10_000)
 def _lookup_postal_code(plz: str) -> Optional[pgeocode.pandas.Series]:
@@ -59,6 +61,7 @@ def _lookup_postal_code(plz: str) -> Optional[pgeocode.pandas.Series]:
     except Exception as exc:  # pragma: no cover
         logger.warning(f"Postal-code lookup error: {exc}")
         return None
+
 
 class AddressValidator:
     """Enhanced address validation for German addresses."""
@@ -77,7 +80,9 @@ class AddressValidator:
 
         record = _lookup_postal_code(plz_str)
         if record is not None:
-            valid_names = { _ascii_low(part) for part in str(record.place_name).split(",") }
+            valid_names = {
+                _ascii_low(part) for part in str(record.place_name).split(",")
+            }
             if _ascii_low(city) in valid_names:
                 return True, "Valid postal code for city"
             return False, f"Postal code {plz_str} is not valid for {city}"

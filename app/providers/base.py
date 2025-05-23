@@ -85,7 +85,7 @@ class ProviderBase(abc.ABC):
 
     @abc.abstractmethod
     @circuit_protected
-    async def fetch(self, address: Address) -> List[Offer]:  # pragma: no cover
+    async def fetch(self, address: Address) -> List[Offer]:
         """
         Perform the provider-specific data retrieval.
 
