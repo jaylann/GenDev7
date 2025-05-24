@@ -20,8 +20,12 @@ import { SortOption } from "@/types/sort-option";
  * WebSocket endpoint for real-time comparison updates.
  * Derived from API_BASE_URL by replacing http(s) with ws(s).
  */
-export const WEBSOCKET_URL =
-    "wss://lizard-lucky-unlikely.ngrok-free.app/ws/compare";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export const WEBSOCKET_URL = (() => {
+  const wsProtocol = API_BASE_URL.startsWith("https") ? "wss" : "ws";
+  const host = API_BASE_URL.split("://")[1];
+  return `${wsProtocol}://${host}/ws/compare`;
+})();
 /**
  * Google Maps API key loaded from environment.
  * Used for address autocomplete and map rendering.

@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import {
     DEFAULT_FILTERS,
     SORT_OPTIONS,
+    API_BASE_URL,
 } from "@/config/constants";
 import { deserializeFiltersFromURL } from "@/utils/url";
 
@@ -110,7 +111,7 @@ export const useComparePageInitializer = ({
             (async () => {
                 try {
                     const res = await fetch(
-                        `https://lizard-lucky-unlikely.ngrok-free.app/compare/${slugFromUrl}`,
+                        `${API_BASE_URL}/compare/${slugFromUrl}`,
                         {
                             headers: { Accept: "application/json" },
                             cache: "no-store",
