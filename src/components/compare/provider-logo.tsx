@@ -5,7 +5,6 @@
  * Selects an appropriate icon component by matching keywords in the provider name.
  */
 import React, { FC } from "react";
-import { Briefcase, Building2, Target, Wifi } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -25,15 +24,8 @@ export const ProviderLogo: FC<{ providerName: string; className?: string }> = ({
     providerName,
     className,
 }) => {
-    // Default icon if no provider-specific keyword matches
-    let IconComponent: React.ElementType = Building2;
     const lowerProviderName = providerName.toLowerCase();
-    // Use Wifi icon for providers matching "webwunder"
-    if (lowerProviderName.includes("webwunder")) IconComponent = Wifi;
-    // Use Briefcase icon for providers matching "byteme"
-    else if (lowerProviderName.includes("byteme")) IconComponent = Briefcase;
-    // Use Target icon for providers matching "ping perfect"
-    else if (lowerProviderName.includes("ping perfect")) IconComponent = Target;
+    const imageSrc = `/${lowerProviderName}.webp`;
     return (
         <div
             className={cn(
@@ -42,7 +34,7 @@ export const ProviderLogo: FC<{ providerName: string; className?: string }> = ({
             )}
             title={providerName}
         >
-            <IconComponent className="size-5" />
+            <img src={imageSrc} alt={providerName} className="size-5" />
         </div>
     );
 };
