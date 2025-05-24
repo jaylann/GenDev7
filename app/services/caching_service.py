@@ -43,10 +43,12 @@ def get(slug: str) -> Optional[List[Offer]]:
     Returns:
         Optional[List[Offer]]: Cached offers list, or None on miss/expiry.
     """
-    entry = _cache.get(slug)
-    if not entry:
+    entry: Optional[Tuple[float, List[Offer]]] = _cache.get(slug)
+    if entry is None:
         return None
 
+    expires_at: float
+    offers: List[Offer]
     expires_at, offers = entry
     if time.monotonic() > expires_at:
         logger.info(f"[cache] expired slug={slug!r}")

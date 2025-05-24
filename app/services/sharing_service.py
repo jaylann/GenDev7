@@ -8,6 +8,7 @@ and validates input before responding with API schemas.
 from __future__ import annotations
 
 import time
+from typing import List, Any, Dict
 
 from fastapi import HTTPException
 from pydantic import ValidationError
@@ -18,7 +19,7 @@ from app.api.schemas import (
     SingleOfferShareResponse,
 )
 from app.core import Settings
-from app.models import Address
+from app.models import Address, Offer
 from app.services import cache_get, cache_set
 from app.utils import decode, encode
 from app.utils import logger
@@ -41,19 +42,19 @@ async def get_comparison_by_slug(slug: str) -> CompareResponse:
         HTTPException: 400 if slug decoding fails;
                        404 if no cached data is found for the slug.
     """
-    decoded = decode(slug)
+    decoded: Dict[str, Any] | None = decode(slug)
     if not decoded:
         logger.warning(f"Invalid slug format: {slug}")
         raise HTTPException(status_code=400, detail="Invalid slug format.")
 
-    offers = cache_get(slug)
+    offers: List[Offer] | None = cache_get(slug)
     if offers is None:
         logger.warning(f"Cache miss for slug: {slug}")
         raise HTTPException(
             status_code=404, detail="Comparison data expired or slug unknown."
         )
 
-    addr_data = decoded.get("addr")
+    addr_data: Dict[str, Any] | None = decoded.get("addr")
     api_address: Address | None = None
     if addr_data:
         try:
@@ -85,26 +86,28 @@ async def generate_share_link(
         HTTPException: 400 for invalid original slug or offer key format;
                        404 if original comparison or specified offer is not found.
     """
-    original_offers = cache_get(request.original_page_slug)
+    original_offers: List[Offer] | None = cache_get(request.original_page_slug)
     if not original_offers:
         raise HTTPException(
             status_code=404,
             detail="Original offer list not found or expired.",
         )
 
-    decoded_original = decode(request.original_page_slug)
+    decoded_original: Dict[str, Any] | None = decode(request.original_page_slug)
     if not decoded_original or "addr" not in decoded_original:
         raise HTTPException(status_code=400, detail="Invalid original slug.")
 
-    address_data = decoded_original["addr"]
+    address_data: Dict[str, Any] = decoded_original["addr"]
 
     # Extract provider name and product ID from the offer key
     try:
+        provider_name: str
+        product_id_str: str
         provider_name, product_id_str = request.offer_key.split(":", 1)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid offer key format.")
 
-    found_offer = next(
+    found_offer: Offer | None = next(
         (
             offer
             for offer in original_offers
@@ -118,12 +121,12 @@ async def generate_share_link(
             status_code=404, detail="Specified offer not found in the original list."
         )
 
-    payload = {
+    payload: Dict[str, Any] = {
         "addr": address_data,
         "ts": time.monotonic(),
         "offer_key": request.offer_key,
     }
-    shared_slug = encode(payload)
+    shared_slug: str = encode(payload)
     await cache_set(shared_slug, [found_offer], settings.cache_ttl_seconds)
 
     return SingleOfferShareResponse(shared_slug=shared_slug)

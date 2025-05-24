@@ -146,10 +146,16 @@ async def websocket_comparison_flow(
     offers_phase1: Dict[str, List[Offer]] = {}
     for name, task in phase1_tasks.items():
         if task in done:
+            pname: str
+            poffers: List[Offer]
+            ok: bool
             pname, poffers, ok = task.result()
             if ok:
                 offers_phase1[pname] = poffers
     if servus_task and servus_task.done():
+        pname: str
+        poffers: List[Offer]
+        ok: bool
         pname, poffers, ok = servus_task.result()
         if ok:
             offers_phase1[pname] = poffers
@@ -184,9 +190,13 @@ async def websocket_comparison_flow(
     if phase2_tasks:
         results = await asyncio.gather(*phase2_tasks, return_exceptions=True)
         for res in results:
+            # res is either Exception or (provider_name, offers, ok)
             if isinstance(res, Exception):
                 logger.error(f"[ws] provider task failed in Phase 2: {res!r}")
                 continue
+            pname: str
+            poffers: List[Offer]
+            ok: bool
             pname, poffers, ok = res
             if ok:
                 final_offers_map[pname] = poffers
@@ -224,6 +234,9 @@ async def _send_final_for_servus_only(
 
     Fetches offers, merges them, caches, and sends a single FINAL_OFFERS message.
     """
+    _ignored: str
+    offers: List[Offer]
+    ok: bool
     _, offers, ok = await execute_provider_fetch(servus, address, shared_client)
     merged = merge_offers(offers) if ok else []
     slug = None

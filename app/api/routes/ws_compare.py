@@ -5,15 +5,15 @@ from fastapi import APIRouter
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from app.api.schemas import WsMessage
-from app.core import get_settings
+from app.core import get_settings, Settings
 from app.services import websocket_comparison_flow
 from app.utils import logger
-
+from fastapi import Depends
 router = APIRouter()
 
 
 @router.websocket("/ws/compare")
-async def compare_websocket(websocket: WebSocket) -> None:
+async def compare_websocket(websocket: WebSocket, settings: Settings = Depends(get_settings)) -> None:
     """Handle the comparison websocket endpoint.
 
     This function sets up a WebSocket connection at /ws/compare, reads a JSON payload,
@@ -26,7 +26,6 @@ async def compare_websocket(websocket: WebSocket) -> None:
         WebSocketDisconnect: If the client disconnects before sending a payload.
     """
     await websocket.accept()
-    settings: Any = get_settings()
 
     try:
         payload: Dict[str, Any] = await websocket.receive_json()

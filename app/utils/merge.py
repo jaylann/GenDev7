@@ -4,7 +4,7 @@ Utilities to deduplicate and sort Offer objects based on their effective price.
 
 from __future__ import annotations
 
-import math
+import sys
 from typing import Dict, Tuple, List
 
 from app.models import Offer
@@ -44,7 +44,7 @@ def _effective_price(o: Offer) -> int:
         return o.price_cents_month_intro
     if o.price_cents_month_regular is not None:
         return o.price_cents_month_regular
-    return math.inf
+    return sys.maxsize
 
 
 def merge_offers(raw: List[Offer]) -> List[Offer]:

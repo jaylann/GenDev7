@@ -4,4 +4,5 @@ __all__ = [
     "Address",
     "Offer",
     "providers",
+    "validators"
 ]

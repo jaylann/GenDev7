@@ -26,12 +26,12 @@ class Offer(BaseModel):
     Monetary values are **cent-accurate integers (EUR-cent)**.
     """
 
-    # — Identification —
+    # Identification
     provider: NonBlankStr = Field(..., examples=["ByteMe"])
     plan_name: NonBlankStr = Field(..., examples=["Ultra 70", "Premium 200 Young"])
     product_id: NonBlankStr = Field(..., examples=["501", "PROD-1234"])
 
-    # — Performance —
+    # Performance
     speed_down_mbit: PosInt = Field(
         ..., description="Advertised downstream rate (Mbit/s)"
     )
@@ -41,7 +41,7 @@ class Offer(BaseModel):
     )
     connection_type: Literal["DSL", "Cable", "Fiber", "Mobile"]
 
-    # — Commercials —
+    # Commercials
     price_cents_month_intro: OptPosInt = Field(
         default=None,
         description="Price per month during the initial promo term",
@@ -59,7 +59,7 @@ class Offer(BaseModel):
         default=False, description="True if an on-site technician is free"
     )
 
-    # — TV & Media —
+    # TV & Media
     tv_included: Optional[bool] = Field(
         default=False, description="True if *any* TV product is bundled"
     )
@@ -68,7 +68,7 @@ class Offer(BaseModel):
         examples=["ByteLive Basic", "Ping TV Plus"],
     )
 
-    # — Promotions & Audience —
+    # Promotions & Audience
     voucher_type: Optional[VoucherKind] = Field(
         default=None, description="Kind of voucher / incentive"
     )
@@ -88,10 +88,8 @@ class Offer(BaseModel):
     class Config:
         extra = "ignore"
 
-    # -----------------------------------------------------------------------
-    # Validators — only domain logic that *cannot* be expressed via the
+    # Validators - only domain logic that *cannot* be expressed via the
     # reusable Annotated types lives here.
-    # -----------------------------------------------------------------------
     @field_validator("connection_type", mode="before")
     @classmethod
     def _normalize_conn_type(cls, v: str) -> str:
@@ -112,7 +110,7 @@ class Offer(BaseModel):
             info.data["voucher_type"] = VoucherKind.PERCENTAGE
         return v
 
-    # -------------------- model-level cross-field rules --------------------
+    #  model-level cross-field rules
     @model_validator(mode="after")
     def _derive_tv_included(self) -> "Offer":
         """Back-fill *tv_included* from *tv_package_name* if needed."""

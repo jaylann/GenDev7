@@ -38,7 +38,7 @@ def _b64decode(data: str) -> bytes:
     Returns:
         bytes: Decoded raw byte sequence.
     """
-    pad = "=" * (-len(data) % 4)  # add missing padding
+    pad: str = "=" * (-len(data) % 4)  # add missing padding
     return base64.urlsafe_b64decode(data + pad)
 
 
@@ -69,4 +69,5 @@ def decode(slug: str) -> Payload:
     """
     comp: bytes = _b64decode(slug)
     raw: bytes = zlib.decompress(comp)
-    return json.loads(raw)
+    result: Payload = json.loads(raw)
+    return result

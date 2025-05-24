@@ -57,9 +57,9 @@ def _lookup_postal_code(plz: str) -> Optional[pgeocode.pandas.Series]:
         return None
     try:
         record = _nom.query_postal_code(plz)
-        return record if record.place_name == record.place_name else None  # type: ignore
-    except Exception as exc:  # pragma: no cover
-        logger.warning(f"Postal-code lookup error: {exc}")
+        return record if record.place_name == record.place_name else None
+    except Exception as excep:
+        logger.warning(f"Postal-code lookup error: {excep}")
         return None
 
 

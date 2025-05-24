@@ -5,8 +5,6 @@ from pydantic import BeforeValidator, AfterValidator, Field
 
 
 # Helper functions
-
-
 def _blank_to_none(v: Any) -> Any:
     """
     Convert blank, whitespace-only, or NaN values to None.
