@@ -1,6 +1,6 @@
 # caching_service.py
-from .caching_service import get as cache_get
-from .caching_service import set as cache_set
+from .caching_service import cache_get
+from .caching_service import cache_set
 
 # comparison_service.py
 from .comparison_service import websocket_comparison_flow

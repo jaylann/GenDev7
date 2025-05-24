@@ -47,7 +47,7 @@ async def get_comparison_by_slug(slug: str) -> CompareResponse:
         logger.warning(f"Invalid slug format: {slug}")
         raise HTTPException(status_code=400, detail="Invalid slug format.")
 
-    offers: List[Offer] | None = cache_get(slug)
+    offers: List[Offer] | None = await cache_get(slug)
     if offers is None:
         logger.warning(f"Cache miss for slug: {slug}")
         raise HTTPException(
@@ -86,7 +86,7 @@ async def generate_share_link(
         HTTPException: 400 for invalid original slug or offer key format;
                        404 if original comparison or specified offer is not found.
     """
-    original_offers: List[Offer] | None = cache_get(request.original_page_slug)
+    original_offers: List[Offer] | None = await cache_get(request.original_page_slug)
     if not original_offers:
         raise HTTPException(
             status_code=404,

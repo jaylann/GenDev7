@@ -22,7 +22,7 @@ from app.providers.base import ProviderBase
 from app.services import cache_set
 from app.utils import shared_client, merge_offers, encode
 
-PHASE_1_TIMEOUT = 15.0
+PHASE_1_TIMEOUT = 10.0
 
 
 async def _ensure_domain_validity(

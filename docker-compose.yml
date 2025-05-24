@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   app:
     build:
@@ -8,6 +10,7 @@ services:
       - "8000"
     environment:
       - PYTHON_ENV=production
+      - REDIS_URL=redis://redis:6379/0
     # health-check to let nginx wait until Gunicorn is ready
     healthcheck:
       test: [ "CMD-SHELL", "curl -f http://localhost:8000/health || exit 1" ]
@@ -15,6 +18,8 @@ services:
       timeout: 5s
       start_period: 30s
       retries: 3
+    depends_on:
+      - redis
 
   nginx:
     image: nginx:1.27-alpine
@@ -27,3 +32,9 @@ services:
       app:
         condition: service_healthy
     restart: always
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    # by default redis listens on 0.0.0.0:6379 inside the network
+    # no need to publish it externally unless you want to debug from host
