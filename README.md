@@ -1,36 +1,157 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BetterSurf Web Frontend
 
-## Getting Started
+[![Next.js Version](https://img.shields.io/badge/next.js-15.3.2-black.svg)](https://nextjs.org/)  
+[![TypeScript](https://img.shields.io/badge/typescript-5.4.2-blue.svg)](https://www.typescriptlang.org/)  
 
-First, run the development server:
+---
+
+## 📖 Table of Contents
+
+1. [About](#about)  
+2. [Features](#features)  
+3. [Prerequisites](#prerequisites)  
+4. [Getting Started](#getting-started)  
+   - [Clone & Install](#clone--install)  
+   - [Environment Variables](#environment-variables)  
+   - [Run Locally](#run-locally)  
+   - [Build & Export](#build--export)  
+5. [Scripts](#scripts)  
+6. [Project Structure](#project-structure)  
+7. [Environment Config](#environment-config)  
+8. [Styling & Fonts](#styling--fonts)  
+
+---
+
+## 📌 About
+
+This is the **BetterSurf** web frontend, built on Next.js + TypeScript. It provides a sleek, responsive UI to compare internet-provider offers side-by-side, leveraging the BetterSurf backend API for data.
+
+---
+
+## 🚀 Features
+
+- ⚡ **Next.js 14** with App Router & React 19  
+- 🔄 **Suspense** + React Server Components for fast loading  
+- 🗺️ Integrated **Google Maps Autocomplete**  
+- 🌙 **Gradient background**
+- 🔔 Toast notifications via Sonner  
+- ✅ ESLint + Prettier + TypeScript type safety  
+
+---
+
+## 🛠️ Prerequisites
+
+- Node.js **18+** (LTS recommended)  
+- npm **10+** or Yarn **1.22+**  
+- Google Maps API key (for map component)  
+- Running instance of BetterSurf backend  
+
+---
+
+## 🏁 Getting Started
+
+### Clone & Install
+
+```bash
+# Clone the repo
+git clone https://github.com/jaylann/gendev-web.git
+cd gendev-web
+
+# Install dependencies
+npm install
+# or
+yarn install
+````
+
+### Environment Variables
+
+Copy the example file and fill in your keys:
+
+```bash
+cp .env.local.example .env.local
+```
+
+Edit `.env.local`:
+
+```dotenv
+NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+### Run Locally
 
 ```bash
 npm run dev
 # or
 yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build & Export
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm run start
+# or
+yarn build
+yarn start
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 📜 Scripts
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Command  | Description                                 |
+| -------- | ------------------------------------------- |
+| `dev`    | Runs Next.js in development mode (with HMR) |
+| `build`  | Creates an optimized production build       |
+| `start`  | Runs the production server                  |
+| `lint`   | Runs ESLint checks                          |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+---
 
-## Deploy on Vercel
+## 🗂️ Project Structure
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+.
+├── public/                  Static assets (icons, images, fonts)
+├── src/
+│   ├── components/          Reusable React components
+│   │   ├── compare/         ComparePage, skeleton, maps loader
+│   │   └── ui/              Sonner toaster, buttons, etc.
+│   ├── app/
+│   │   ├── globals.css      Base styles & Tailwind config
+│   │   ├── layout.tsx       RootLayout with fonts, background
+│   │   └── page.tsx         Entry point (Suspense + ComparePage)
+│   └── utils/               Helpers (API client, hooks)
+├── .env.local.example       Env var template
+├── next.config.ts           Next.js configuration
+├── tsconfig.json            TypeScript settings
+├── eslint.config.mjs        Lint rules
+├── postcss.config.mjs       Tailwind / PostCSS setup
+└── package.json             Scripts & dependencies
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## ⚙️ Environment Config
+
+* **`NEXT_PUBLIC_API_URL`**
+  Base URL for the BetterSurf backend (e.g. `http://localhost:8000`).
+
+* **`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`**
+  API key to load Google Maps in the comparison page.
+
+---
+
+## 🎨 Styling & Fonts
+
+* Uses **Tailwind CSS** for utility-first styling.
+* Global CSS in `src/app/globals.css`.
+* Google Fonts via `next/font/google`:
+
+    * `Geist` (sans)
+    * `Geist Mono` (mono)
+
+Dark gradient background is applied at the `<html>` level via Tailwind classes.
