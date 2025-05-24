@@ -6,6 +6,7 @@
  */
 import React, { FC } from "react";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 /**
  * ProviderLogo component displays a provider-specific icon inside a styled container.
@@ -29,12 +30,12 @@ export const ProviderLogo: FC<{ providerName: string; className?: string }> = ({
     return (
         <div
             className={cn(
-                "flex items-center justify-center size-10 rounded-full bg-slate-700 text-white p-2 transition-colors",
+                "relative flex items-center justify-center size-10 rounded-full bg-slate-700 text-white p-2 transition-colors",
                 className,
             )}
             title={providerName}
         >
-            <img src={imageSrc} alt={providerName} className="size-5" />
+            <Image src={imageSrc} alt={providerName} fill className="object-contain rounded-full" />
         </div>
     );
 };

@@ -194,7 +194,8 @@ export const useOfferWebSocket = ({
                 case "FINAL_OFFERS": {
                     const initialTs = initialOffersTimestampRef.current;
                     const prevOffers = offersRef.current;
-                    const isQuickFinal = !!initialTs && Date.now() - initialTs <= 3000;
+                    // If it arrives within 5 seconds just auto load them. User wont notice. And increases UX.
+                    const isQuickFinal = !!initialTs && Date.now() - initialTs <= 5000;
 
                     // Never expect another refinement after FINAL
                     expectingRefinementRef.current = false;
