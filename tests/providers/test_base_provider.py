@@ -26,11 +26,11 @@ class DummyProvider(ProviderBase):
     name = "DummyProvider"
 
     def __init__(
-            self,
-            client: httpx.AsyncClient,
-            *,
-            failures_before_success: int = 0,
-            retry_config: RetryConfig | None = None,
+        self,
+        client: httpx.AsyncClient,
+        *,
+        failures_before_success: int = 0,
+        retry_config: RetryConfig | None = None,
     ) -> None:
         super().__init__(client, retry_config=retry_config)
         self._failures_before_success = failures_before_success
@@ -39,8 +39,8 @@ class DummyProvider(ProviderBase):
     # keep CB protection
     @circuit_protected
     async def fetch(
-            self,
-            address: Address,
+        self,
+        address: Address,
     ) -> List[Offer]:
         self.call_count += 1
         if self.call_count <= self._failures_before_success:
@@ -61,7 +61,8 @@ def dummy_address() -> Address:
         country_code="DE",
     )
 
-FAST_WAIT = wait_fixed(0) # no wait between attempts
+
+FAST_WAIT = wait_fixed(0)  # no wait between attempts
 
 
 @pytest.fixture(autouse=True)
@@ -75,8 +76,6 @@ def _reset_breakers() -> None:
 def httpx_client() -> httpx.AsyncClient:
     """A harmless AsyncClient instance for all tests."""
     return httpx.AsyncClient(base_url="http://example")
-
-
 
 
 # Retry logic – deterministic cases
@@ -97,7 +96,9 @@ async def test_success_without_retry(httpx_client, dummy_address):
 async def test_retry_until_success(httpx_client, dummy_address):
     attempts, failures = 5, 3
     cfg = RetryConfig(max_attempts=attempts, wait=FAST_WAIT)
-    provider = DummyProvider(httpx_client, failures_before_success=failures, retry_config=cfg)
+    provider = DummyProvider(
+        httpx_client, failures_before_success=failures, retry_config=cfg
+    )
 
     offers = await provider(dummy_address)
 
@@ -111,7 +112,9 @@ async def test_retry_until_success(httpx_client, dummy_address):
 async def test_retry_exhaustion_raises(httpx_client, dummy_address):
     attempts = 3
     cfg = RetryConfig(max_attempts=attempts, wait=FAST_WAIT)
-    provider = DummyProvider(httpx_client, failures_before_success=float("inf"), retry_config=cfg)
+    provider = DummyProvider(
+        httpx_client, failures_before_success=float("inf"), retry_config=cfg
+    )
 
     with pytest.raises(ProviderError):
         await provider(dummy_address)
@@ -120,7 +123,11 @@ async def test_retry_exhaustion_raises(httpx_client, dummy_address):
 
 
 # Retry logic – property-based fuzzing
-@settings(deadline=None, max_examples=25, suppress_health_check=(HealthCheck.function_scoped_fixture,))
+@settings(
+    deadline=None,
+    max_examples=25,
+    suppress_health_check=(HealthCheck.function_scoped_fixture,),
+)
 @given(
     max_attempts=st.integers(min_value=1, max_value=6),
     failures=st.integers(min_value=0, max_value=6),
@@ -132,7 +139,9 @@ def test_retry_property(max_attempts: int, failures: int, httpx_client, dummy_ad
     The number of fetch invocations must never exceed max_attempts.
     """
     cfg = RetryConfig(max_attempts=max_attempts, wait=FAST_WAIT)
-    provider = DummyProvider(httpx_client, failures_before_success=failures, retry_config=cfg)
+    provider = DummyProvider(
+        httpx_client, failures_before_success=failures, retry_config=cfg
+    )
     # Ensure the circuit does **not** open during this run
     breaker = get_circuit_breaker(provider.name)
     breaker.state = CircuitState.CLOSED
@@ -165,8 +174,8 @@ async def test_circuit_open_short_circuits(httpx_client, dummy_address):
     # Manually force the breaker open
     breaker = get_circuit_breaker(provider.name)
     breaker.state = CircuitState.OPEN
-    breaker.last_state_change = time.time()      # ensure “just now”
-    breaker.config.recovery_timeout = 9999       # well beyond test duration
+    breaker.last_state_change = time.time()  # ensure “just now”
+    breaker.config.recovery_timeout = 9999  # well beyond test duration
 
     offers = await provider(dummy_address)
 

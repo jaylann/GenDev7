@@ -9,6 +9,7 @@ from hypothesis import (
     settings,
     HealthCheck,
 )
+
 # noinspection PyProtectedMember
 from pydantic import ValidationError, FieldValidationInfo
 
@@ -68,7 +69,10 @@ def st_valid_offer_input_dict(draw: st.DrawFn) -> Dict[str, Any]:
         kwargs["price_cents_month_intro"] = draw(st_positive_int_val)
         kwargs["price_cents_month_regular"] = draw(st_positive_int_val)
     # Ensure that if contract_regular_months differs from contract_duration_months, both prices are provided
-    if kwargs.get("contract_regular_months") is not None and kwargs["contract_regular_months"] != kwargs["contract_duration_months"]:
+    if (
+        kwargs.get("contract_regular_months") is not None
+        and kwargs["contract_regular_months"] != kwargs["contract_duration_months"]
+    ):
         if "price_cents_month_intro" not in kwargs:
             kwargs["price_cents_month_intro"] = draw(st_positive_int_val)
         if "price_cents_month_regular" not in kwargs:

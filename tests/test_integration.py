@@ -14,6 +14,7 @@ from main import app
 # Fixtures & monkey-patches                                                   #
 # --------------------------------------------------------------------------- #
 
+
 @pytest.fixture
 def anyio_backend() -> str:
     """Force AnyIO to use asyncio only (avoids Trio import errors)."""
@@ -28,7 +29,7 @@ def _patch_route_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
     """
 
     # -- a minimal but VALID Offer ----------------------------------------- #
-    valid_offer = Offer(                       # full validation passes
+    valid_offer = Offer(  # full validation passes
         provider="MockProvider",
         plan_name="Mock DSL 100",
         product_id="PROD-1",
@@ -38,7 +39,7 @@ def _patch_route_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
         price_cents_month_regular=1999,
     )
 
-    async def fake_get_comp(slug: str) -> CompareResponse:        # type: ignore[override]
+    async def fake_get_comp(slug: str) -> CompareResponse:  # type: ignore[override]
         """Return a CompareResponse with one real Offer object."""
         return CompareResponse(slug=slug, offers=[valid_offer])
 
@@ -49,14 +50,13 @@ def _patch_route_helpers(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
         "app.api.routes.http_compare.get_comparison_by_slug", fake_get_comp
     )
-    monkeypatch.setattr(
-        "app.api.routes.http_compare.generate_share_link", fake_share
-    )
+    monkeypatch.setattr("app.api.routes.http_compare.generate_share_link", fake_share)
 
 
 # --------------------------------------------------------------------------- #
 # HTTP integration tests                                                      #
 # --------------------------------------------------------------------------- #
+
 
 @pytest.mark.anyio
 async def test_compare_by_slug_returns_data() -> None:
@@ -86,6 +86,7 @@ async def test_generate_single_offer_share_link() -> None:
 # --------------------------------------------------------------------------- #
 # WebSocket integration test                                                  #
 # --------------------------------------------------------------------------- #
+
 
 def test_compare_websocket_roundtrip() -> None:
     client = TestClient(app)

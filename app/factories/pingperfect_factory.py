@@ -94,7 +94,9 @@ class PingPerfectFactory:
 
         try:
             info: Dict[str, Union[str, int, None]] = item.get("productInfo", {}) or {}
-            price: Dict[str, Union[str, int, None]] = item.get("pricingDetails", {}) or {}
+            price: Dict[str, Union[str, int, None]] = (
+                item.get("pricingDetails", {}) or {}
+            )
 
             provider_name_raw: Optional[str] = item.get("providerName")
             provider_name: Optional[str] = (
@@ -144,7 +146,9 @@ class PingPerfectFactory:
         return None
 
     @staticmethod
-    def parse_responses(raw_items: List[Dict[str, object]]) -> List[PingPerfectResponse]:
+    def parse_responses(
+        raw_items: List[Dict[str, object]],
+    ) -> List[PingPerfectResponse]:
         """
         Parse multiple JSON items into PingPerfectResponse models.
 

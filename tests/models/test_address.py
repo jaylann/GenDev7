@@ -37,8 +37,14 @@ def test_valid_address_trimming_and_normalization():
     ],
 )
 def test_invalid_fields(field, value):
-    valid = {"street": "Main Street", "house_number": "123A", "city": "Berlin", "plz": "10115", "country_code": "DE",
-             field: value}
+    valid = {
+        "street": "Main Street",
+        "house_number": "123A",
+        "city": "Berlin",
+        "plz": "10115",
+        "country_code": "DE",
+        field: value,
+    }
     with pytest.raises(ValidationError) as exc_info:
         Address(**valid)
     errors = exc_info.value.errors()

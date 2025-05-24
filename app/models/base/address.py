@@ -32,7 +32,6 @@ class Address(BaseModel):
     class Config:
         frozen = True
 
-
     @field_validator("country_code", mode="before")
     @classmethod
     def normalize_country_code(cls, v):

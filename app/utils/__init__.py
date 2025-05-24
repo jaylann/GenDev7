@@ -1,4 +1,3 @@
-
 __all__ = [
     "sign",
     "shared_client",

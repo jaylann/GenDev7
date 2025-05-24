@@ -32,7 +32,9 @@ class Offer(BaseModel):
     product_id: NonBlankStr = Field(..., examples=["501", "PROD-1234"])
 
     # — Performance —
-    speed_down_mbit: PosInt = Field(..., description="Advertised downstream rate (Mbit/s)")
+    speed_down_mbit: PosInt = Field(
+        ..., description="Advertised downstream rate (Mbit/s)"
+    )
     data_cap_gb: OptPosInt = Field(
         default=None,
         description="Monthly data cap in GB (None ⇒ flat rate)",
@@ -120,7 +122,10 @@ class Offer(BaseModel):
     @model_validator(mode="after")
     def _ensure_price_present(self) -> "Offer":
         """Require at least one monthly price."""
-        if self.price_cents_month_intro is None and self.price_cents_month_regular is None:
+        if (
+            self.price_cents_month_intro is None
+            and self.price_cents_month_regular is None
+        ):
             raise ValueError(
                 "Either price_cents_month_intro or price_cents_month_regular must be provided."
             )
@@ -133,12 +138,12 @@ class Offer(BaseModel):
         both intro & regular prices must be specified.
         """
         if (
-                self.contract_regular_months is not None
-                and self.contract_regular_months != self.contract_duration_months
-                and (
+            self.contract_regular_months is not None
+            and self.contract_regular_months != self.contract_duration_months
+            and (
                 self.price_cents_month_intro is None
                 or self.price_cents_month_regular is None
-        )
+            )
         ):
             raise ValueError(
                 "When *contract_regular_months* differs from *contract_duration_months*, "

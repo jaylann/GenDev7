@@ -39,6 +39,7 @@ _PROMO_PRICE_RE = re.compile(
 _MIN_ORDER_RE = re.compile(r"Mindestbestellwert\s*beträgt\s*(\d+)\s*€", re.I)
 _REGULAR_MONTH_RE = re.compile(r"Ab\s*dem\s*(\d+)\.?\s*Monat", re.I)
 
+
 class VerbynDichFactory:
     """
     Factory for integrating with the VerbynDich provider.
@@ -103,7 +104,9 @@ class VerbynDichFactory:
             # Extract and coerce download speed to integer Mbit, rounding decimals
             raw_speed = _match_first(_SPEED_RE)
             try:
-                speed_down_mbit = int(round(float(raw_speed.replace(",", ".")))) if raw_speed else 16
+                speed_down_mbit = (
+                    int(round(float(raw_speed.replace(",", ".")))) if raw_speed else 16
+                )
             except ValueError:
                 speed_down_mbit = None
 

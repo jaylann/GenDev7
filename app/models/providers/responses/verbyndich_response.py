@@ -5,17 +5,27 @@ import uuid
 from pydantic import BaseModel, Field, field_validator
 
 from app.models.base import VoucherKind, Offer
-from app.models.validators import NonBlankStr, PosInt, OptStrClean, OptPosInt, OptPercent
+from app.models.validators import (
+    NonBlankStr,
+    PosInt,
+    OptStrClean,
+    OptPosInt,
+    OptPercent,
+)
 
 
 class VerbynDichResponse(BaseModel):
     valid: bool
     last: bool
 
-    price_cents_month: PosInt = Field(..., description="Introductory monthly price in cents")
+    price_cents_month: PosInt = Field(
+        ..., description="Introductory monthly price in cents"
+    )
     speed_down_mbit: PosInt
     contract_duration_months: PosInt
-    max_age: OptPosInt = Field(None, description="Maximum customer age to qualify for voucher")
+    max_age: OptPosInt = Field(
+        None, description="Maximum customer age to qualify for voucher"
+    )
     contract_regular_months: OptPosInt = Field(
         None, description="Standard contract term in months (optional)"
     )
@@ -37,7 +47,9 @@ class VerbynDichResponse(BaseModel):
     )
 
     connection_type: NonBlankStr
-    tv_package_name: OptStrClean = Field(None, description="Name of the TV package if included")
+    tv_package_name: OptStrClean = Field(
+        None, description="Name of the TV package if included"
+    )
     tv_included: bool = Field(..., description="Whether TV is included")
     data_cap_gb: OptPosInt = Field(None, description="Data cap in GB")
 

@@ -40,7 +40,9 @@ class ServusSpeedFactory:
         return body
 
     @staticmethod
-    def parse_detail_response(pid: str, payload: object) -> Optional[ServusSpeedResponse]:
+    def parse_detail_response(
+        pid: str, payload: object
+    ) -> Optional[ServusSpeedResponse]:
         """
         Parse a product-detail payload into a ServusSpeedResponse.
 
@@ -97,7 +99,9 @@ class ServusSpeedFactory:
 
             provider_name_raw: object = prod.get("providerName")
             if not isinstance(provider_name_raw, str):
-                logger.error(f"Invalid providerName '{provider_name_raw}' for pid {pid}")
+                logger.error(
+                    f"Invalid providerName '{provider_name_raw}' for pid {pid}"
+                )
                 return None
             provider_name: str = provider_name_raw
 
@@ -105,7 +109,9 @@ class ServusSpeedFactory:
             speed: int = int(round(float(speed_raw)))  # type: ignore[arg-type]
 
             contract_duration_raw: object = info.get("contractDurationInMonths")
-            contract_duration: int = to_int(contract_duration_raw, "contractDurationInMonths")
+            contract_duration: int = to_int(
+                contract_duration_raw, "contractDurationInMonths"
+            )
 
             monthly_cost_raw: object = price.get("monthlyCostInCent")
             monthly_cost: int = to_int(monthly_cost_raw, "monthlyCostInCent")

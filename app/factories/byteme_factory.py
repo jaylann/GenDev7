@@ -81,7 +81,9 @@ class ByteMeFactory:
 
             # Extract voucher details
             voucher_type_raw: Optional[str] = getattr(row, "voucherType", None)
-            voucher_value_raw: Optional[Union[str, float, int]] = getattr(row, "voucherValue", None)
+            voucher_value_raw: Optional[Union[str, float, int]] = getattr(
+                row, "voucherValue", None
+            )
 
             voucher_type: Optional[str] = (
                 str(voucher_type_raw).strip().lower()
@@ -155,7 +157,9 @@ class ByteMeFactory:
         df: pd.DataFrame = df.copy()
 
         if cls._TV_SOURCE_COL in df.columns:
-            raw_tv: pd.Series = df[cls._TV_SOURCE_COL].fillna("").astype(str).str.strip()
+            raw_tv: pd.Series = (
+                df[cls._TV_SOURCE_COL].fillna("").astype(str).str.strip()
+            )
             lower_tv: pd.Series = raw_tv.str.lower()
             is_true: pd.Series = lower_tv == "true"
             is_false: pd.Series = lower_tv == "false"

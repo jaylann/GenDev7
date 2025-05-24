@@ -26,8 +26,8 @@ PHASE_1_TIMEOUT = 15.0
 
 
 async def _ensure_domain_validity(
-        websocket: WebSocket,
-        address: Address,
+    websocket: WebSocket,
+    address: Address,
 ) -> bool:
     """
     Run enhanced domain-level address validation.
@@ -59,9 +59,9 @@ async def _ensure_domain_validity(
 
 
 async def execute_provider_fetch(
-        provider: ProviderBase,
-        address: Address,
-        client: httpx.AsyncClient,
+    provider: ProviderBase,
+    address: Address,
+    client: httpx.AsyncClient,
 ) -> Tuple[str, List[Offer], bool]:
     """
     Execute a provider’s fetch logic and capture its result.
@@ -81,9 +81,9 @@ async def execute_provider_fetch(
 
 
 async def websocket_comparison_flow(
-        websocket: WebSocket,
-        payload: dict,
-        settings: Settings,
+    websocket: WebSocket,
+    payload: dict,
+    settings: Settings,
 ) -> None:
     """
     Run the two-phase comparison flow over a WebSocket connection.
@@ -95,7 +95,9 @@ async def websocket_comparison_flow(
         address = WsCompareAddressRequest(**payload)
     except ValidationError as e:
         await websocket.send_json(
-            WsMessage(type="ERROR", message=f"Invalid address: {e.errors()}").model_dump()
+            WsMessage(
+                type="ERROR", message=f"Invalid address: {e.errors()}"
+            ).model_dump()
         )
         await websocket.close(code=1003)
         return
@@ -116,12 +118,8 @@ async def websocket_comparison_flow(
         await websocket.close()
         return
 
-    fast_providers = [
-        p for p in providers if not isinstance(p, ServusSpeedProvider)
-    ]
-    servus = next(
-        (p for p in providers if isinstance(p, ServusSpeedProvider)), None
-    )
+    fast_providers = [p for p in providers if not isinstance(p, ServusSpeedProvider)]
+    servus = next((p for p in providers if isinstance(p, ServusSpeedProvider)), None)
 
     # Servus-only shortcut
     if servus and not fast_providers:
@@ -216,10 +214,10 @@ async def websocket_comparison_flow(
 
 
 async def _send_final_for_servus_only(
-        websocket: WebSocket,
-        servus: ServusSpeedProvider,
-        address: Address,
-        settings: Settings,
+    websocket: WebSocket,
+    servus: ServusSpeedProvider,
+    address: Address,
+    settings: Settings,
 ) -> None:
     """
     Handle the scenario where only a ServusSpeedProvider is used.
