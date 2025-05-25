@@ -57,6 +57,7 @@ export default function ComparePage(): JSX.Element {
                     searches={state.recentSearches}
                     onClear={actions.clearRecentSearches}
                     className="fixed top-4 right-4 z-50"
+                    currentSlug={state.currentDisplaySlug}
                 />
 
                 {/* Address search section for inputting and selecting an address */}

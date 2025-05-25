@@ -79,9 +79,11 @@ export const useRecentSearches = () => {
      */
     const addRecentSearch = useCallback((searchData: AddRecentSearchData) => {
         setRecentSearches((prevSearches) => {
-            // Check if this sessionId already has an entry
+            // Duplicate detection: match by *sessionId* OR *url*
             const existingIndex = prevSearches.findIndex(
-                (s) => s.sessionId === searchData.sessionId,
+                (s) =>
+                    s.sessionId === searchData.sessionId ||
+                    s.url === searchData.url,
             );
             let updatedSearches = [...prevSearches];
 
@@ -135,6 +137,34 @@ export const useRecentSearches = () => {
     }, []);
 
     /**
+     * Replaces the stored URL for an existing search *without* changing its
+     * position, timestamp, label, or id.  No-op if the sessionId is unknown or
+     * the URL is already identical.
+     *
+     * @param sessionId - The stable identifier we generated when the search started
+     * @param newUrl    - The final compare-slug URL coming from the WebSocket
+     */
+    const updateSearchSlug = useCallback(
+      (sessionId: string, newUrl: string) => {
+        setRecentSearches((prev) => {
+          const idx = prev.findIndex((s) => s.sessionId === sessionId);
+          if (idx === -1 || prev[idx].url === newUrl) return prev; // nothing to do
+
+          const updated = [...prev];
+          updated[idx] = { ...updated[idx], url: newUrl };
+
+          try {
+            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+          } catch (err) {
+            console.error("Failed to persist updated recent-search slug:", err);
+          }
+          return updated;
+        });
+      },
+      [],
+    );
+
+    /**
      * Clears all recent search entries from state and sessionStorage.
      */
     const clearRecentSearches = useCallback(() => {
@@ -150,5 +180,5 @@ export const useRecentSearches = () => {
     }, []);
 
     // Expose state and handlers to consuming components
-    return { recentSearches, addRecentSearch, clearRecentSearches };
+    return { recentSearches, addRecentSearch, updateSearchSlug, clearRecentSearches };
 };
