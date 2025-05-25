@@ -83,7 +83,7 @@ export const AddressAutocompleteInput: React.FC<
 
     const [highlightedIdx, setHighlightedIdx] = useState<number>(-1);
 
-    // 🛠 One-time prefill when loading parsedAddress from slug
+    // One-time prefill when loading parsedAddress from slug
     const hasPrefilledRef = useRef(false);
 
     useEffect(() => {
@@ -95,21 +95,21 @@ export const AddressAutocompleteInput: React.FC<
                 try {
                     const { results } = await new window.google.maps.Geocoder().geocode({ address: raw });
                     formatted = results[0]?.formatted_address ?? raw;
+                    if (formatted === value) {
+                        hasPrefilledRef.current = true;
+                        return;
+                    }
                 } catch {
                     // silently ignore and use raw
                 }
             }
 
             setValue(formatted, false);
-            // 1️⃣ Fill the input so the user sees the nice, formatted address
-            // 2️⃣ INTENTIONALLY **do not** call `onAddressSelect` here –
-            //     calling it would overwrite the “Loaded … offers.” status
-            //     that was just shown after the slug fetch.
             hasPrefilledRef.current = true;
         })();
-    }, [parsedAddress, ready, setValue]);
+    }, [parsedAddress, ready, setValue, value]);
 
-    // 🛠 Notify parent when user clears the field entirely
+    // Notify parent when user clears the field entirely
     useEffect(() => {
         if (parsedAddress || value.trim() !== "") return;
         onAddressSelectAction(null, "");
