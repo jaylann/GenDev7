@@ -194,7 +194,7 @@ export const OfferGrid: FC<OfferGridProps> = ({
             <AnimatePresence mode="popLayout">
                 <div
                     className={cn(
-                        "grid gap-5 sm:gap-6 px-1",
+                        "grid gap-5 sm:gap-6 px-1 pb-4 sm:pb-8",
                         viewMode === "grid"
                             ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
                             : "grid-cols-1 md:grid-cols-2 gap-4",

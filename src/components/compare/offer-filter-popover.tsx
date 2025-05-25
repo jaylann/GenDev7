@@ -403,7 +403,7 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                     {!!activeFilterCount && (
                         <Badge
                             variant="destructive"
-                            className="absolute -top-1.5 -right-1.5 h-5 w-5 flex items-center justify-center p-0.5 text-[0.6rem] rounded-full bg-indigo-600 text-white"
+                            className="absolute -top-1.5 -right-1.5 h-5 w-5 flex items-center justify-center p-0.5 text-[0.6rem] rounded-full bg-indigo-600 dark:bg-indigo-600 text-white"
                         >
                             {activeFilterCount}
                         </Badge>
