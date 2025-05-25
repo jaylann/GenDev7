@@ -103,12 +103,7 @@ export const RecentSearchesDropdown: FC<RecentSearchesDropdownProps> = ({
                                 )}
                                 title={search.label}
                             >
-                                <span
-                                    className="truncate block"
-                                    title={search.label}
-                                >
                                 {search.label}
-                            </span>
                             </DropdownMenuItem>
                         );
                     })}

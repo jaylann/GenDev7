@@ -241,21 +241,12 @@ export function useComparePageState(): ComparePageState {
         setSortOptionAction: setSortOption,
         setFiltersAction: setFilters,
         setStatusAction: (message: string) => {
-            // Only update status from initializer if a search isn't active,
-            // or if the message is an error message or a shared link confirmation.
-            if (!searchIsActiveRef.current ||
-                message.toLowerCase().startsWith("error:") ||
-                message.toLowerCase().includes("shared results") ||
-                message.toLowerCase().includes("shared link loaded")
-            ) {
-                setStatusMessage(message);
-            }
-            // This logic is for the initialPageLoadProcessedRef, distinct from searchIsActiveRef
+            setStatusMessage(message);
+            // If status indicates no slug was processed on init, mark initial load processed.
             if (message.startsWith("Enter an address") && !initialPageLoadProcessedRef.current) {
-                initialPageLoadProcessedRef.current = true;
+                 initialPageLoadProcessedRef.current = true;
             }
         },
-        searchIsActiveRef,
         setLoadingAction: setIsLoadingFromUrl,
         setIsLoadingFromSlugAction: setIsLoadingFromUrl,
         setParsedAddress: setParsedAddressFromSlug,
@@ -421,22 +412,15 @@ export function useComparePageState(): ComparePageState {
             return;
         }
 
-        searchIsActiveRef.current = true;
         initialPageLoadProcessedRef.current = true;
-        // NEW: Set an immediate status message for the search action.
-        // This message will be visible briefly until useOfferWebSocket updates it.
-        const searchTarget = sessionIdRef.current && !sessionIdRef.current.startsWith("session-")
-            ? sessionIdRef.current
-            : "the selected address";
-        setStatusMessage(`Fetching offers for ${searchTarget}…`);
 
         router.replace(pathname, { scroll: false });
 
         hasAddedInitialHistoryEntryRef.current = false;
+        searchIsActiveRef.current = true;
 
-        if (!sessionIdRef.current || sessionIdRef.current.startsWith("shared-")) {
-            // If it was a shared link or no session ID, create a new one for this active search
-            sessionIdRef.current = `session-${Date.now()}`;
+        if (!sessionIdRef.current) {
+             sessionIdRef.current = `session-${Date.now()}`;
         }
         currentSearchSlugRef.current = null;
 
@@ -459,7 +443,7 @@ export function useComparePageState(): ComparePageState {
         if (pendingOffers) {
             setOriginalOffers(pendingOffers);
             setStatusMessage(
-                `Displaying ${pendingOffers.length} updated offers.`,
+                `Displaying updated results (${pendingOffers.length} offers).`,
             );
 
             /**
