@@ -82,47 +82,38 @@ export const AddressAutocompleteInput: React.FC<
     });
 
     const [highlightedIdx, setHighlightedIdx] = useState<number>(-1);
-    useEffect(() => {
-        setHighlightedIdx(-1);
-    }, [suggestions.data]);
+
+    // 🛠 One-time prefill when loading parsedAddress from slug
+    const hasPrefilledRef = useRef(false);
 
     useEffect(() => {
-        // When parsedAddress is supplied or input is cleared, ensure onAddressSelect is called appropriately.
-        if (!ready) return;
-
-        if (parsedAddress) {
-            (async () => {
-                const raw = `${parsedAddress.street} ${parsedAddress.house_number}, ${parsedAddress.plz} ${parsedAddress.city}`;
-                let formatted = raw;
-                if (window.google?.maps?.Geocoder) {
-                    try {
-                        const results = await new Promise<
-                            google.maps.GeocoderResult[]
-                        >((resolve, reject) => {
-                            new window.google.maps.Geocoder().geocode(
-                                { address: raw },
-                                (res, status) => {
-                                    if (status === "OK" && res) resolve(res);
-                                    else reject(status);
-                                },
-                            );
-                        });
-                        formatted = results[0]?.formatted_address ?? raw;
-                    } catch (error) {
-                        console.error(
-                            "Geocode failed for parsedAddress:",
-                            error,
-                        );
-                    }
+        if (!ready || !parsedAddress || hasPrefilledRef.current) return;
+        (async () => {
+            const raw = `${parsedAddress.street} ${parsedAddress.house_number}, ${parsedAddress.plz} ${parsedAddress.city}`;
+            let formatted = raw;
+            if (window.google?.maps?.Geocoder) {
+                try {
+                    const { results } = await new window.google.maps.Geocoder().geocode({ address: raw });
+                    formatted = results[0]?.formatted_address ?? raw;
+                } catch {
+                    // silently ignore and use raw
                 }
+            }
 
-                setValue(formatted, false);
-                onAddressSelect(parsedAddress, formatted);
-            })();
-        } else if (value === "") {
-            onAddressSelect(null, "");
-        }
-    }, [parsedAddress, ready, setValue, onAddressSelect, value]);
+            setValue(formatted, false);
+            // 1️⃣ Fill the input so the user sees the nice, formatted address
+            // 2️⃣ INTENTIONALLY **do not** call `onAddressSelect` here –
+            //     calling it would overwrite the “Loaded … offers.” status
+            //     that was just shown after the slug fetch.
+            hasPrefilledRef.current = true;
+        })();
+    }, [parsedAddress, ready, setValue]);
+
+    // 🛠 Notify parent when user clears the field entirely
+    useEffect(() => {
+        if (parsedAddress || value.trim() !== "") return;
+        onAddressSelect(null, "");
+    }, [value]);
 
     // Refs for handling focus and outside-click detection.
     const inputRef = useRef<HTMLInputElement | null>(null);

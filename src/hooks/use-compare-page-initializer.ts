@@ -127,8 +127,16 @@ export const useComparePageInitializer = ({
                             detail ?? `Backend returned ${res.status}`,
                         );
                     }
+                    const raw = await res.text();
+                    console.log("▶️ RAW RESPONSE:", raw);
+                    let data: SharedOffersResponse;
+                    try {
+                        data = JSON.parse(raw);
+                    } catch (e) {
+                        throw new Error(`Invalid JSON from backend: ${raw.slice(0, 200)}`);
+                    }
 
-                    const data: SharedOffersResponse = await res.json();
+
 
                     // Populate offers and slug from fetched shared comparison
                     setOriginalOffers(data.offers);
