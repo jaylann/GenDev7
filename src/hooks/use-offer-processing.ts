@@ -7,12 +7,6 @@ import { calculateAvgNetMonthlyCost } from "@/utils/calculations";
 import { calculateRecommendationScore } from "@/utils/recommendation-score";
 
 /**
- * Module: useOfferProcessing
- *
- * A React hook that processes a list of offers by enriching with calculated metrics,
- * applying active filters, and sorting based on the selected option.
- */
-/**
  * Custom hook to process offers: enrich, filter, and sort.
  * @param originalOffers - The raw list of offers.
  * @param sortOption - The current sorting option.

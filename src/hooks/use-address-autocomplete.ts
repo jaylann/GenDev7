@@ -1,12 +1,6 @@
 /**
- * useAddressAutocomplete Hook
- *
- * Provides an input-controlled address autocomplete experience using the
- * Google Places SDK. Exposes suggestion fetching, selection handling,
- * and geocoding to a standardized Address type.
- *
- * Delegates suggestion logic to usePlacesAutocomplete and
- * parsing logic to parseGeocodeResult.
+ * Custom React hook providing address autocomplete and geocoding capabilities.
+ * Utilizes Google Places SDK for suggestions and geocoding.
  */
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,16 +8,15 @@ import usePlacesAutocomplete, { getGeocode } from "use-places-autocomplete";
 import { parseGeocodeResult } from "@/utils/address";
 import type { Address } from "@/types/address";
 
-/** The public shape returned by the custom hook. */
 /**
- * Public API of the useAddressAutocomplete hook.
+ * Hook return API.
  *
- * @property value - Controlled input value for the address field.
- * @property setValue - Update the input value; optionally fetch suggestions.
- * @property suggestions - Current list of place suggestions.
- * @property handleSelect - Callback when a suggestion is chosen.
- * @property geocodeAndEmit - Geocode an arbitrary string and emit result.
- * @property ready - True when SDK and hook are fully initialized.
+ * @property value - Current input value.
+ * @property setValue - Updates input value; fetches suggestions if indicated.
+ * @property suggestions - Array of place suggestions.
+ * @property handleSelect - Handles selection of a suggestion.
+ * @property geocodeAndEmit - Geocodes input string and emits parsed address.
+ * @property ready - Indicates when the SDK and hook are fully initialized.
  */
 export interface UseAddressAutocomplete {
     /** Controlled input value. */
@@ -90,8 +83,11 @@ export const useAddressAutocomplete = ({
         poll();
     }, [init]);
 
-    // Geocode a free-form address string and invoke onAddressSelect with the parsed result.
-    /** Submit, geocode, emit parsed value. */
+    /**
+     * Geocodes a free-form address string and invokes the onAddressSelect callback.
+     *
+     * @param addr - Address string to geocode.
+     */
     const geocodeAndEmit = useCallback(
         async (addr: string) => {
             const trimmed = addr.trim();
@@ -117,8 +113,11 @@ export const useAddressAutocomplete = ({
         [hookReady, onAddressSelectAction],
     );
 
-    // When a suggestion is picked: update input, clear suggestions, and geocode selection.
-    /** When user picks a suggestion row. */
+    /**
+     * Processes a selected suggestion: updates input, clears suggestions, and geocodes.
+     *
+     * @param desc - Description of the selected place.
+     */
     const handleSelect = useCallback(
         async (desc: string) => {
             setValue(desc, false);
@@ -128,8 +127,9 @@ export const useAddressAutocomplete = ({
         [setValue, clearSuggestions, geocodeAndEmit],
     );
 
-    // On mount, set the initial input value without fetching suggestions.
-    /** One-time initial value. */
+    /**
+     * Initializes input value on mount without fetching suggestions.
+     */
     useEffect(() => {
         if (initialValue) setValue(initialValue, false);
         // eslint-disable-next-line react-hooks/exhaustive-deps

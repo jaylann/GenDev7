@@ -51,7 +51,7 @@ export const useRecentSearches = () => {
                     )
                 ) {
                     setRecentSearches(
-                        parsedSearches.sort(
+                        parsedSearches.toSorted(
                             (a, b) => b.timestamp - a.timestamp,
                         ),
                     );

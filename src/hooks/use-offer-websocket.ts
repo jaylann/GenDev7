@@ -90,7 +90,6 @@ interface UseOfferWebSocketProps {
  * UI declarative and business‑logic‑free.
  */
 export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
-    /* ────────── NEW: generation counter to identify the *current* socket ────────── */
     const generationRef = useRef(0);
 
     // Active WebSocket reference
@@ -120,7 +119,6 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
 
     /** Initialize or reset the WebSocket connection for offer searches. */
     const connectWebSocket = useCallback(() => {
-        /* ✂️  Abort whatever is still around – this increments the generation. */
         abortCurrentWebSocket();
         generationRef.current += 1;
         const thisGen = generationRef.current;
@@ -153,7 +151,7 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
             return;
         }
 
-        // Clean‑start every run --------------------------------------------------
+        // Clean‑start every run
         expectingRefinementRef.current = false;
         initialOffersTimestampRef.current = null;
         onLoadingChangeAction(true);
@@ -166,9 +164,8 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
         const sock = new WebSocket(WEBSOCKET_URL);
         ws.current = sock;
 
-        /* ---------------- open → immediately transmit query --------------- */
         sock.onopen = () => {
-            if (thisGen !== generationRef.current) return;   // 🚫 stale
+            if (thisGen !== generationRef.current) return;
             if (sock.readyState !== WebSocket.OPEN) return; // Should not happen if onopen is called
             /** The exact payload shape expected by the FastAPI endpoint */
             const payload = {
@@ -177,12 +174,10 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                 wants_fiber: wantsFiber, // server expects snake_case
             } as Record<string, unknown>; // Cast to allow any property, as backend expects specific structure
             sock.send(JSON.stringify(payload));
-            // No status update here; "Connecting..." is still appropriate until first message.
         };
 
-        /* --------------- incoming message handler (the heavy bit) ---------- */
         sock.onmessage = (ev) => {
-            if (thisGen !== generationRef.current) return;   // 🚫 stale
+            if (thisGen !== generationRef.current) return;
             let data: WebSocketMessage;
             try {
                 data = JSON.parse(ev.data as string);
@@ -259,9 +254,6 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                                 `Search finished – ${offers.length} refined offers ready.`
                             );
                         } else {
-                            // Nothing new – silently finish, but update to reflect completion
-                            // It's possible offers were re-ordered or minor details changed,
-                            // so we still call onOffersReceivedAction if server sends offers.
                             // If offers array is empty, it means no new offers.
                             if(offers.length > 0) {
                                 offersRef.current = offers; // Update ref if server sent data
@@ -292,10 +284,6 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                 case "ERROR": {
                     onConnectionErrorAction(data.message ?? "Websocket connection error.");
                     onLoadingChangeAction(false);
-                    // Consider closing the socket here if the error is fatal,
-                    // but the onclose handler might also cover cleanup.
-                    // If server indicates error, it might close connection itself.
-                    // ws.current?.close(); // Let onclose handle final status if connection drops
                     break;
                 }
                 default: {

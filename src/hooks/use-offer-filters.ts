@@ -1,31 +1,34 @@
 /**
- * useOfferFilters Hook
- *
- * Manages state and logic for filtering offers.
- * Provides utilities for:
- *  - tracking current filter values,
- *  - computing the count of active (non-default) filters,
- *  - resetting all filters,
- *  - updating individual filter criteria.
+ * Custom React hook managing offer filter state and related logic.
+ * Provides state management, update/reset actions, and active filter computations.
  */
 import { useCallback, useMemo, useState } from "react";
 import { FiltersState } from "@/types/filters-state";
 import { DEFAULT_FILTERS } from "@/config/constants";
 
 /**
- * Custom hook to manage offer filter state and related logic.
- * @param initialFilters - Optional initial filter state.
- * @returns An object containing filter state, setters, and derived values.
+ * Hook to manage offer filter state and related logic.
+ *
+ * @param initialFilters - Optional initial filter state, defaults to DEFAULT_FILTERS.
+ * @returns An object containing:
+ *   - filters: current filter state,
+ *   - setFilters: direct setter for filter state,
+ *   - updateFilter: function to update individual filter keys,
+ *   - resetFilters: function to reset filters to defaults,
+ *   - activeFilterCount: number of non-default filters.
  */
 export const useOfferFilters = (
     initialFilters: FiltersState = DEFAULT_FILTERS,
 ) => {
-    // Initialize filters state with optional initial values or defaults.
+    /**
+     * Initializes filter state with provided or default values.
+     */
     const [filters, setFilters] = useState<FiltersState>(initialFilters);
 
-    // Compute the number of active filters (non-default) for UI badges or summaries.
+    /**
+     * Computes the count of active (non-default) filters.
+     */
     const activeFilterCount = useMemo(() => {
-        // Increment count for each filter group that differs from defaults.
         let count = 0;
         if (filters.contractDurations.length > 0) count++;
         if (filters.connectionTypes.length > 0) count++;
@@ -36,7 +39,9 @@ export const useOfferFilters = (
         return count;
     }, [filters]);
 
-    // Reset all filters back to their default values.
+    /**
+     * Resets all filters to their default values.
+     */
     const resetFilters = useCallback(() => {
         setFilters(DEFAULT_FILTERS);
     }, []);
@@ -46,7 +51,6 @@ export const useOfferFilters = (
      * @param filterKey - The key of the filter to update.
      * @param value - The new value for the filter.
      */
-    // Generic handler to update a specific filter key with a new value.
     const updateFilter = useCallback(
         <K extends keyof FiltersState>(
             filterKey: K,
@@ -57,7 +61,6 @@ export const useOfferFilters = (
         [],
     );
 
-    // Expose filter state, actions, and derived values to consuming components.
     return {
         filters,
         setFilters, // Expose direct setter for flexibility (e.g., URL sync)

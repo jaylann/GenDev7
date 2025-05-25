@@ -13,7 +13,7 @@ import { useEffect, type RefObject } from "react";
  * @param onOutside - Callback executed when a click is detected outside all refs.
  */
 export const useOutsideClick = (
-    refs: RefObject<HTMLElement | null>[],  // ← accept any HTMLElement refs
+    refs: RefObject<HTMLElement | null>[],  // accept any HTMLElement refs
     onOutside: () => void,
 ): void => {
     useEffect(() => {
