@@ -11,11 +11,6 @@
         opacity: 1;
     }
 }
-@layer utilities {
-    .animate-slide-in {
-        animation: slide-in 0.35s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-    }
-}
 
 @theme inline {
     --color-background: var(--background);
@@ -58,6 +53,8 @@
 }
 
 :root {
+    --font-geist-sans: 'Geist Sans', sans-serif;
+    --font-geist-mono: 'Geist Mono', monospace;
     --radius: 0.625rem;
     --background: oklch(1 0 0);
     --foreground: oklch(0.141 0.005 285.823);

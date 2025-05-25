@@ -42,7 +42,7 @@ export interface UseAddressAutocomplete {
 
 interface Params {
     /** Callback when parsing finishes (null → invalid). */
-    onAddressSelect: (addr: Address | null, full: string) => void;
+    onAddressSelectAction: (addr: Address | null, full: string) => void;
     /** Optional initial input value. */
     initialValue?: string;
 }
@@ -55,7 +55,7 @@ interface Params {
  * @returns UseAddressAutocomplete API for managing the autocomplete flow.
  */
 export const useAddressAutocomplete = ({
-    onAddressSelect,
+    onAddressSelectAction,
     initialValue = "",
 }: Params): UseAddressAutocomplete => {
     const {
@@ -95,26 +95,26 @@ export const useAddressAutocomplete = ({
     const geocodeAndEmit = useCallback(
         async (addr: string) => {
             const trimmed = addr.trim();
-            if (!trimmed) return onAddressSelect(null, "");
+            if (!trimmed) return onAddressSelectAction(null, "");
 
             if (!hookReady) {
                 // SDK not ready – emit raw value only
-                return onAddressSelect(null, trimmed);
+                return onAddressSelectAction(null, trimmed);
             }
 
             try {
                 const results = await getGeocode({ address: trimmed });
                 const parsed = parseGeocodeResult(results);
-                onAddressSelect(
+                onAddressSelectAction(
                     parsed,
                     results[0]?.formatted_address ?? trimmed,
                 );
             } catch (err: unknown) {
                 console.error("[AddressAutocomplete] Geocoding failed:", err);
-                onAddressSelect(null, trimmed);
+                onAddressSelectAction(null, trimmed);
             }
         },
-        [hookReady, onAddressSelect],
+        [hookReady, onAddressSelectAction],
     );
 
     // When a suggestion is picked: update input, clear suggestions, and geocode selection.

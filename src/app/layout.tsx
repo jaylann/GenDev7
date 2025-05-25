@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { GoogleMapsLoader } from "@/components/compare/google-maps-loader";
 import { Toaster } from "@/components/ui/sonner";
+import React from "react";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 

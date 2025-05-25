@@ -37,7 +37,6 @@ export const getConnectionTypeDisplayName = (
             return "Mobile";
         default:
             // Exhaustive type check: should never occur if all cases are handled
-            const exhaustiveCheck: never = connectionType;
-            return exhaustiveCheck;
+            return connectionType;
     }
 };

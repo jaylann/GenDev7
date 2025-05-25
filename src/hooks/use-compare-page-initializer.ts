@@ -29,24 +29,24 @@ interface SharedOffersResponse {
 /**
  * Props for useComparePageInitializer hook.
  *
- * @property setOriginalOffers - Setter for the list of offers to display.
- * @property setSlug - Setter for the current comparison slug.
- * @property setSortOption - Setter for the selected sort option.
- * @property setFilters - Setter for the active filter state.
- * @property setStatus - Setter for status messages to show in the UI.
- * @property setLoading - Setter for the global loading flag.
- * @property setIsLoadingFromSlug - Setter for the “loading from slug” flag.
+ * @property setOriginalOffersAction - Setter for the list of offers to display.
+ * @property setSlugAction - Setter for the current comparison slug.
+ * @property setSortOptionAction - Setter for the selected sort option.
+ * @property setFiltersAction - Setter for the active filter state.
+ * @property setStatusAction - Setter for status messages to show in the UI.
+ * @property setLoadingAction - Setter for the global loading flag.
+ * @property setIsLoadingFromSlugAction - Setter for the “loading from slug” flag.
  * @property setParsedAddress - Optional setter for the pre-validated address.
  * @property setInitialAddressLabel - Optional setter for fallback address label.
  */
 export interface UseComparePageInitializerProps {
-    setOriginalOffers: (offers: Offer[]) => void;
-    setSlug: (slug: string | null) => void;
-    setSortOption: (sort: SortOptionKey) => void;
-    setFilters: (filters: FiltersState) => void;
-    setStatus: (message: string) => void;
-    setLoading: (loading: boolean) => void;
-    setIsLoadingFromSlug: (loading: boolean) => void;
+    setOriginalOffersAction: (offers: Offer[]) => void;
+    setSlugAction: (slug: string | null) => void;
+    setSortOptionAction: (sort: SortOptionKey) => void;
+    setFiltersAction: (filters: FiltersState) => void;
+    setStatusAction: (message: string) => void;
+    setLoadingAction: (loading: boolean) => void;
+    setIsLoadingFromSlugAction: (loading: boolean) => void;
 
     /**
      *  If the consumer needs the _pre-validated_ address for the UI,
@@ -69,13 +69,13 @@ export interface UseComparePageInitializerProps {
  */
 export const useComparePageInitializer = ({
     // Destructure setter functions for page state
-    setOriginalOffers,
-    setSlug,
-    setSortOption,
-    setFilters,
-    setStatus,
-    setLoading,
-    setIsLoadingFromSlug,
+    setOriginalOffersAction,
+    setSlugAction,
+    setSortOptionAction,
+    setFiltersAction,
+    setStatusAction,
+    setLoadingAction,
+    setIsLoadingFromSlugAction,
     setParsedAddress,
     setInitialAddressLabel,
 }: UseComparePageInitializerProps): void => {
@@ -93,18 +93,18 @@ export const useComparePageInitializer = ({
                 sortFromUrl &&
                 SORT_OPTIONS.some((s) => s.key === sortFromUrl)
             ) {
-                setSortOption(sortFromUrl);
+                setSortOptionAction(sortFromUrl);
             }
-            setFilters({ ...DEFAULT_FILTERS, ...filtersFromUrl });
+            setFiltersAction({ ...DEFAULT_FILTERS, ...filtersFromUrl });
         };
 
         // Enter global loading state, mark if loading from slug
-        setIsLoadingFromSlug(!!slugFromUrl);
-        setLoading(true);
+        setIsLoadingFromSlugAction(!!slugFromUrl);
+        setLoadingAction(true);
 
         // If a shared comparison slug exists, fetch and load shared offers
         if (slugFromUrl) {
-            setStatus(
+            setStatusAction(
                 `Loading shared comparison (slug: ${slugFromUrl.slice(0, 20)}…)…`,
             );
 
@@ -132,15 +132,15 @@ export const useComparePageInitializer = ({
                     let data: SharedOffersResponse;
                     try {
                         data = JSON.parse(raw);
-                    } catch (e) {
+                    } catch {
                         throw new Error(`Invalid JSON from backend: ${raw.slice(0, 200)}`);
                     }
 
 
 
                     // Populate offers and slug from fetched shared comparison
-                    setOriginalOffers(data.offers);
-                    setSlug(data.slug);
+                    setOriginalOffersAction(data.offers);
+                    setSlugAction(data.slug);
 
                     // full typed address (for the autocomplete input)
                     if (data.address) {
@@ -161,36 +161,36 @@ export const useComparePageInitializer = ({
                         setParsedAddress?.(null);
                     }
 
-                    setStatus(`Loaded ${data.offers.length} shared offers.`);
+                    setStatusAction(`Loaded ${data.offers.length} shared offers.`);
                     applyUrlParams();
                 } catch (err: unknown) {
                     const errorMessage =
                         err instanceof Error ? err.message : String(err);
                     console.error("Error loading shared offers:", err);
-                    setStatus(
+                    setStatusAction(
                         `Error: Could not load shared comparison. ${errorMessage}. Link may be invalid or expired.`,
                     );
 
                     // Clean-up state so UI returns to an empty page
-                    setOriginalOffers([]);
-                    setSlug(null);
+                    setOriginalOffersAction([]);
+                    setSlugAction(null);
                     setParsedAddress?.(null);
                     applyUrlParams();
                 } finally {
-                    setLoading(false);
-                    setIsLoadingFromSlug(false);
+                    setLoadingAction(false);
+                    setIsLoadingFromSlugAction(false);
                 }
             })();
         } else {
             // No slug: initialize page with default empty state and URL params
-            setOriginalOffers([]);
-            setSlug(null);
+            setOriginalOffersAction([]);
+            setSlugAction(null);
             setParsedAddress?.(null);
             applyUrlParams();
             // Prompt user to enter an address when no shared data is present
-            setStatus("Enter an address to compare internet plans.");
-            setLoading(false);
-            setIsLoadingFromSlug(false);
+            setStatusAction("Enter an address to compare internet plans.");
+            setLoadingAction(false);
+            setIsLoadingFromSlugAction(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);

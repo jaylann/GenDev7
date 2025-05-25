@@ -30,7 +30,7 @@ export interface AddressAutocompleteInputProps {
     initialValue?: string;
     parsedAddress?: ParsedAddress;
     defaultAddressText?: string;
-    onAddressSelect: (addr: ParsedAddress | null, full: string) => void;
+    onAddressSelectAction: (addr: ParsedAddress | null, full: string) => void;
     inputClassName?: string;
     containerClassName?: string;
     disabled?: boolean;
@@ -60,7 +60,7 @@ export const AddressAutocompleteInput: React.FC<
          initialValue,
          parsedAddress,
          defaultAddressText,
-         onAddressSelect,
+         onAddressSelectAction,
          inputClassName,
          containerClassName,
          disabled,
@@ -75,7 +75,7 @@ export const AddressAutocompleteInput: React.FC<
         handleSelect,
         geocodeAndEmit,
     } = useAddressAutocomplete({
-        onAddressSelect,
+        onAddressSelectAction,
         initialValue: parsedAddress
             ? undefined
             : (initialValue ?? defaultAddressText ?? ""),
@@ -112,8 +112,8 @@ export const AddressAutocompleteInput: React.FC<
     // 🛠 Notify parent when user clears the field entirely
     useEffect(() => {
         if (parsedAddress || value.trim() !== "") return;
-        onAddressSelect(null, "");
-    }, [value]);
+        onAddressSelectAction(null, "");
+    }, [value, onAddressSelectAction, parsedAddress]);
 
     // Refs for handling focus and outside-click detection.
     const inputRef = useRef<HTMLInputElement | null>(null);
@@ -129,7 +129,7 @@ export const AddressAutocompleteInput: React.FC<
         setValue(newValue);
         setShowSuggestions(true);
         setHighlightedIdx(-1);
-        if (!newValue.trim()) onAddressSelect(null, "");
+        if (!newValue.trim()) onAddressSelectAction(null, "");
     };
 
     const total = suggestions.data.length;

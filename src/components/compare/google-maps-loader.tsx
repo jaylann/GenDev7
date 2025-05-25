@@ -6,6 +6,7 @@
  */
 "use client";
 import Script from "next/script";
+import React from "react";
 
 /**
  * GoogleMapsLoader component dynamically injects the Google Maps SDK script.

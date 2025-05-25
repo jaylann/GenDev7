@@ -45,7 +45,6 @@ export const getVoucherKindDisplayName = (voucherKind: VoucherKind): string => {
             return "Special Discount";
         default:
             // Enforce exhaustive handling: this branch should be unreachable if all cases are covered
-            const exhaustiveCheck: never = voucherKind;
-            return exhaustiveCheck;
+            return voucherKind;
     }
 };

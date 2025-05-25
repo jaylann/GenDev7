@@ -38,7 +38,7 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 
 interface OfferFilterPopoverProps {
     appliedFilters: FiltersState;
-    onApplyFilters: (newFilters: FiltersState) => void;
+    onApplyFiltersAction: (newFilters: FiltersState) => void;
     originalOffers: Offer[];
     isLoadingOffers: boolean;
     activeFilterCount: number;
@@ -58,7 +58,7 @@ interface OfferFilterPopoverProps {
  */
 export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
     appliedFilters,
-    onApplyFilters,
+    onApplyFiltersAction,
     originalOffers,
     isLoadingOffers,
     activeFilterCount,
@@ -85,7 +85,7 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
 
     // Apply draft filters and close the popover/sheet
     const handleApply = () => {
-        onApplyFilters(draftFilters);
+        onApplyFiltersAction(draftFilters);
         setIsOpen(false);
     };
 

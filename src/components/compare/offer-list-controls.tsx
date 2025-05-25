@@ -126,7 +126,7 @@ export const OfferListControls: FC<OfferListControlsProps> = ({
             {/* Filter Popover: apply or clear filters on the offers */}
             <OfferFilterPopover
                 appliedFilters={filters}
-                onApplyFilters={onFiltersChange}
+                onApplyFiltersAction={onFiltersChange}
                 originalOffers={originalOffers}
                 isLoadingOffers={isLoadingOffers}
                 activeFilterCount={activeFilterCount}

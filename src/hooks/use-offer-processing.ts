@@ -25,7 +25,7 @@ export const useOfferProcessing = (
     sortOption: SortOptionKey,
     filters: FiltersState,
 ): Offer[] => {
-    const processedOffers = useMemo(() => {
+    return useMemo(() => {
         // Execute when originalOffers, sortOption, or filters change.
         if (originalOffers.length === 0) {
             return [];
@@ -77,9 +77,7 @@ export const useOfferProcessing = (
                 !filters.selectedProviders.includes(offer.provider)
             )
                 return false;
-            if (filters.youthOffer === "yes" && offer.max_age == null)
-                return false;
-            return true;
+            return !(filters.youthOffer === "yes" && offer.max_age == null);
         });
 
         // 3. Sort the remaining offers according to the selected sort option.
@@ -119,6 +117,4 @@ export const useOfferProcessing = (
         // Return the final processed list of offers.
         return filtered;
     }, [originalOffers, sortOption, filters]);
-
-    return processedOffers;
 };

@@ -13,11 +13,7 @@ import type { Offer } from "@/types/offer";
 import { ParsedAddress } from "@/components/compare/address-autocomplete-input";
 import { SortOptionKey } from "@/types/sort-option-key";
 import { useOfferFilters } from "@/hooks/use-offer-filters";
-import {
-    AVAILABLE_PROVIDER_NAMES,
-    DEFAULT_FILTERS,
-    GOOGLE_MAPS_API_KEY_FROM_ENV,
-} from "@/config/constants";
+import { AVAILABLE_PROVIDER_NAMES, DEFAULT_FILTERS, GOOGLE_MAPS_API_KEY_FROM_ENV } from "@/config/constants";
 import { useRecentSearches } from "@/hooks/use-recent-searches";
 import { useComparePageInitializer } from "@/hooks/use-compare-page-initializer";
 import { SlugType, useOfferWebSocket } from "@/hooks/use-offer-websocket";
@@ -191,8 +187,8 @@ export function useComparePageState(): ComparePageState {
     // ───────────── Initialize from URL slug ─────────────
     // Sync page state with URL slug and set up initial search context.
     useComparePageInitializer({
-        setOriginalOffers, // now only takes slug
-        setSlug: (slug: string | null) => {
+        setOriginalOffersAction: setOriginalOffers, // now only takes slug
+        setSlugAction: (slug: string | null) => {
             setCurrentDisplaySlug(slug);
             setActiveShareableSlug(slug);
             if (slug) {
@@ -200,11 +196,11 @@ export function useComparePageState(): ComparePageState {
                 sessionIdRef.current = `shared-${slug}`;
             }
         },
-        setSortOption,
-        setFilters,
-        setStatus: setStatusMessage,
-        setLoading: setIsLoadingFromUrl,
-        setIsLoadingFromSlug: setIsLoadingFromUrl,
+        setSortOptionAction: setSortOption,
+        setFiltersAction: setFilters,
+        setStatusAction: setStatusMessage,
+        setLoadingAction: setIsLoadingFromUrl,
+        setIsLoadingFromSlugAction: setIsLoadingFromUrl,
         setParsedAddress: setParsedAddressFromSlug, // now label is handled here, separately
         setInitialAddressLabel: (label: string) =>
             setInitialAddressLabel(label),
@@ -277,7 +273,7 @@ export function useComparePageState(): ComparePageState {
         hasApiKey: Boolean(GOOGLE_MAPS_API_KEY_FROM_ENV),
         providers: providersForApi,
         wantsFiber,
-        onOffersReceived: (offers, phase, willRefine) => {
+        onOffersReceivedAction: (offers, phase, willRefine) => {
             setOriginalOffers(offers);
 
             if (phase === "INITIAL_OFFERS") {
@@ -305,16 +301,16 @@ export function useComparePageState(): ComparePageState {
                 hasTriggeredRefineRef.current = false; // ready for the next run
             }
         },
-        onWebSocketSlugReceived: handleWebSocketSlugReceived,
-        onLoadingChange: handleWebSocketLoadingChange,
-        onStatusUpdate: setStatusMessage,
-        onConnectionError: (msg) => {
+        onWebSocketSlugReceivedAction: handleWebSocketSlugReceived,
+        onLoadingChangeAction: handleWebSocketLoadingChange,
+        onStatusUpdateAction: setStatusMessage,
+        onConnectionErrorAction: (msg) => {
             setStatusMessage(msg);
             setIsWaitingInitialOffers(false);
             setIsRefiningOffers(false);
         },
-        onPendingOffersUpdate: handlePendingOffersUpdate,
-        onPromptOpenChange: setIsUpdatePromptOpen,
+        onPendingOffersUpdateAction: handlePendingOffersUpdate,
+        onPromptOpenChangeAction: setIsUpdatePromptOpen,
         initialLoadingState: isLoadingFromUrl,
     });
 
@@ -359,8 +355,7 @@ export function useComparePageState(): ComparePageState {
         }
 
         hasAddedInitialHistoryEntryRef.current = false;
-        const newSessionId = sessionIdRef.current ?? `session-${Date.now()}`;
-        sessionIdRef.current = newSessionId;
+        sessionIdRef.current = sessionIdRef.current ?? `session-${Date.now()}`;
 
         setOriginalOffers([]);
         setPendingOffers(null);
