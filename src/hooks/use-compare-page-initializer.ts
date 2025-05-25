@@ -177,5 +177,5 @@ export const useComparePageInitializer = ({
             setLoadingAction(false);
             setIsLoadingFromSlugAction(false);
         }
-    }, [searchParams, setFiltersAction, setInitialAddressLabel, setIsLoadingFromSlugAction, setLoadingAction, setOriginalOffersAction, setParsedAddress, setSlugAction, setSortOptionAction, setStatusAction]);
+    }, [searchParams]);
 };
