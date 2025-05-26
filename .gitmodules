@@ -1,0 +1,6 @@
+[submodule "GenDevWeb"]
+	path = GenDevWeb
+	url = https://github.com/jaylann/gendev-web
+[submodule "GenDevBackend"]
+	path = GenDevBackend
+	url = https://github.com/jaylann/gendev
