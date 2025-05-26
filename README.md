@@ -7,30 +7,31 @@
 
 ## 📖 Table of Contents
 
-1. [About](#about)  
-2. [Features](#features)  
-3. [Prerequisites](#prerequisites)  
-4. [Getting Started](#getting-started)  
-   - [Clone & Install](#clone--install)  
+1. [📌 About](#about)  
+2. [🚀 Features](#features)  
+3. [🛠️ Prerequisites](#prerequisites)  
+4. [🏁 Getting Started](#getting-started)  
+   - [Clone & Install](#clone-install)
    - [Environment Variables](#environment-variables)  
    - [Run Locally](#run-locally)  
-   - [Build & Export](#build--export)  
-5. [Scripts](#scripts)  
-6. [Project Structure](#project-structure)  
-7. [Environment Config](#environment-config)  
-8. [Styling & Fonts](#styling--fonts)  
+   - [Build & Export](#build-export)  
+5. [📜 Scripts](#scripts)  
+6. [⚙️ Environment Config](#environment-config)  
+7. [🎨 Styling & Fonts](#styling--fonts)  
 
 ---
 
+<a id="about"></a>
 ## 📌 About
 
 This is the **BetterSurf** web frontend, built on Next.js + TypeScript. It provides a sleek, responsive UI to compare internet-provider offers side-by-side, leveraging the BetterSurf backend API for data.
 
 ---
 
+<a id="features"></a>
 ## 🚀 Features
 
-- ⚡ **Next.js 14** with App Router & React 19  
+- ⚡ **Next.js 15** with App Router & React 19  
 - 🔄 **Suspense** + React Server Components for fast loading  
 - 🗺️ Integrated **Google Maps Autocomplete**  
 - 🌙 **Gradient background**
@@ -39,6 +40,7 @@ This is the **BetterSurf** web frontend, built on Next.js + TypeScript. It provi
 
 ---
 
+<a id="prerequisites"></a>
 ## 🛠️ Prerequisites
 
 - Node.js **18+** (LTS recommended)  
@@ -48,8 +50,10 @@ This is the **BetterSurf** web frontend, built on Next.js + TypeScript. It provi
 
 ---
 
+<a id="getting-started"></a>
 ## 🏁 Getting Started
 
+<a id="clone-install"></a>
 ### Clone & Install
 
 ```bash
@@ -88,6 +92,7 @@ yarn dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+<a id="build-export"></a>
 ### Build & Export
 
 ```bash
@@ -100,6 +105,7 @@ yarn start
 
 ---
 
+<a id="scripts"></a>
 ## 📜 Scripts
 
 | Command  | Description                                 |
@@ -111,30 +117,7 @@ yarn start
 
 ---
 
-## 🗂️ Project Structure
-
-```
-.
-├── public/                  Static assets (icons, images, fonts)
-├── src/
-│   ├── components/          Reusable React components
-│   │   ├── compare/         ComparePage, skeleton, maps loader
-│   │   └── ui/              Sonner toaster, buttons, etc.
-│   ├── app/
-│   │   ├── globals.css      Base styles & Tailwind config
-│   │   ├── layout.tsx       RootLayout with fonts, background
-│   │   └── page.tsx         Entry point (Suspense + ComparePage)
-│   └── utils/               Helpers (API client, hooks)
-├── .env.local.example       Env var template
-├── next.config.ts           Next.js configuration
-├── tsconfig.json            TypeScript settings
-├── eslint.config.mjs        Lint rules
-├── postcss.config.mjs       Tailwind / PostCSS setup
-└── package.json             Scripts & dependencies
-```
-
----
-
+<a id="environment-config"></a>
 ## ⚙️ Environment Config
 
 * **`NEXT_PUBLIC_API_URL`**
@@ -145,6 +128,7 @@ yarn start
 
 ---
 
+<a id="styling-fonts"></a>
 ## 🎨 Styling & Fonts
 
 * Uses **Tailwind CSS** for utility-first styling.
