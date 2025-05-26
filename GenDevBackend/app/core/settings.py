@@ -7,7 +7,9 @@ Includes endpoints and credentials for external services.
 from __future__ import annotations
 
 from functools import lru_cache
+from pydoc import describe
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from app.core.credential_manager import CredentialManager
 
@@ -21,21 +23,17 @@ class Settings(BaseSettings):
     """
 
     # Endpoints for external services
-    webwunder_wsdl: str = (
-        "https://webwunder.gendev7.check24.fun/endpunkte/soap/ws/getInternetOffers.wsdl"
-    )
+    webwunder_wsdl: str = Field(..., description="WebWunder WSDL URL")
 
-    byteme_endpoint: str = "https://byteme.gendev7.check24.fun/app/api/products/data"
+    byteme_endpoint: str = Field(..., description="ByteMe API endpoint")
 
-    pingperfect_endpoint: str = (
-        "https://pingperfect.gendev7.check24.fun/internet/angebote/data"
-    )
+    pingperfect_endpoint: str = Field(..., description="PingPerfect API endpoint")
 
-    servusspeed_base: str = "https://servus-speed.gendev7.check24.fun"
+    servusspeed_base: str = Field(..., description="ServusSpeed API base URL")
 
-    verbyndich_base: str = "https://verbyndich.gendev7.check24.fun/check24/data"
+    verbyndich_base: str = Field(..., description="VerbynDich API base URL")
 
-    cache_ttl_seconds: int = 24 * 60 * 60  # Cache duration in seconds (24 hours)
+    cache_ttl_seconds: int = Field(24 * 60 * 60, description="Cache TTL in seconds")
 
     model_config = SettingsConfigDict(
         env_file=".env", env_file_encoding="utf-8", extra="ignore"
