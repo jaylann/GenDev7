@@ -91,7 +91,7 @@ pip install --no-cache-dir -r requirements.txt
    BYTEME_API_KEY=YOUR_API_KEY_HERE
    ```
 
-3. (Optional) Override any service endpoints if needed.
+3. (Optional) Override any service endpoints if needed as well as cache ttl.
 
 ### Run Locally
 
