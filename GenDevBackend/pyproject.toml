@@ -1,0 +1,34 @@
+[project]
+name = "gendev"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "aiocache>=0.12.3",
+    "async-lru>=2.0.5",
+    "black>=25.1.0",
+    "coverage>=7.8.1",
+    "fastapi>=0.115.12",
+    "gunicorn>=23.0.0",
+    "httpx[http2]>=0.27,<0.28",
+    "hypothesis>=6.131.17",
+    "loguru>=0.7.3",
+    "mypy>=1.15.0",
+    "pandas>=2.2.3",
+    "pgeocode>=0.5.0",
+    "pydantic>=2.11.4",
+    "pydantic-settings>=2.9.1",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
+    "pytest-mock>=3.14.0",
+    "python-dotenv>=1.1.0",
+    "python-multipart>=0.0.20",
+    "redis>=6.0.0",
+    "tenacity>=9.1.2",
+    "trio>=0.30.0",
+    "uvicorn[standard]>=0.34.2",
+    "zeep>=4.3.1",
+]
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
