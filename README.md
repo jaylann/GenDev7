@@ -1,6 +1,6 @@
 # BetterSurf Internet-Provider Comparison
 [![Python Version](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-%5E0.115.12-brightgreen.svg)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115.12-brightgreen.svg)](https://fastapi.tiangolo.com/)
 
 ---
 
