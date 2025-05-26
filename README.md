@@ -4,27 +4,25 @@
 
 ---
 
-## 📖 Table of Contents
+## Table of Contents
 
-1. [About](#about)  
-2. [Features](#features)  
-3. [Prerequisites](#prerequisites)  
-4. [Getting Started](#getting-started)  
+1. 📌 [About](#about)  
+2. 🚀 [Features](#features)  
+3. 🛠️ [Prerequisites](#prerequisites)  
+4. 🏁 [Getting Started](#getting-started)  
    - [Clone the Repo](#clone-the-repo)  
    - [Install Dependencies](#install-dependencies)  
    - [Configuration](#configuration)  
    - [Run Locally](#run-locally)  
-5. [Dockerized Deployment](#dockerized-deployment)  
-6. [API Reference](#api-reference)  
-   - [Health Check](#health-check)  
-   - [HTTP Compare](#http-compare)  
-   - [WebSocket Compare](#websocket-compare)  
-7. [CORS & HTTPS](#cors--https)  
+5. 🐳 [Dockerized Deployment](#dockerized-deployment)  
+6. 📚 [API Reference](#api-reference)  
+7. 🔒 [CORS & HTTPS](#cors--https)  
    - [CORS Settings](#cors-settings)  
    - [HTTPS with ngrok](#https-with-ngrok)  
 
 ---
 
+<a id="about"></a>
 ## 📌 About
 
 **BetterSurf** is a FastAPI-based service that aggregates and compares internet-provider offers from multiple vendors.  
@@ -32,6 +30,7 @@ It exposes both REST and WebSocket endpoints and comes fully Dockerized for easy
 
 ---
 
+<a id="features"></a>
 ## 🚀 Features
 
 - 🔄 **HTTP & WebSocket** endpoints for real-time offer streaming  
@@ -44,6 +43,7 @@ It exposes both REST and WebSocket endpoints and comes fully Dockerized for easy
 
 ---
 
+<a id="prerequisites"></a>
 ## 🛠️ Prerequisites
 
 - Python **3.12**  
@@ -52,16 +52,17 @@ It exposes both REST and WebSocket endpoints and comes fully Dockerized for easy
 
 ---
 
+<a id="getting-started"></a>
 ## 🏁 Getting Started
 
-### 1. Clone the Repo
+### Clone the Repo
 
 ```bash
 git clone https://github.com/jaylann/gendev.git
 cd bettersurf
 ````
 
-### 2. Install Dependencies
+### Install Dependencies
 
 We use **uv** for ultra-fast installs. Fallback to `pip` if you prefer:
 
@@ -73,7 +74,7 @@ uv pip install --system -r requirements.txt
 pip install --no-cache-dir -r requirements.txt
 ```
 
-### 3. Configuration
+### Configuration
 
 1. Copy `.env.example` to `.env`
 
@@ -92,7 +93,7 @@ pip install --no-cache-dir -r requirements.txt
 
 3. (Optional) Override any service endpoints if needed.
 
-### 4. Run Locally
+### Run Locally
 
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
@@ -103,6 +104,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ---
 
+<a id="dockerized-deployment"></a>
 ## 🐳 Dockerized Deployment
 
 Build and run with Docker Compose:
@@ -117,12 +119,14 @@ docker-compose up --build -d
 
 ---
 
+<a id="api-reference"></a>
 ## 📚 API Reference
 
 Refer to the [OpenAPI docs](http://localhost:8000/docs) for full schema.
 
 ---
 
+<a id="cors--https"></a>
 ## 🔒 CORS & HTTPS
 
 ### CORS Settings
