@@ -22,10 +22,15 @@ import { OfferGrid } from "@/components/compare/offer-grid";
  *  - OfferListControls for sorting, filtering, and sharing
  *  - OfferGrid for displaying the list or grid of offers
  *
- * @returns JSX.Element
+ * On mobile devices, the entire content area including the header and search sections
+ * will scroll. On desktop devices (md breakpoint and larger), the header and search
+ * sections remain fixed at the top, and only the offer grid becomes scrollable.
+ * The top sections (PageHeader, AddressSearchSection, OfferListControls) are set
+ * to not shrink, ensuring they maintain their natural height.
+ *
+ * @returns {JSX.Element} The rendered ComparePage component.
  */
 export default function ComparePage(): JSX.Element {
-    // Obtain current page state and action handlers from our custom hook
     const { state, actions } = useComparePageState();
 
     const cleanedStatus = state.statusMessage
@@ -39,7 +44,7 @@ export default function ComparePage(): JSX.Element {
             <main
                 className="container mx-auto max-w-7xl px-4 pt-12 pb-0 sm:pt-16 sm:pb-0
                       flex-1 flex flex-col space-y-2 sm:space-y-6
-                      overflow-hidden"
+                      overflow-y-auto md:overflow-y-hidden"
             >
                 {/* Offer-update prompt dialog, triggers when there are pending offers to confirm */}
                 <UpdatePromptDialog
@@ -50,7 +55,10 @@ export default function ComparePage(): JSX.Element {
                 />
 
                 {/* Page header displaying the cleaned status message */}
-                <PageHeader statusMessage={cleanedStatus} />
+                {/* Wrap PageHeader with flex-none to prevent shrinking */}
+                <div className="flex-none">
+                    <PageHeader statusMessage={cleanedStatus} />
+                </div>
 
                 {/* Dropdown for accessing and clearing recent address searches */}
                 <RecentSearchesDropdown
@@ -61,6 +69,7 @@ export default function ComparePage(): JSX.Element {
                 />
 
                 {/* Address search section for inputting and selecting an address */}
+                {/* Already wrapped with flex-none, which is good */}
                 <div className="flex-none">
                     <AddressSearchSection
                         parsedAddress={state.parsedAddressFromSlug ?? undefined}
@@ -75,27 +84,31 @@ export default function ComparePage(): JSX.Element {
                 </div>
 
                 {/* Controls for sorting, filtering, and sharing the offer list */}
-                <OfferListControls
-                    sortOption={state.sortOption}
-                    onSortChange={actions.setSortOption}
-                    viewMode={state.viewMode}
-                    onViewModeChange={actions.setViewMode}
-                    onShare={actions.handleSharePage}
-                    isShareDisabled={state.isSharePageDisabled}
-                    sharedLinkCopied={state.sharedLinkCopied}
-                    filters={state.filters}
-                    onFiltersChange={actions.setFilters}
-                    activeFilterCount={state.activeFilterCount}
-                    originalOffers={state.originalOffers}
-                    isLoadingOffers={
-                        state.isWaitingInitialOffers || state.isRefiningOffers
-                    }
-                    areAnyOffersLoaded={state.areAnyOffersEverLoaded}
-                    isSingleOfferView={state.isSingleOfferView}
-                />
+                {/* Wrap OfferListControls with flex-none to prevent shrinking */}
+                <div className="flex-none">
+                    <OfferListControls
+                        sortOption={state.sortOption}
+                        onSortChange={actions.setSortOption}
+                        viewMode={state.viewMode}
+                        onViewModeChange={actions.setViewMode}
+                        onShare={actions.handleSharePage}
+                        isShareDisabled={state.isSharePageDisabled}
+                        sharedLinkCopied={state.sharedLinkCopied}
+                        filters={state.filters}
+                        onFiltersChange={actions.setFilters}
+                        activeFilterCount={state.activeFilterCount}
+                        originalOffers={state.originalOffers}
+                        isLoadingOffers={
+                            state.isWaitingInitialOffers || state.isRefiningOffers
+                        }
+                        areAnyOffersLoaded={state.areAnyOffersEverLoaded}
+                        isSingleOfferView={state.isSingleOfferView}
+                    />
+                </div>
 
                 {/* Main content area: displays offers in grid or list view */}
-                <div className="flex-1 overflow-y-auto">
+                {/* This div will take up the remaining space and scroll its content on desktop */}
+                <div className="flex-1 md:overflow-y-auto">
                     <OfferGrid
                         offers={state.processedOffers}
                         isLoading={state.isBlockingUi || state.isRefiningOffers}
