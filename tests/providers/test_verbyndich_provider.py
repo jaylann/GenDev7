@@ -39,14 +39,6 @@ def _adjust_constants(monkeypatch):
     yield
 
 
-@pytest.fixture(autouse=True)
-def _reset_lru_and_breakers():
-    real_fetch_page.cache_clear()  # ensure clean alru_cache
-    yield
-    real_fetch_page.cache_clear()
-    reset_all_breakers()
-
-
 @pytest.fixture(scope="session")
 def dummy_addr() -> Address:
     return Address(
