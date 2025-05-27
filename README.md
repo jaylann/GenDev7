@@ -2,44 +2,82 @@
 
 ## 1. 🗺️ Project Overview & Live Demo
 
-**Responsive Web Application for Internet Provider Comparison** – This project (code-named *BetterSurf*) is a full-stack web app that allows users to input any address and instantly compare real-time internet offers from 5 different providers. Built with a focus on reliability and UX, it streams provider results live over WebSocket and gracefully handles API delays or failures. Users see comprehensive plan details in an intuitive interface, with robust error handling and sharing capabilities.
+**Responsive Web Application for Internet Provider Comparison** – This project (code-named *BetterSurf*) is a full-stack web app that allows users to input any address and instantly compare real-time internet offers from 5 different providers. Built with a focus on reliability and UX, it streams provider results live over **WebSocket** and gracefully handles API delays or failures. Users see comprehensive plan details in an intuitive interface, with robust error handling and sharing capabilities.
 
-### 🚀 **Live Demo Links**
+### 🚀 Live Demo
 
-* **Frontend**: [Web App](https://gendev-web.vercel.app/)
-* **Backend API**: [API](https://d61c7czwgnmbn.cloudfront.net)
-* **API Documentation**: [API Docs](https://d61c7czwgnmbn.cloudfront.net/docs)
+Explore *BetterSurf* live:
 
-### 📁 **Repository Structure**
+*   **Frontend Web App**: [Web App](https://gendev-web.vercel.app/)
+*   **Backend API**: [API](https://d61c7czwgnmbn.cloudfront.net)
+*   **API Documentation**: [API Docs](https://d61c7czwgnmbn.cloudfront.net/docs)
 
-Frontend and backend were developed independently (Next.js app and FastAPI service), then unified via a git subtree merge for submission. The repository root contains both: GenDevWeb (frontend) and GenDevBackend (backend), preserving a clean commit history and a modular architecture.
+### 📁 Repository Structure
+
+The frontend and backend components were developed independently (a **Next.js** application and a **FastAPI** service, respectively) and subsequently unified into this repository using a git subtree merge for submission. The repository root contains both [`GenDevWeb`](./GenDevWeb) (frontend) and [`GenDevBackend`](./GenDevBackend) (backend), preserving a clean commit history and maintaining a modular architecture.
+
+### 🔧 Setup
+
+To get *BetterSurf* up and running on your local machine, please follow the detailed setup instructions in the respective README files for the backend and frontend components:
+
+*   **Backend Setup**: [`GenDevBackend/README.md`](./GenDevBackend/README.md)
+*   **Frontend Setup**: [`GenDevWeb/README.md`](./GenDevWeb/README.md)
+
+These guides provide comprehensive, step-by-step instructions to ensure a smooth setup process.
+
+---
 
 ## 2. ✅ Challenge Requirements Compliance
 
-### 👍 **Minimum Requirements Met:**
+### 👍 Minimum Requirements Met:
 
-* ✅ **Robust API Failure Handling**: Uses WebSockets with an intelligent 2-phase timeout system for results streaming, Tenacity-based retry logic with exponential backoff, and a circuit breaker pattern per provider for resilience (see Section 4.2).
-* ✅ **Comprehensive Sorting & Filtering**: Five sorting algorithms including an intelligent recommendation engine, plus multi-criteria filtering by provider, speed, contract duration, connection type, TV option, and youth discounts (see Section 4.3).
-* ✅ **Advanced Share Link Feature**: Slug-based shareable links backed by Redis (24h TTL, configurable) for both complete search results and individual offers, preserving all query parameters (address and filters) in the slug payload.
-* ✅ **API Credentials Security**: Environment-based credential manager using Pydantic **SecretStr** to keep keys secure. No provider credentials are ever exposed to the frontend.
+*   ✅ **Robust API Failure Handling**: Utilizes **WebSockets** with an intelligent 2-phase timeout system for results streaming, **Tenacity**-based retry logic with exponential backoff, and a circuit breaker pattern per provider for enhanced resilience (see Section 4.2).
+*   ✅ **Comprehensive Sorting & Filtering**: Implements five sorting algorithms, including an intelligent recommendation engine, alongside multi-criteria filtering by provider, speed, contract duration, connection type, TV option, and youth discounts (see Section 4.3).
+*   ✅ **Advanced Share Link Feature**: Features slug-based shareable links backed by **Redis** (24h TTL, configurable) for both complete search results and individual offers. These links preserve all query parameters (address and filters) within the slug payload.
+*   ✅ **API Credentials Security**: Employs an environment-based credential manager using Pydantic's `SecretStr` to ensure API keys remain secure and are never exposed to the frontend.
 
-### ✨ **Optional Features Implemented:**
+### ✨ Optional Features Implemented:
 
-* ✅ **Address Autocompletion**: Google Places API integration for address lookup, secured with domain-restricted API keys.
-* ✅ **Comprehensive Input Validation**: Strict Pydantic models on the backend for all requests, plus additional domain-specific address validation (e.g. matching ZIP to city). Frontend provides user-friendly validation errors for incomplete addresses.
-* ✅ **Persistent Session State**: Recent searches (up to 20) are stored in browser localStorage for quick access, enabling users to seamlessly revisit previous comparisons.
+*   ✅ **Address Autocompletion**: Integrates the **Google Places API** for seamless address lookup, secured with domain-restricted API keys.
+*   ✅ **Comprehensive Input Validation**: Leverages strict **Pydantic** models on the backend for all incoming requests, supplemented by domain-specific address validation (e.g., matching ZIP code to city). The frontend provides user-friendly validation errors for incomplete addresses.
+*   ✅ **Persistent Session State**: Stores recent searches (up to 20) in the browser's `localStorage` for quick access, allowing users to seamlessly revisit previous comparisons.
+
+---
 
 ## 3. 🏗️ Architecture Overview
 
 ### 🏛️ System Architecture
 
-The system follows a decoupled microservice-style architecture with a **Next.js** frontend and a **FastAPI** backend. The **frontend** (deployed on Vercel) renders the UI and opens a WebSocket connection to the **backend** (running on AWS EC2) for live data streaming. The FastAPI backend orchestrates parallel calls to multiple **provider APIs**, aggregates and caches results in **Redis**, and communicates back to the client via WebSocket and REST endpoints. An Nginx reverse proxy (with CloudFront) fronts the backend container, handling HTTP(S) traffic and WebSocket upgrades. This setup ensures a clear separation: the browser interacts only with the FastAPI API (never directly with provider services), and all sensitive API keys remain on the server side.
+The system adopts a decoupled two-tier architecture, featuring a **Next.js** frontend and a **FastAPI** backend.
+
+*   The **Frontend** (deployed on Vercel) is responsible for rendering the user interface and establishes a **WebSocket** connection to the backend for live data streaming.
+*   The **Backend** (running on AWS EC2) orchestrates parallel calls to multiple third-party **provider APIs**. It aggregates results, caches them in **Redis**, and communicates back to the client via **WebSocket** and standard REST endpoints.
+*   An **Nginx** reverse proxy, fronted by **CloudFront**, manages HTTP(S) traffic and **WebSocket** upgrades for the backend container.
+
+This design ensures a clear separation of concerns: the browser interacts exclusively with the **FastAPI** API (never directly with provider services), and all sensitive API keys are securely managed on the server side.
 
 ### 💻 Technology Stack
 
-**Backend:** FastAPI (Python) for the web service, **Pydantic** for data modeling and validation, **httpx** for async HTTP calls to providers, **Tenacity** for resilient retries, **Loguru** for structured logging, **Pytest** for testing, containerized via **Docker** (+ Compose). A **Redis** in-memory datastore provides caching and sharing capabilities. Nginx is used as a reverse proxy, and **Gunicorn** (with Uvicorn workers) serves the FastAPI app in production.
+**Backend:**
 
-**Frontend:** Next.js 15 (React 19) with the App Router architecture, written in **TypeScript**. Styling is done with **Tailwind CSS** (using ShadCN/UI components). It integrates the **Google Places API** for address autocompletion. Developer tooling includes ESLint and **Prettier** for code quality. React’s latest features (Server Components, Suspense) are leveraged for performance, and the UI uses libraries like **Sonner** for non-blocking toast notifications.
+*   **Framework/Language**: **FastAPI** (Python)
+*   **Data Validation**: **Pydantic**
+*   **HTTP Client**: **httpx** (for asynchronous calls to provider APIs)
+*   **Retry Logic**: **Tenacity** (for resilient external API calls)
+*   **Logging**: **Loguru** (for structured logging)
+*   **Testing**: **Pytest**
+*   **Containerization**: **Docker** & **Docker Compose**
+*   **Caching & Sharing**: **Redis** (in-memory datastore)
+*   **Web Server/Proxy**: **Gunicorn** (with **Uvicorn** workers) serving the **FastAPI** app, **Nginx** (as reverse proxy)
+
+**Frontend:**
+
+*   **Framework**: **Next.js 15** (utilizing **React 19** and the App Router architecture)
+*   **Language**: **TypeScript**
+*   **Styling**: **Tailwind CSS** with **ShadCN/UI** components
+*   **Address Autocompletion**: **Google Places API**
+*   **Code Quality**: **ESLint** (linting), **Prettier** (formatting)
+*   **UI Enhancements**: **Sonner** (for non-blocking toast notifications), React Server Components, and Suspense for optimized performance.
 
 ## 4. ⭐ Core Features & Implementation
 
@@ -287,3 +325,8 @@ In summary, the application follows security best practices relative to the scop
 In load-testing, the backend can handle multiple simultaneous WebSocket comparisons thanks to async IO (each additional connection incurs minimal overhead, and Gunicorn’s worker model can utilize CPU for parsing/merging). The bottleneck usually lies in provider response times, which we mitigated via the two-phase approach and parallelism. On the frontend, using the modern React/Next stack means we capitalize on framework optimizations out of the box – and the site remains responsive even as dozens of offers are rendered and manipulated.
 
 Overall, these optimizations ensure that the application feels **snappy and scalable**: users get results quickly, and the system can handle a growing load with intelligent use of resources.
+
+## 9. 🔮 Future Improvements
+Add caching for address requests as well as for single provider fetches. This was not implemented due ot the conflict in the problem statement ("while still displaying only actual offers that the internet providers are able to conclude.")
+- Potentially integrate a database to store the offers for faster retrieval and to provide a way to track offers over time.
+- Improve amount of test cases to cover more, including frontend tests (Not implemented due to time constraints)
