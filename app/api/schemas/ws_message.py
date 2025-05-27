@@ -44,11 +44,6 @@ class WsMessage(BaseModel):
         description="Name of the provider sending this update, if applicable",
         examples=["ByteMe"],
     )
-    is_complete: Optional[bool] = Field(
-        None,
-        description="Flag indicating whether the comparison process is complete",
-        examples=[True],
-    )
     will_refine: Optional[bool] = Field(
         None,
         description="Flag indicating whether further refinement messages will follow",

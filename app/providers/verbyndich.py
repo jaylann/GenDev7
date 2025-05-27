@@ -34,7 +34,6 @@ PAGE_FETCH_RETRY_EXP_MULTIPLIER = 1
 PAGE_FETCH_RETRY_EXP_MAX_WAIT = 1
 
 
-@alru_cache(maxsize=128)
 @retry(
     stop=stop_after_attempt(PAGE_FETCH_RETRY_ATTEMPTS),
     wait=wait_exponential(
