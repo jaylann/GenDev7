@@ -1,6 +1,6 @@
 /**
  * @module useAddressAutocomplete
- * @description Address autocomplete and geocoding via Google Places SDK.
+ * @description Provides address autocomplete and geocoding functionality using the Google Places SDK.
  */
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -63,41 +63,45 @@ export const useAddressAutocomplete = ({
     const [sdkReady, setSdkReady] = useState(false);
     const triedInit = useRef(false);
 
-    // Initialize Places SDK when available
+    // Initializes the Google Places SDK when available
     useEffect(() => {
         if (triedInit.current || typeof window === "undefined") return;
 
         const pollForGoogleSDK = () => {
             if (window.google?.maps?.places) {
+                // Initialize the usePlacesAutocomplete hook
                 init(); // Initialize `usePlacesAutocomplete`
                 setSdkReady(true);
                 triedInit.current = true;
             } else {
+                // Retry initialization after a brief delay
                 setTimeout(pollForGoogleSDK, 100); // Check again shortly
             }
         };
         pollForGoogleSDK();
     }, [init]);
 
-    // Set initial input value without fetching suggestions
+    // Populate initial input value without triggering suggestion fetch
     useEffect(() => {
         if (initialValue) {
             setValue(initialValue, false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- Only on initialValue change or mount
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- Restrict effect to initialValue changes only
     }, [initialValue /* setValue is stable */]);
 
     /**
-     * Handles selection of a suggestion: geocodes, updates input, and invokes callback.
+     * Handles selection of an autocomplete suggestion by performing geocoding,
+     * updating the input value, and invoking the provided callback.
      */
     const handleSelect = useCallback(
         async (description: string) => {
-            clearSuggestions(); // Hide the suggestions dropdown immediately
+            clearSuggestions(); // Clear existing suggestions to close the dropdown
 
-            // If the Places API hook isn't ready, fallback to a simpler behavior.
+            // If SDK or autocomplete hook is not initialized, use fallback behavior
             if (!hookReady || !sdkReady) {
-                setValue(description, false); // Set input to the selected description
-                onAddressSelectAction(null, description); // Notify parent
+                setValue(description, false); // Update input with the selected description
+                onAddressSelectAction(null, description); // Invoke callback with the raw description
+                // Log a warning if SDK is unavailable during selection
                 console.warn(
                     "[AddressAutocomplete] SDK not ready during handleSelect. Using raw description.",
                 );
@@ -105,31 +109,30 @@ export const useAddressAutocomplete = ({
             }
 
             try {
-                // Geocode the textual description of the selected place.
+                // Perform geocoding for the selected place description
                 const geocodeResults = await getGeocode({
                     address: description,
                 });
 
                 if (geocodeResults && geocodeResults.length > 0) {
-                    // Successfully geocoded.
-                    const bestResult = geocodeResults[0]; // Typically, the first result is the most relevant.
-                    // This is the full, canonical address string from Google, e.g., "Am Brunnen 24, 85551 Kirchheim bei München, Germany"
+                    // Process successful geocoding response
+                    const bestResult = geocodeResults[0]; // Use the first result as the most relevant match
+                    // Extract the fully formatted address returned by the API
                     const fullFormattedAddress = bestResult.formatted_address;
-                    // Use your utility function to parse Google's GeocoderResult[] into your app's Address structure.
+                    // Parse geocoding results into the Address model using the utility function
                     const parsedAddressData =
                         parseGeocodeResult(geocodeResults);
 
-                    // KEY CHANGE: Update the input field to display the full, formatted address.
+                    // Update input value with the formatted address
                     setValue(fullFormattedAddress, false);
 
-                    // Notify the parent component about the selection, providing both the
-                    // structured address object and the full formatted string.
+                    // Invoke callback with structured address data and formatted address
                     onAddressSelectAction(
                         parsedAddressData,
                         fullFormattedAddress,
                     );
                 } else {
-                    // Geocoding returned no results. Fallback to using the original description.
+                    // If geocoding returns no results, use the original description as fallback
                     console.warn(
                         `[AddressAutocomplete] Geocoding for "${description}" returned no results. Using description as fallback.`,
                     );
@@ -137,12 +140,12 @@ export const useAddressAutocomplete = ({
                     onAddressSelectAction(null, description);
                 }
             } catch (error: unknown) {
-                // Handle any errors that occur during the geocoding process.
+                // Handle potential errors during the geocoding process
                 console.error(
                     `[AddressAutocomplete] Geocoding failed for "${description}":`,
                     error,
                 );
-                // In case of an error, fallback to using the original description in the input field.
+                // On error, revert to using the original description
                 setValue(description, false);
                 onAddressSelectAction(null, description);
             }
@@ -157,7 +160,7 @@ export const useAddressAutocomplete = ({
     );
 
     /**
-     * Geocodes a free-form address string and invokes callback without changing input.
+     * Geocodes a free-form address string and invokes the callback without modifying the input value.
      */
     const geocodeAndEmit = useCallback(
         async (addressString: string) => {
@@ -168,7 +171,7 @@ export const useAddressAutocomplete = ({
             }
 
             if (!hookReady || !sdkReady) {
-                // SDK not ready – emit raw value only
+                // If SDK is not ready, invoke callback with the raw address input
                 console.warn(
                     "[AddressAutocomplete] SDK not ready during geocodeAndEmit. Emitting raw address.",
                 );
@@ -179,8 +182,7 @@ export const useAddressAutocomplete = ({
             try {
                 const results = await getGeocode({ address: trimmedAddress });
                 const parsed = parseGeocodeResult(results);
-                // The formatted_address from geocoding is passed to onAddressSelectAction.
-                // The input field's value is *not* changed here.
+                // Pass formatted address to callback without modifying the input value
                 onAddressSelectAction(
                     parsed,
                     results[0]?.formatted_address ?? trimmedAddress, // Prefer formatted, fallback to input
@@ -190,6 +192,7 @@ export const useAddressAutocomplete = ({
                     `[AddressAutocomplete] Geocoding failed for "${trimmedAddress}":`,
                     err,
                 );
+                // Invoke callback with raw input on error
                 onAddressSelectAction(null, trimmedAddress); // Emit raw input on error
             }
         },
@@ -200,8 +203,8 @@ export const useAddressAutocomplete = ({
         value,
         setValue,
         suggestions,
-        handleSelect, // The modified handleSelect
+        handleSelect, // Selection handler for autocomplete suggestions
         geocodeAndEmit,
-        ready: sdkReady && hookReady, // Combined readiness state
+        ready: sdkReady && hookReady, // Indicates if both SDK and hook are initialized
     };
 };

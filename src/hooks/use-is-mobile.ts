@@ -1,24 +1,25 @@
 /**
- * Custom React hook to detect and track mobile view based on viewport width.
- * Listens to window resize events and updates state.
+ * Enterprise-grade React hook that monitors the viewport width to determine mobile context.
+ * It registers a window resize listener and maintains responsive state.
  */
 import { useEffect, useState } from "react";
 
 /**
- * Hook to determine if the viewport width is below a specified breakpoint.
+ * Evaluates whether the viewport width is below the specified mobile breakpoint.
  *
- * @param breakpoint - Pixel width threshold to classify mobile view (default: 640).
- * @returns True if current viewport width is less than the breakpoint.
+ * @param breakpoint The pixel width threshold to define mobile view (default: 640).
+ * @returns A boolean indicating if the viewport width is less than the breakpoint.
  */
 export function useIsMobile(breakpoint = 640) {
     const [isMobile, setIsMobile] = useState(false);
 
     /**
-     * Registers window resize listener, performs initial status check, and cleans up on unmount.
+     * Initializes the window resize listener, performs an initial evaluation,
+     * and ensures cleanup on component unmount.
      */
     useEffect(() => {
         /**
-         * Updates mobile status based on current window width.
+         * Checks the current window width against the breakpoint and updates the state.
          */
         const onResize = () => setIsMobile(window.innerWidth < breakpoint);
         onResize();

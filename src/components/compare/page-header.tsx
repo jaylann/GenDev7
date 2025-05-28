@@ -54,7 +54,7 @@ export const PageHeader: FC<PageHeaderProps> = ({
                 </p>
             )}
 
-            {/* NEW: Loading Indicator and Offer Count Section */}
+            {/* Loading Indicator and Offer Count Section */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 min-h-[20px] sm:min-h-[24px]">
                 {/* Loading Spinner */}
                 {(isLoading || isRefining) && (

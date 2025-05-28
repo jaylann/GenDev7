@@ -1,7 +1,7 @@
 "use client";
 /**
- * Custom React hook for initializing the compare page state from URL parameters and shared offers.
- * Parses slug, sort, and filters; fetches and populates comparison data if a slug is present.
+ * Initializes the compare page state by interpreting URL parameters and retrieving shared offers.
+ * Extracts the slug, sorting preferences, and filter settings; fetches comparison data when a slug is provided.
  */
 import { useSearchParams } from "next/navigation";
 import { useEffect } from "react";
@@ -25,17 +25,17 @@ interface SharedOffersResponse {
 }
 
 /**
- * Props for useComparePageInitializer hook.
+ * Properties required by the useComparePageInitializer hook.
  *
- * @property setOriginalOffersAction - Sets the list of comparison offers.
- * @property setSlugAction - Sets the comparison slug.
- * @property setSortOptionAction - Sets the selected sort option.
- * @property setFiltersAction - Sets the current filter state.
- * @property setStatusAction - Sets status messages for the UI.
- * @property setLoadingAction - Toggles the global loading flag.
- * @property setIsLoadingFromSlugAction - Toggles the "loading from slug" indicator.
- * @property setParsedAddress - Optional: sets the parsed address object.
- * @property setInitialAddressLabel - Optional: sets fallback address label text.
+ * @property setOriginalOffersAction - Callback to set the comparison offers list.
+ * @property setSlugAction - Callback to record the comparison slug.
+ * @property setSortOptionAction - Callback to apply the chosen sort option.
+ * @property setFiltersAction - Callback to apply the active filter state.
+ * @property setStatusAction - Callback to update UI status messages.
+ * @property setLoadingAction - Callback to toggle the global loading indicator.
+ * @property setIsLoadingFromSlugAction - Callback to indicate loading status when using a slug.
+ * @property setParsedAddress - Optional callback to supply validated address data.
+ * @property setInitialAddressLabel - Optional callback to provide a fallback address label.
  */
 export interface UseComparePageInitializerProps {
     setOriginalOffersAction: (offers: Offer[]) => void;
@@ -57,12 +57,9 @@ export interface UseComparePageInitializerProps {
 }
 
 /**
- * Hook to initialize compare page based on URL search parameters.
+ * Establishes the initial state of the compare page based on URL search parameters.
  *
- * Reads slug, sort, and filter parameters from the URL. When a slug is present,
- * fetches shared comparison data and updates state; otherwise applies defaults.
- *
- * @param props - Setter callbacks for page state and UI feedback.
+ * @param props - Collection of callbacks for managing page state and user feedback.
  */
 export const useComparePageInitializer = ({
     // Destructure setter functions for page state
@@ -78,14 +75,14 @@ export const useComparePageInitializer = ({
 }: UseComparePageInitializerProps): void => {
     const searchParams = useSearchParams();
 
-    // Run initialization logic whenever URL search parameters change
+    // Listen for changes in URL parameters to initialize or update page state.
     useEffect(() => {
         const slugFromUrl = searchParams.get("slug");
         const sortFromUrl = searchParams.get("sort") as SortOptionKey | null;
         const filtersFromUrl = deserializeFiltersFromURL(searchParams);
 
         /**
-         * Applies URL-derived sort and filter parameters to the page state.
+         * Applies sorting and filtering parameters derived from the URL to the page state.
          */
         const applyUrlParams = (): void => {
             if (
@@ -102,7 +99,7 @@ export const useComparePageInitializer = ({
 
         if (slugFromUrl) {
             /**
-             * Fetches shared comparison offers by slug, handles errors, and populates page state.
+             * Retrieves comparison data using the provided slug and updates the page state.
              */
             (async () => {
                 try {
@@ -168,6 +165,7 @@ export const useComparePageInitializer = ({
                     setIsLoadingFromSlugAction(false);
                 }
             })();
+        // Initialize default state when no slug is present.
         } else {
             setOriginalOffersAction([]);
             setSlugAction(null);

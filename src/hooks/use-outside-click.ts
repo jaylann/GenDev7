@@ -1,22 +1,22 @@
-/****
- * useOutsideClick Hook
+/**
+ * Custom React hook that invokes a callback when a mousedown event occurs outside of specified elements.
  *
- * Invokes a callback when a mouse down event occurs outside all specified element references.
- * Useful for closing dropdowns, modals, or tooltips when clicking elsewhere on the page.
+ * Useful for closing dropdowns, modals, or tooltips when the user interacts outside the component.
+ *
+ * @param refs - Array of RefObject<HTMLElement> to monitor for outside click events.
+ * @param onOutside - Callback invoked when a click is detected outside all provided refs.
  */
 import { useEffect, type RefObject } from "react";
 
-/**
- * Fires `onOutside` whenever a click happens outside all provided element refs.
- *
- * @param refs - Array of refs to monitor for outside clicks.
- * @param onOutside - Callback executed when a click is detected outside all refs.
- */
 export const useOutsideClick = (
-    refs: RefObject<HTMLElement | null>[],  // accept any HTMLElement refs
+    refs: RefObject<HTMLElement | null>[],
     onOutside: () => void,
 ): void => {
     useEffect(() => {
+        /**
+         * Document mousedown event listener.
+         * Invokes onOutside if the event target lies outside all monitored elements.
+         */
         const handler = (e: MouseEvent) => {
             if (refs.every((r) => !r.current?.contains(e.target as Node))) {
                 onOutside();

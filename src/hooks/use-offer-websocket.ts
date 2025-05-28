@@ -6,7 +6,7 @@ import type { Offer } from "@/types/offer";
 import { WEBSOCKET_URL } from "@/config/constants";
 import type { WebSocketMessage } from "@/types/web-socket-message";
 
-/* ───────────────── types ───────────────── */
+/* Type Definitions */
 export type SlugType = "INITIAL" | "FINAL" | "SHARED";
 
 interface UseOfferWebSocketProps {
@@ -25,21 +25,21 @@ interface UseOfferWebSocketProps {
     onStatusUpdateAction: (msg: string) => void;
     onConnectionErrorAction: (msg: string) => void;
 
-    /** ➊ now also hands over a *pending* slug */
+    /** Handler invoked when pending offers and slug are available for review */
     onPendingOffersUpdateAction: (offers: Offer[] | null, slug: string | null) => void;
     onPromptOpenChangeAction: (open: boolean) => void;
 
     initialLoadingState: boolean;
 }
 
-/* ───────────────── hook ───────────────── */
+/* Custom React Hook: useOfferWebSocket */
 export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
     const genRef             = useRef(0);
     const wsRef              = useRef<WebSocket | null>(null);
     const firstBatchTsRef    = useRef<number | null>(null);
     const offersRef          = useRef<Offer[]>([]);
 
-    /* helper ─ close current socket */
+    // Closes the active WebSocket connection and resets related state
     const abortCurrentWebSocket = useCallback(() => {
         if (wsRef.current) {
             wsRef.current.onopen =
@@ -52,12 +52,12 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
         firstBatchTsRef.current = null;
     }, []);
 
-    /* helper ─ keep ComparePage in sync (still used elsewhere) */
+    // Updates internal offers reference for consistent data across components
     const updateWebSocketOffersRef = useCallback((offers: Offer[]) => {
         offersRef.current = offers;
     }, []);
 
-    /* (re)connect */
+    // Establishes or re-establishes the WebSocket connection
     const connectWebSocket = useCallback(() => {
         abortCurrentWebSocket();
         genRef.current += 1;
@@ -77,7 +77,7 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
             onPromptOpenChangeAction,
         } = props;
 
-        /* guard clauses */
+        // Validation checks for API key presence and selected address
         if (!hasApiKey) {
             onConnectionErrorAction("Google Maps API key missing – cannot run search.");
             return;
@@ -87,11 +87,11 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
             return;
         }
 
-        /* bootstrap UI state */
+        // Initialize UI loading state and reset slug indicator
         onLoadingChangeAction(true);
         onWebSocketSlugReceivedAction(null, "INITIAL");
 
-        /* real socket */
+        // Create and configure the WebSocket instance
         const sock = new WebSocket(WEBSOCKET_URL);
         wsRef.current = sock;
 
@@ -118,7 +118,7 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                 return;
             }
 
-            /* de-duplicate offers */
+            // Remove duplicate offers based on provider and plan identifiers
             const seen = new Set<string>();
             const offers: Offer[] = [];
             (data.offers ?? []).forEach((o) => {
@@ -130,7 +130,7 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
             });
 
             switch (data.type) {
-                /* ─── INITIAL ─── */
+                // Handle initial offers from the server
                 case "INITIAL_OFFERS": {
                     const willRefine = Boolean(data.will_refine);
                     firstBatchTsRef.current = Date.now();
@@ -149,15 +149,14 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                     break;
                 }
 
-                /* ─── FINAL ─── */
-                /* inside sock.onmessage … switch (data.type) … */
+                // Handle final offers refinement from the server
                 case "FINAL_OFFERS": {
                     const quick =
                         !!firstBatchTsRef.current &&
                         Date.now() - firstBatchTsRef.current <= 5_000;
 
                     if (quick) {
-                        /* ─── quick refinement → load immediately ─── */
+                        // Fast refinement: update offers immediately without prompting user
                         if (data.slug) onWebSocketSlugReceivedAction(data.slug, "FINAL");
 
                         offersRef.current = offers;
@@ -168,19 +167,17 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                             );
                         }
                     } else {
-                        /* ─── slow refinement → prompt ─── */
+                        // Slow refinement: stage pending offers and prompt user for review
 
-                        /* ➊ park offers *and* slug for later */
+                        // 1. Store pending offers and slug for later use
                         onPendingOffersUpdateAction(offers, data.slug ?? null);
 
-                        /* ➋ open the “new results” dialog */
+                        // 2. Trigger display of the "new results" dialog
                         onPromptOpenChangeAction(true);
 
-                        /* ➌ stop the spinner WITHOUT changing the list
-                           (pass the *current* offers that are on screen) */
+                        // 3. Stop loading indicator without altering the displayed offers
                         onOffersReceivedAction(offersRef.current, "FINAL_OFFERS", false);
                         if (data.message) {
-
                             onStatusUpdateAction(
                                 data.message
                             );
@@ -193,12 +190,12 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                 }
 
 
-                /* ─── STATUS ─── */
+                // Handle status update messages
                 case "STATUS_UPDATE":
                     if (data.message?.trim()) onStatusUpdateAction(data.message);
                     break;
 
-                /* ─── ERROR ─── */
+                // Handle error messages from the server
                 case "ERROR":
                     onConnectionErrorAction(data.message ?? "WebSocket connection error.");
                     onLoadingChangeAction(false);

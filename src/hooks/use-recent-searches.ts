@@ -3,18 +3,23 @@
 import { useCallback, useEffect, useState } from "react";
 import type { RecentSearchItem } from "@/types/recent-search-item";
 
-/* ───────────────────────────── constants ───────────────────────────── */
+// Maximum number of recent search entries to retain.
+// Key used to persist recent search entries in sessionStorage.
 const MAX_RECENT_SEARCHES = 5;
 const STORAGE_KEY = "recentCompareSearches";
 
-/* ────────────────────────────── helpers ────────────────────────────── */
+// Types and helper functions for recent search management.
 interface AddRecentSearchData {
     url: string;
     label: string;
     sessionId: string;      // stable ID generated at the moment the search starts
 }
 
-/** Pulls ?slug=… from any absolute or relative URL. */
+/**
+ * Extracts the 'slug' query parameter from the provided URL.
+ * @param url - The URL string to parse, absolute or relative.
+ * @returns The 'slug' parameter value, or null if not present.
+ */
 const extractSlug = (url: string): string | null => {
     try {
         return new URL(url, window.location.origin).searchParams.get("slug");
@@ -23,11 +28,11 @@ const extractSlug = (url: string): string | null => {
     }
 };
 
-/* ─────────────────────────────── hook ──────────────────────────────── */
+// Custom React hook to manage recent search history.
 export const useRecentSearches = () => {
     const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>([]);
 
-    /* ───── load from sessionStorage once ───── */
+    // Initialize recent searches from sessionStorage on mount.
     useEffect(() => {
         try {
             const stored = sessionStorage.getItem(STORAGE_KEY);
@@ -51,7 +56,7 @@ export const useRecentSearches = () => {
         }
     }, []);
 
-    /* ───── add a *new* search or refresh an existing one ───── */
+    // Add a new search entry or update an existing one, maintaining recency order.
     const addRecentSearch = useCallback((data: AddRecentSearchData) => {
         setRecentSearches((prev) => {
             const existingIdx = prev.findIndex(
@@ -81,7 +86,7 @@ export const useRecentSearches = () => {
         });
     }, []);
 
-    /* ───── fix the URL once we know the *final* slug ───── */
+    // Update the URL of an existing search entry when its final slug is available.
     const updateSearchSlug = useCallback(
         (sessionId: string, newUrl: string) => {
             if (!sessionId) return;                         // nothing to match on
@@ -112,7 +117,7 @@ export const useRecentSearches = () => {
         [],
     );
 
-    /* ───── clear history ───── */
+    // Clear all stored recent search entries.
     const clearRecentSearches = useCallback(() => {
         setRecentSearches([]);
         try {
