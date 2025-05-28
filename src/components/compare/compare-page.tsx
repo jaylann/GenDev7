@@ -33,12 +33,6 @@ import { OfferGrid } from "@/components/compare/offer-grid";
 export default function ComparePage(): JSX.Element {
     const { state, actions } = useComparePageState();
 
-    const cleanedStatus = state.statusMessage
-        .toLowerCase()
-        .startsWith("refining")
-        ? ""
-        : state.statusMessage;
-
     return (
         <div className="flex flex-col h-screen bg-gradient-to-br from-[#0B0B2D] via-[#1C1044] to-[#3C0E4C] text-slate-100 selection:bg-indigo-500 selection:text-white">
             <main
