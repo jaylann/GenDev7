@@ -296,5 +296,4 @@ Potential enhancements:
 ## 11. 🚧 Known Issues
 
 *   **Frontend Status Message Synchronization:**
-    *   **Issue:** Occasionally, the primary frontend status message may display information slightly out of sync with the current application state (e.g., showing "Enter Valid Address" briefly when it should be "Connecting to service...").
-    *   **Proposed Solution:** This is a minor UI display quirk. A future refinement would involve decoupling status display responsibilities. For instance, introducing a dedicated offer count display and a persistent loading indicator (e.g., a spinning wheel) during data fetching. The main status message would then be solely responsible for input validation status and critical connection messages, improving clarity and synchronization.
+    *   **Issue:** Occasionally, the primary frontend status message may display information slightly out of sync with the current application state. This can be fixed by improving state updates and making sure they trigger only when needed.
