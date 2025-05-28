@@ -57,7 +57,12 @@ export default function ComparePage(): JSX.Element {
                 {/* Page header displaying the cleaned status message */}
                 {/* Wrap PageHeader with flex-none to prevent shrinking */}
                 <div className="flex-none">
-                    <PageHeader statusMessage={cleanedStatus} />
+                    <PageHeader
+                        mainStatusMessage={state.mainStatusMessage} // Or state.statusMessage if you kept that name
+                        offerCount={state.currentOfferCount}
+                        isLoading={state.isGloballyLoading}
+                        isRefining={state.isSpecificallyRefining} // or state.isRefiningOffers
+                    />
                 </div>
 
                 {/* Dropdown for accessing and clearing recent address searches */}

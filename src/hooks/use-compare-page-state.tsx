@@ -34,6 +34,10 @@ export interface ComparePageState {
     /* ──────────────── state ──────────────── */
     state: {
         /* status / lifecycle */
+        mainStatusMessage: string; // NEW
+        currentOfferCount: number | null; // NEW
+        isGloballyLoading: boolean; // NEW
+        isSpecificallyRefining: boolean; // NEW
         statusMessage: string;
         isBlockingUi: boolean;
         isLoadingFromUrl: boolean;
@@ -114,10 +118,11 @@ export function useComparePageState(): ComparePageState {
     const [hasSearchBeenPerformed, setHasSearchBeenPerformed] = useState<boolean>(false);
     const [originalOffers, setOriginalOffers] = useState<Offer[]>([]);
     const [pendingOffers, setPendingOffers] = useState<Offer[] | null>(null);
+    const [pendingSlug,   setPendingSlug]   = useState<string | null>(null);
     const [parsedBackendAddress, setParsedBackendAddress] = useState<ParsedAddress | null>(null);
     const [parsedAddressFromSlug, setParsedAddressFromSlug] = useState<Address | null>(null);
     const [initialAddressLabel, setInitialAddressLabel] = useState<string>("");
-    const [statusMessage, setStatusMessage] = useState<string>("Initializing…");
+    const [mainStatusMessage, setMainStatusMessage] = useState<string>("Initializing…");
     const [currentDisplaySlug, setCurrentDisplaySlug] = useState<string | null>(null);
     const [activeShareableSlug, setActiveShareableSlug] = useState<string | null>(null);
     const [isLoadingFromUrl, setIsLoadingFromUrl] = useState<boolean>(true);
@@ -185,6 +190,10 @@ export function useComparePageState(): ComparePageState {
     useComparePageInitializer({
         setOriginalOffersAction: (offers: Offer[]) => {
             setOriginalOffers(offers);
+            if (isLoadingFromUrl) {
+                setPendingOffers(null);
+                setIsUpdatePromptOpen(false);
+            }
             // if (offers.length > 0 && !initialPageLoadProcessedRef.current) {
             // }
         },
@@ -212,7 +221,7 @@ export function useComparePageState(): ComparePageState {
         setSortOptionAction: setSortOption,
         setFiltersAction: setFilters,
         setStatusAction: (message: string) => {
-            setStatusMessage(message);
+            setMainStatusMessage(message);
             if (message.startsWith("Enter an address") && !initialPageLoadProcessedRef.current) {
                 initialPageLoadProcessedRef.current = true;
             }
@@ -240,9 +249,15 @@ export function useComparePageState(): ComparePageState {
         setIsWaitingInitialOffers(waiting);
     }, []);
 
-    const handlePendingOffersUpdate = useCallback((offers: Offer[] | null) => {
-        setPendingOffers(offers);
-    }, []);
+    /** called by Web-Socket: save offers **and** the yet-to-be-applied slug */
+    const handlePendingOffersUpdate = useCallback(
+        (offers: Offer[] | null, slug: string | null) => {
+            setPendingOffers(offers);
+            setPendingSlug(slug);
+            setIsRefiningOffers(false);          // stop spinner immediately
+        },
+        [],
+    );
 
     const handleWebSocketSlugReceived = useCallback(
         (slug: string | null, slugType: SlugType) => {
@@ -315,7 +330,9 @@ export function useComparePageState(): ComparePageState {
         providers: providersForApi,
         wantsFiber,
         onOffersReceivedAction: (offers, phase, willRefine) => {
-            setOriginalOffers(offers);
+            if (phase === "INITIAL_OFFERS" || (phase === "FINAL_OFFERS" && !isUpdatePromptOpen)) {
+                setOriginalOffers(offers);
+            }
 
             if (phase === "INITIAL_OFFERS") {
                 if (willRefine) {
@@ -343,9 +360,9 @@ export function useComparePageState(): ComparePageState {
         },
         onWebSocketSlugReceivedAction: handleWebSocketSlugReceived,
         onLoadingChangeAction: handleWebSocketLoadingChange,
-        onStatusUpdateAction: setStatusMessage,
+        onStatusUpdateAction: setMainStatusMessage,
         onConnectionErrorAction: (msg) => {
-            setStatusMessage(msg);
+            setMainStatusMessage(msg);
             setIsWaitingInitialOffers(false);
             setIsRefiningOffers(false);
             searchIsActiveRef.current = false; // Ensure search is marked inactive on error
@@ -375,19 +392,19 @@ export function useComparePageState(): ComparePageState {
                 : fullText.trim();
             if (addressText) {
                 sessionIdRef.current = addressText; // Use full address text as session ID for this search
-                setStatusMessage(
+                setMainStatusMessage(
                     addr
                         ? `Address ready: ${addressText}. Click Search!`
                         : `Could not fully verify “${addressText}”. Ensure all parts are clear.`,
                 );
             } else {
                 sessionIdRef.current = null;
-                setStatusMessage(
+                setMainStatusMessage(
                     "Enter a complete German address to compare internet plans.",
                 );
             }
         },
-        [],
+        [setMainStatusMessage],
     );
 
     /**
@@ -396,7 +413,7 @@ export function useComparePageState(): ComparePageState {
     const handleSearchClick = useCallback(() => {
         abortCurrentWebSocket(); // Abort any ongoing WebSocket connection
         if (!parsedBackendAddress && !sessionIdRef.current?.trim()) { // Check sessionIdRef as fallback if parsedBackendAddress is null
-            setStatusMessage("Please select a valid address first.");
+            setMainStatusMessage("Please select a valid address first.");
             return;
         }
 
@@ -409,9 +426,9 @@ export function useComparePageState(): ComparePageState {
         hasAddedInitialHistoryEntryRef.current = false; // Reset history flag for the new search
         searchIsActiveRef.current = true; // Mark search as active
 
-        // If sessionIdRef is not set (e.g., from address input), generate a temporary one.
+        // If no sessionId has been assigned yet, generate a proper UUID
         if (!sessionIdRef.current) {
-            sessionIdRef.current = `session-${Date.now()}`;
+            sessionIdRef.current = crypto.randomUUID();
         }
         currentSearchSlugRef.current = null; // Clear previous search slug reference
 
@@ -428,7 +445,7 @@ export function useComparePageState(): ComparePageState {
         hasTriggeredRefineRef.current = false; // Reset refine notification flag
 
         connectWebSocket(); // Initiate WebSocket connection for the new search
-    }, [parsedBackendAddress, connectWebSocket, router, pathname, abortCurrentWebSocket]);
+    }, [parsedBackendAddress, connectWebSocket, router, pathname, abortCurrentWebSocket, setMainStatusMessage]);
 
 
     /**
@@ -437,39 +454,36 @@ export function useComparePageState(): ComparePageState {
     const handleShowPendingOffers = useCallback(() => {
         if (pendingOffers) {
             setOriginalOffers(pendingOffers); // Update original offers with pending ones
-            setStatusMessage(
-                `Displaying updated results (${pendingOffers.length} offers).`,
-            );
-            // Persist this state to history if it's a user-initiated search
-            if (
-                activeShareableSlug &&
-                sessionIdRef.current &&
-                !sessionIdRef.current.startsWith("shared-") // Don't update history for shared links
-            ) {
-                const url = buildUrl(
-                    activeShareableSlug,
-                    sortOption,
-                    filters,
-                    false,
-                );
-                if (url) { // Add to recent searches as this is a new state the user accepted
-                    addRecentSearch({
-                        url,
-                        label: sessionIdRef.current,
-                        sessionId: sessionIdRef.current,
-                    });
+            /* ─── slug & URL switch happens *now* ─── */
+            if (pendingSlug && pendingSlug !== currentDisplaySlug) {
+                setCurrentDisplaySlug(pendingSlug);
+                setActiveShareableSlug(pendingSlug);
+
+                const newUrl = buildUrl(pendingSlug, sortOption, filters, false);
+                if (newUrl) {
+                    router.replace(newUrl, { scroll: false });
+                    /* update existing entry in recent-search list */
+                    if (sessionIdRef.current)
+                        updateSearchSlug(sessionIdRef.current, newUrl);
                 }
             }
+
         }
         setPendingOffers(null); // Clear pending offers
+        setPendingSlug(null);
         setIsUpdatePromptOpen(false); // Close prompt
         setIsRefiningOffers(false); // Ensure refining is off
     }, [
         pendingOffers,
+        pendingSlug,
+        currentDisplaySlug,
         activeShareableSlug,
         sortOption,
         filters,
         addRecentSearch,
+        setMainStatusMessage,
+        router,
+        updateSearchSlug,
         // sessionIdRef is a ref
     ]);
 
@@ -630,6 +644,19 @@ export function useComparePageState(): ComparePageState {
         }
     }, [currentDisplaySlug]); // Depends on currentDisplaySlug and refs currentSearchSlugRef, searchIsActiveRef
 
+    // Derived computed state
+    const currentOfferCountForDisplay = useMemo(() => {
+        if (originalOffers.length > 0) return originalOffers.length;
+        if (hasSearchBeenPerformed && !isWaitingInitialOffers && !isLoadingFromUrl && !isRefiningOffers) {
+            return 0;
+        }
+        return null;
+    }, [originalOffers, hasSearchBeenPerformed, isWaitingInitialOffers, isLoadingFromUrl, isRefiningOffers]);
+
+    const isGloballyLoading = useMemo(() => {
+        return isLoadingFromUrl || isWaitingInitialOffers;
+    }, [isLoadingFromUrl, isWaitingInitialOffers]);
+
     /**
      * Derived UI flags for disabling controls and view mode.
      */
@@ -642,9 +669,9 @@ export function useComparePageState(): ComparePageState {
         (originalOffers.length === 1 &&
             currentDisplaySlug === activeShareableSlug); // Disable if single offer view from shared link
     const areAnyOffersEverLoaded =
-        originalOffers.length > 0 || pendingOffers !== null;
+        originalOffers.length > 0 || (pendingOffers !== null && isUpdatePromptOpen);
     const isSingleOfferView =
-        processedOffers.length === 1 && // Use processedOffers for single view check
+        processedOffers.length === 1 &&
         hasSearchBeenPerformed &&
         !isWaitingInitialOffers &&
         !isLoadingFromUrl &&
@@ -656,8 +683,11 @@ export function useComparePageState(): ComparePageState {
      */
     return {
         state: {
-            /* status / lifecycle */
-            statusMessage,
+            mainStatusMessage,
+            currentOfferCount: currentOfferCountForDisplay,
+            isGloballyLoading,
+            isSpecificallyRefining: isRefiningOffers,
+            statusMessage: mainStatusMessage,
             isBlockingUi,
             isLoadingFromUrl,
             isWaitingInitialOffers,

@@ -1,184 +1,126 @@
-// app/compare/hooks/useRecentSearches.ts
-import { useCallback, useEffect, useState } from "react";
-import { RecentSearchItem } from "@/types/recent-search-item";
+"use client";
 
-// Maximum number of searches to retain in sessionStorage
+import { useCallback, useEffect, useState } from "react";
+import type { RecentSearchItem } from "@/types/recent-search-item";
+
+/* ───────────────────────────── constants ───────────────────────────── */
 const MAX_RECENT_SEARCHES = 5;
-// Key under which recent searches are stored in sessionStorage
 const STORAGE_KEY = "recentCompareSearches";
 
-// Represents the data required to add or update a recent search entry
+/* ────────────────────────────── helpers ────────────────────────────── */
 interface AddRecentSearchData {
     url: string;
     label: string;
-    sessionId: string;
+    sessionId: string;      // stable ID generated at the moment the search starts
 }
 
-/**
- * useRecentSearches hook
- *
- * Manages a list of recent compare page searches:
- * - Loads and validates stored searches from sessionStorage on mount.
- * - Provides functions to add/update and clear searches.
- *
- * @returns {{
- *   recentSearches: RecentSearchItem[];
- *   addRecentSearch: (data: AddRecentSearchData) => void;
- *   clearRecentSearches: () => void;
- * }}
- */
-export const useRecentSearches = () => {
-    const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>(
-        [],
-    );
+/** Pulls ?slug=… from any absolute or relative URL. */
+const extractSlug = (url: string): string | null => {
+    try {
+        return new URL(url, window.location.origin).searchParams.get("slug");
+    } catch {
+        return null;
+    }
+};
 
-    // Initialize recentSearches state from sessionStorage on first render
+/* ─────────────────────────────── hook ──────────────────────────────── */
+export const useRecentSearches = () => {
+    const [recentSearches, setRecentSearches] = useState<RecentSearchItem[]>([]);
+
+    /* ───── load from sessionStorage once ───── */
     useEffect(() => {
         try {
-            const storedSearches = sessionStorage.getItem(STORAGE_KEY);
-            if (storedSearches) {
-                const parsedSearches: RecentSearchItem[] =
-                    JSON.parse(storedSearches);
-                if (
-                    Array.isArray(parsedSearches) &&
-                    parsedSearches.every(
-                        (item) =>
-                            item.id &&
-                            item.sessionId &&
-                            item.url &&
-                            item.label &&
-                            item.timestamp,
-                    )
-                ) {
-                    setRecentSearches(
-                        parsedSearches.toSorted(
-                            (a, b) => b.timestamp - a.timestamp,
-                        ),
-                    );
-                } else {
-                    sessionStorage.removeItem(STORAGE_KEY);
-                }
+            const stored = sessionStorage.getItem(STORAGE_KEY);
+            if (!stored) return;
+
+            const parsed: RecentSearchItem[] = JSON.parse(stored);
+            if (
+                Array.isArray(parsed) &&
+                parsed.every(
+                    (i) =>
+                        i.id && i.sessionId && i.url && i.label && typeof i.timestamp === "number",
+                )
+            ) {
+                setRecentSearches(parsed.toSorted((a, b) => b.timestamp - a.timestamp));
+            } else {
+                sessionStorage.removeItem(STORAGE_KEY); // corrupted → wipe
             }
-        } catch (error) {
-            console.error(
-                "Failed to load recent searches from sessionStorage:",
-                error,
-            );
+        } catch (err) {
+            console.error("Failed to read recent searches:", err);
             sessionStorage.removeItem(STORAGE_KEY);
         }
     }, []);
 
-    /**
-     * Adds a new search entry or updates an existing one:
-     * - If sessionId exists, update that entry's label, url, and timestamp, moving it to the front.
-     * - Otherwise, create a new entry with a unique id and timestamp.
-     * - Ensures the list does not exceed MAX_RECENT_SEARCHES entries.
-     * - Persists the updated list back to sessionStorage.
-     *
-     * @param searchData - Object containing url, label, and sessionId for the search
-     */
-    const addRecentSearch = useCallback((searchData: AddRecentSearchData) => {
-        setRecentSearches((prevSearches) => {
-            // Duplicate detection: match by *sessionId* OR *url*
-            const existingIndex = prevSearches.findIndex(
-                (s) =>
-                    s.sessionId === searchData.sessionId ||
-                    s.url === searchData.url,
+    /* ───── add a *new* search or refresh an existing one ───── */
+    const addRecentSearch = useCallback((data: AddRecentSearchData) => {
+        setRecentSearches((prev) => {
+            const existingIdx = prev.findIndex(
+                (s) => s.sessionId === data.sessionId || s.url === data.url,
             );
-            let updatedSearches = [...prevSearches];
+            const updated = [...prev];
+            const base = { ...data, timestamp: Date.now() };
 
-            // Prepare updated fields (timestamp always current)
-            const newItemData: Omit<RecentSearchItem, "id"> = {
-                ...searchData,
-                timestamp: Date.now(), // Always update timestamp
-            };
-
-            // Update existing entry and move it to the top of the list
-            if (existingIndex > -1) {
-                // Update existing item: Preserve its original `id` but update other fields.
-                const existingItem = updatedSearches[existingIndex];
-                updatedSearches[existingIndex] = {
-                    ...existingItem,
-                    ...newItemData,
-                };
-                // Move the updated item to the top
-                const itemToMove = updatedSearches.splice(existingIndex, 1)[0];
-                updatedSearches.unshift(itemToMove);
+            if (existingIdx > -1) {
+                updated[existingIdx] = { ...updated[existingIdx], ...base };
+                updated.unshift(updated.splice(existingIdx, 1)[0]); // move to top
             } else {
-                // Create a new RecentSearchItem and add to the top of the list
-                const newItem: RecentSearchItem = {
-                    ...newItemData,
-                    id:
-                        Date.now().toString() +
-                        Math.random().toString(36).substring(2, 7), // New unique ID for React
-                };
-                updatedSearches.unshift(newItem);
+                updated.unshift({
+                    ...base,
+                    id: `${Date.now()}${Math.random().toString(36).slice(2, 7)}`,
+                });
             }
 
-            // Trim list to maximum allowed entries
-            if (updatedSearches.length > MAX_RECENT_SEARCHES) {
-                updatedSearches = updatedSearches.slice(0, MAX_RECENT_SEARCHES);
-            }
+            if (updated.length > MAX_RECENT_SEARCHES) updated.splice(MAX_RECENT_SEARCHES);
 
-            // Persist updated list to sessionStorage
             try {
-                sessionStorage.setItem(
-                    STORAGE_KEY,
-                    JSON.stringify(updatedSearches),
-                );
-            } catch (error) {
-                console.error(
-                    "Failed to save recent searches to sessionStorage:",
-                    error,
-                );
+                sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+            } catch (err) {
+                console.error("Failed to persist recent searches:", err);
             }
-            return updatedSearches;
+            return updated;
         });
     }, []);
 
-    /**
-     * Replaces the stored URL for an existing search *without* changing its
-     * position, timestamp, label, or id.  No-op if the sessionId is unknown or
-     * the URL is already identical.
-     *
-     * @param sessionId - The stable identifier we generated when the search started
-     * @param newUrl    - The final compare-slug URL coming from the WebSocket
-     */
+    /* ───── fix the URL once we know the *final* slug ───── */
     const updateSearchSlug = useCallback(
-      (sessionId: string, newUrl: string) => {
-        setRecentSearches((prev) => {
-          const idx = prev.findIndex((s) => s.sessionId === sessionId);
-          if (idx === -1 || prev[idx].url === newUrl) return prev; // nothing to do
+        (sessionId: string, newUrl: string) => {
+            if (!sessionId) return;                         // nothing to match on
 
-          const updated = [...prev];
-          updated[idx] = { ...updated[idx], url: newUrl };
+            setRecentSearches((prev) => {
+                /* 1️⃣ try sessionId match (normal workflow) */
+                let idx = prev.findIndex((s) => s.sessionId === sessionId);
 
-          try {
-            sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-          } catch (err) {
-            console.error("Failed to persist updated recent-search slug:", err);
-          }
-          return updated;
-        });
-      },
-      [],
+                /* 2️⃣ fallback for shared-link restores that have no sessionId */
+                if (idx === -1) {
+                    const newSlug = extractSlug(newUrl);
+                    idx = prev.findIndex((s) => extractSlug(s.url) === newSlug);
+                }
+
+                if (idx === -1 || prev[idx].url === newUrl) return prev; // unchanged
+
+                const updated = [...prev];
+                updated[idx] = { ...updated[idx], url: newUrl };
+
+                try {
+                    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+                } catch (err) {
+                    console.error("Failed to persist updated recent-search slug:", err);
+                }
+                return updated;
+            });
+        },
+        [],
     );
 
-    /**
-     * Clears all recent search entries from state and sessionStorage.
-     */
+    /* ───── clear history ───── */
     const clearRecentSearches = useCallback(() => {
         setRecentSearches([]);
         try {
             sessionStorage.removeItem(STORAGE_KEY);
-        } catch (error) {
-            console.error(
-                "Failed to clear recent searches from sessionStorage:",
-                error,
-            );
+        } catch (err) {
+            console.error("Failed to clear recent searches:", err);
         }
     }, []);
 
-    // Expose state and handlers to consuming components
     return { recentSearches, addRecentSearch, updateSearchSlug, clearRecentSearches };
 };
