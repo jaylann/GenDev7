@@ -528,7 +528,7 @@ export function useComparePageState(): ComparePageState {
                 return;
             }
             const offerKey = `${offer.provider}:${offer.product_id}`;
-            await sonnerToast.promise(
+            sonnerToast.promise(
                 generateShareLink(activeShareableSlug, offerKey),
                 {
                     loading: `Creating link for “${offer.plan_name}”…`,
@@ -537,7 +537,7 @@ export function useComparePageState(): ComparePageState {
                             shared_slug,
                             "recommended", // Single offer links default to recommended sort
                             DEFAULT_FILTERS, // And default filters
-                            true, // Mark as single offer view for URL
+                            true,
                         );
                         await navigator.clipboard.writeText(
                             `${window.location.origin}${url}`,
