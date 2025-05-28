@@ -176,7 +176,6 @@ async def websocket_comparison_flow(
             type="INITIAL_OFFERS",
             offers=merged_initial,
             slug=slug_initial,
-            is_complete=False,
             will_refine=will_refine,
         ).model_dump(exclude_none=True)
     )
@@ -217,7 +216,6 @@ async def websocket_comparison_flow(
             type="FINAL_OFFERS",
             offers=merged_final,
             slug=slug_final,
-            is_complete=True,
             will_refine=False,
         ).model_dump(exclude_none=True)
     )
@@ -251,7 +249,6 @@ async def _send_final_for_servus_only(
             type="FINAL_OFFERS",
             offers=merged,
             slug=slug,
-            is_complete=True,
             will_refine=False,
         ).model_dump(exclude_none=True)
     )

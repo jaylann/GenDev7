@@ -34,7 +34,6 @@ PAGE_FETCH_RETRY_EXP_MULTIPLIER = 1
 PAGE_FETCH_RETRY_EXP_MAX_WAIT = 1
 
 
-@alru_cache(maxsize=128)
 @retry(
     stop=stop_after_attempt(PAGE_FETCH_RETRY_ATTEMPTS),
     wait=wait_exponential(
@@ -139,13 +138,13 @@ class VerbynDichProvider(ProviderBase):
                 pending, return_when=asyncio.FIRST_COMPLETED
             )
 
-            # --- Parse finished tasks -------------------------------------------------
+            # Parse finished tasks
             for task in done:
                 try:
                     page_no, data = task.result()
-                except asyncio.CancelledError:  # pragma: no cover
+                except asyncio.CancelledError:
                     continue  # Task was cancelled after last page appeared.
-                except Exception as exc:  # pragma: no cover
+                except Exception as exc:
                     logger.error("VerbynDichProvider → page task failed: {}", exc)
                     continue
 
@@ -162,7 +161,6 @@ class VerbynDichProvider(ProviderBase):
                         page_no,
                     )
 
-            # --- Early exit? ----------------------------------------------------------
             if last_page_seen:
                 # stop waiting for anything that is still in flight
                 for task in pending:
@@ -171,7 +169,7 @@ class VerbynDichProvider(ProviderBase):
                 await asyncio.gather(*pending, return_exceptions=True)
                 break
 
-            # --- Queue the next page --------------------------------------------------
+            # Queue the next page
             if next_page < MAX_PAGES:
                 pending.add(asyncio.create_task(_one(next_page)))
                 next_page += 1
