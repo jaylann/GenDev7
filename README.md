@@ -245,6 +245,7 @@ Comprehensive testing with **Pytest**.
 -   **Integration Tests**: Validate end-to-end workflows (FastAPI `TestClient`). Key test (`test_comparison_service.py`) simulates WebSocket flow with dummy providers (monkey-patching). Test sharing logic.
 -   **API Mocking**: **External provider APIs never called during tests.** Monkey-patch `httpx.AsyncClient` to return predefined `Response` objects. Simulates timeouts/exceptions for retry/circuit breaker logic.
 -   **Test Coverage**: High coverage (**100% files exercised, ~94% line coverage** via `coverage.py`). Critical logic, complex flows, and edge cases tested. CI runs prevent regressions.
+*   **Continuous Integration (Backend)**: The backend code within the `GenDevBackend` subdirectory is subject to automated testing via a GitHub Actions CI pipeline. This workflow, configured in its original private development repository, runs the complete Pytest suite on pushes and pull requests to `main`, publishing test results. The code in this submission is identical to the version validated by this CI process.
 
 ---
 
