@@ -390,6 +390,8 @@ export function useComparePageState(): ComparePageState {
             const addressText = addr
                 ? `${addr.street} ${addr.house_number}, ${addr.plz} ${addr.city}`
                 : fullText.trim();
+
+            setInitialAddressLabel(addressText);   // <-- keep defaultAddressText fresh
             if (addressText) {
                 sessionIdRef.current = addressText; // Use full address text as session ID for this search
                 setMainStatusMessage(

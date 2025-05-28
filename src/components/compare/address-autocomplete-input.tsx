@@ -85,9 +85,11 @@ export const AddressAutocompleteInput: React.FC<
 
     // One-time prefill when loading parsedAddress from slug
     const hasPrefilledRef = useRef(false);
+    const hasUserTypedRef = useRef(false);
 
     useEffect(() => {
-        if (!ready || !parsedAddress || hasPrefilledRef.current) return;
+        // ⛔ never overwrite if the user has already started typing
+        if (!ready || !parsedAddress || hasPrefilledRef.current || hasUserTypedRef.current) return;
         (async () => {
             const raw = `${parsedAddress.street} ${parsedAddress.house_number}, ${parsedAddress.plz} ${parsedAddress.city}`;
             let formatted = raw;
@@ -125,6 +127,7 @@ export const AddressAutocompleteInput: React.FC<
 
     // Update input value, show suggestions, and clear selection if input emptied.
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        hasUserTypedRef.current = true;          // ← mark that the user is typing
         const newValue = e.target.value;
         setValue(newValue);
         setShowSuggestions(true);

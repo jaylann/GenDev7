@@ -98,7 +98,6 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
         <section className="max-w-2xl mx-auto px-4 py-2 md:px-0">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 md:gap-4">
                 <AddressAutocompleteInput
-                    key={defaultAddressText}
                     parsedAddress={parsedAddress}
                     initialValue={defaultAddressText || ""}
                     onAddressSelectAction={handleInternalAddressSelect}
