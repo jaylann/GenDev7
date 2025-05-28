@@ -9,11 +9,10 @@ on:
 
 # 2. Grant the GITHUB_TOKEN minimal needed permissions
 permissions:
-  contents: read        # still needed for checkout/actions
-  checks: write         # allows creating/updating check runs
-  pull-requests: write  # allows GET /commits/{sha}/pulls and more  [oai_citation:1‡CICube](https://cicube.io/workflow-hub/EnricoMi-publish-unit-test-result-action/)
-  issues: write         # needed if you use comment_mode to post PR comments  [oai_citation:2‡CICube](https://cicube.io/workflow-hub/EnricoMi-publish-unit-test-result-action/)
-
+  contents: read
+  checks: write
+  pull-requests: write
+  issues: write
 
 jobs:
   pytest:
@@ -24,29 +23,33 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 4. Install uv (if you use uv instead of pip)
+      # 4. Copy your example env into a real .env so pydantic BaseSettings will load it
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
+
+      # 5. Install uv (if you use uv instead of pip)
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
           version: "0.7.2"
 
-      # 5. Provision Python per your project’s config
+      # 6. Provision Python per your project’s config
       - name: Setup Python
         run: uv python install
 
-      # 6. Sync dependencies (including pytest as dev dep)
+      # 7. Sync dependencies (including pytest as dev dep)
       - name: Install dependencies
         run: uv sync --locked --dev
 
-      # 7. Ensure src/ is on PYTHONPATH (optional if using pytest.ini)
+      # 8. Ensure src/ is on PYTHONPATH (optional if using pytest.ini)
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=${{ github.workspace }}/src" >> $GITHUB_ENV
 
-      # 8. Run pytest quietly, output JUnit XML
+      # 9. Run pytest quietly, output JUnit XML
       - name: Run tests
         run: uv run pytest -q --junit-xml=test-results.xml
 
-      # 9. Publish test results inline via check runs
+      # 10. Publish test results inline via check runs
       - name: Publish Test Results
         if: always()
         uses: EnricoMi/publish-unit-test-result-action@v2
