@@ -47,6 +47,13 @@ export const PageHeader: FC<PageHeaderProps> = ({
                 </p>
             )}
 
+            {/* Main Status Message - focused on input and critical connection status */}
+            {mainStatusMessage && (
+                <p className="text-xs sm:text-sm text-slate-500 min-h-[20px]">
+                    {mainStatusMessage}
+                </p>
+            )}
+
             {/* NEW: Loading Indicator and Offer Count Section */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 min-h-[20px] sm:min-h-[24px]">
                 {/* Loading Spinner */}
@@ -71,13 +78,6 @@ export const PageHeader: FC<PageHeaderProps> = ({
                     </p>
                 )}
             </div>
-
-            {/* Main Status Message - focused on input and critical connection status */}
-            {mainStatusMessage && (
-                <p className="text-xs sm:text-sm text-slate-500 min-h-[20px]">
-                    {mainStatusMessage}
-                </p>
-            )}
         </header>
     );
 };
