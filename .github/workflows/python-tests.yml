@@ -1,0 +1,54 @@
+name: Python Tests
+
+# 1. Run on pushes and PRs to main
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# 2. Grant the GITHUB_TOKEN minimal needed permissions
+permissions:
+  contents: read        # still needed for checkout/actions
+  checks: write         # allows creating/updating check runs
+  pull-requests: write  # allows GET /commits/{sha}/pulls and more  [oai_citation:1‡CICube](https://cicube.io/workflow-hub/EnricoMi-publish-unit-test-result-action/)
+  issues: write         # needed if you use comment_mode to post PR comments  [oai_citation:2‡CICube](https://cicube.io/workflow-hub/EnricoMi-publish-unit-test-result-action/)
+
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 3. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 4. Install uv (if you use uv instead of pip)
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.7.2"
+
+      # 5. Provision Python per your project’s config
+      - name: Setup Python
+        run: uv python install
+
+      # 6. Sync dependencies (including pytest as dev dep)
+      - name: Install dependencies
+        run: uv sync --locked --dev
+
+      # 7. Ensure src/ is on PYTHONPATH (optional if using pytest.ini)
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=${{ github.workspace }}/src" >> $GITHUB_ENV
+
+      # 8. Run pytest quietly, output JUnit XML
+      - name: Run tests
+        run: uv run pytest -q --junit-xml=test-results.xml
+
+      # 9. Publish test results inline via check runs
+      - name: Publish Test Results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: test-results.xml
