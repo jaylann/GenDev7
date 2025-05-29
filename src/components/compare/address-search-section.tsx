@@ -1,11 +1,11 @@
 /**
- * AddressSearchSection Module
+ * @module AddressSearchSection
  *
- * Provides an address autocomplete input with a search button,
- * managing loading states (search vs slug load) and delegating
- * selection and search actions to parent handlers.
+ * Renders an address autocomplete input with search controls, handling
+ * loading states for both manual searches and slug-based initializations,
+ * and forwarding selection and search events to parent handlers.
  */
-import React, { FC } from "react";
+import React, { FC, JSX } from "react";
 import { Button } from "@/components/ui/button";
 import { LoaderCircle, Search as SearchIcon } from "lucide-react";
 import { AddressAutocompleteInput } from "@/components/compare/address-autocomplete-input";
@@ -25,34 +25,45 @@ interface AddressSearchSectionProps {
 }
 
 /**
- * Section containing the address input and search button.
+ * AddressSearchSection
  *
- * @param parsedAddress      The address object selected from autocomplete, if any.
- * @param defaultAddressText Initial text to display in the address input.
- * @param onAddressSelect    Callback when an address is selected or input text changes.
- * @param onSearchClick      Callback when the search button is clicked.
- * @param isSearchDisabled   Whether the search button should be disabled.
- * @param isLoading          True when a search operation is in progress.
- * @param isLoadingFromSlug  True when initializing from a shared slug.
- * @param currentSlug        The current shared slug, if any.
+ * Renders an address autocomplete input alongside a search button,
+ * supporting loading states for both manual and slug-based searches.
+ *
+ * @param parsedAddress - The selected Address object from autocomplete, if available.
+ * @param defaultAddressText - Initial placeholder text for the input.
+ * @param onAddressSelect - Callback invoked when the user selects an address or modifies input text.
+ * @param onSearchClick - Callback invoked when the search button is activated.
+ * @param isSearchDisabled - Whether the search control is disabled.
+ * @param isLoading - True while a manual search operation is in progress.
+ * @param isLoadingFromSlug - True while initializing via a shared slug.
+ * @param currentSlug - The shared slug identifier, if present.
+ * @returns {JSX.Element} The AddressSearchSection component.
+ *
+ * @remarks
+ * - Disables input and button controls when API key is absent or during loading.
+ * - Button label updates to reflect loading or default states.
+ * - Pressing "Enter" triggers a search when controls are enabled.
+ *
+ * @component
  */
 export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
-                                                                        parsedAddress,
-                                                                        defaultAddressText,
-                                                                        onAddressSelect,
-                                                                        onSearchClick,
-                                                                        isSearchDisabled,
-                                                                        isLoading,
-                                                                        isLoadingFromSlug,
-                                                                        currentSlug,
-                                                                    }) => {
-    // Check for presence of Google Maps API key for autocomplete.
+    parsedAddress,
+    defaultAddressText,
+    onAddressSelect,
+    onSearchClick,
+    isSearchDisabled,
+    isLoading,
+    isLoadingFromSlug,
+    currentSlug,
+}): JSX.Element => {
+    // Determine if Google Maps API key is available for autocomplete functionality.
     const hasApiKey = !!GOOGLE_MAPS_API_KEY_FROM_ENV;
 
-    // Disable input if no API key or during loading states.
+    // Disable input when API key is missing or any loading state is active.
     const inputDisabled = !hasApiKey || isLoadingFromSlug || isLoading;
 
-    // Determine the button label and icon based on loading and slug states.
+    // Select button label and icon based on loading and slug states.
     const renderButtonContent = () => {
         if (isLoading && !currentSlug && !isLoadingFromSlug) {
             return (
@@ -78,22 +89,23 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
         );
     };
 
-    // Internal handler to forward address selection events.
+    // Forward internal address selection and text changes to parent callback.
     const handleInternalAddressSelect = (
         address: Address | null,
         fullText: string,
     ): void => {
         onAddressSelect(address, fullText);
     };
+    // Computed flag to disable search button if control disabled or API key is missing.
+    const disableSearchButton = isSearchDisabled || !hasApiKey;
 
-    // Runs only when the button is actually clickable.
+    // Trigger search click action on Enter key when controls are enabled.
     const handleEnterSearch = () => {
-        if (!isSearchDisabled && !isLoading && !isLoadingFromSlug) {
+        if (!disableSearchButton && !isLoading && !isLoadingFromSlug) {
             onSearchClick();
         }
     };
 
-    // Layout section wrapping the address input and search button.
     return (
         <section className="max-w-2xl mx-auto px-4 py-2 md:px-0">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 md:gap-4">
@@ -107,8 +119,8 @@ export const AddressSearchSection: FC<AddressSearchSectionProps> = ({
                     disabled={inputDisabled}
                 />
                 <Button
-                    onClick={onSearchClick}
-                    disabled={isSearchDisabled || !hasApiKey}
+                    onClick={handleEnterSearch}
+                    disabled={disableSearchButton}
                     className={cn(
                         "bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 sm:px-8 rounded-lg w-full sm:w-auto text-sm sm:text-base shrink-0 h-10 sm:h-12",
                     )}

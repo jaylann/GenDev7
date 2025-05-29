@@ -11,24 +11,19 @@ import { OfferListControls } from "@/components/compare/offer-list-controls";
 import { OfferGrid } from "@/components/compare/offer-grid";
 
 /**
- * ComparePage component renders the main offer comparison UI.
+ * ComparePage
  *
- * Utilizes the useComparePageState hook for state management and actions.
- * Renders:
- *  - UpdatePromptDialog for pending offers
- *  - PageHeader with a status message
- *  - RecentSearchesDropdown for quick access to past searches
- *  - AddressSearchSection for address input and lookup
- *  - OfferListControls for sorting, filtering, and sharing
- *  - OfferGrid for displaying the list or grid of offers
+ * Renders the main offer comparison interface, integrating components for update prompts,
+ * address search, recent searches, sorting, filtering, and offer display.
  *
- * On mobile devices, the entire content area including the header and search sections
- * will scroll. On desktop devices (md breakpoint and larger), the header and search
- * sections remain fixed at the top, and only the offer grid becomes scrollable.
- * The top sections (PageHeader, AddressSearchSection, OfferListControls) are set
- * to not shrink, ensuring they maintain their natural height.
+ * @remarks
+ * - On mobile devices, the entire content (header and search sections) scrolls.
+ * - On desktop (md breakpoint and above), header and search sections remain fixed,
+ *   while the offer grid is scrollable.
  *
- * @returns {JSX.Element} The rendered ComparePage component.
+ * @returns {JSX.Element} The ComparePage component.
+ *
+ * @component
  */
 export default function ComparePage(): JSX.Element {
     const { state, actions } = useComparePageState();
@@ -49,13 +44,12 @@ export default function ComparePage(): JSX.Element {
                 />
 
                 {/* Page header displaying the cleaned status message */}
-                {/* Wrap PageHeader with flex-none to prevent shrinking */}
                 <div className="flex-none">
                     <PageHeader
-                        mainStatusMessage={state.mainStatusMessage} // Or state.statusMessage if you kept that name
+                        mainStatusMessage={state.mainStatusMessage}
                         offerCount={state.currentOfferCount}
                         isLoading={state.isGloballyLoading}
-                        isRefining={state.isSpecificallyRefining} // or state.isRefiningOffers
+                        isRefining={state.isSpecificallyRefining}
                     />
                 </div>
 
@@ -68,10 +62,9 @@ export default function ComparePage(): JSX.Element {
                 />
 
                 {/* Address search section for inputting and selecting an address */}
-                {/* Already wrapped with flex-none, which is good */}
                 <div className="flex-none">
                     <AddressSearchSection
-                        parsedAddress={state.parsedAddressFromSlug ?? undefined}
+                        parsedAddress={state.parsedAddressCurrent ?? state.parsedAddressFromSlug ?? undefined}
                         defaultAddressText={state.initialAddressLabel}
                         onAddressSelect={actions.handleAddressSelected}
                         onSearchClick={actions.handleSearchClick}
@@ -83,7 +76,6 @@ export default function ComparePage(): JSX.Element {
                 </div>
 
                 {/* Controls for sorting, filtering, and sharing the offer list */}
-                {/* Wrap OfferListControls with flex-none to prevent shrinking */}
                 <div className="flex-none">
                     <OfferListControls
                         sortOption={state.sortOption}
@@ -106,7 +98,6 @@ export default function ComparePage(): JSX.Element {
                 </div>
 
                 {/* Main content area: displays offers in grid or list view */}
-                {/* This div will take up the remaining space and scroll its content on desktop */}
                 <div className="flex-1 md:overflow-y-auto">
                     <OfferGrid
                         offers={state.processedOffers}
