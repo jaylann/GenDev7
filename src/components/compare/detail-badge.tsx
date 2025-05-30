@@ -51,7 +51,6 @@ export const DetailBadgeComponent: FC<DetailBadgeInfo> = ({
     <Badge
         key={badgeKey}
         variant="outline"
-        // Compose class names: spacing, typography, rounded corners, and dynamic color classes.
         className={cn(
             "gap-1 px-2 py-0.5 text-[0.7rem] font-medium rounded-md leading-tight whitespace-nowrap",
             colorConfig.bg,

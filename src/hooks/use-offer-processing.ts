@@ -1,4 +1,3 @@
-// app/compare/hooks/useOfferProcessing.ts
 import { useMemo } from "react";
 import { Offer } from "@/types/offer";
 import { SortOptionKey } from "@/types/sort-option-key";

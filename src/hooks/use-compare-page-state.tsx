@@ -23,12 +23,11 @@ import { useRecentSearches } from "@/hooks/use-recent-searches";
 import { useComparePageInitializer } from "@/hooks/use-compare-page-initializer";
 import { SlugType, useOfferWebSocket } from "@/hooks/use-offer-websocket";
 import { useOfferProcessing } from "@/hooks/use-offer-processing";
-import { buildUrl } from "@/utils/build-url";
+import { buildUrl } from "@/utils/url";
 import { generateShareLink } from "@/utils/generate-share-link";
 import { toast as sonnerToast } from "sonner";
 import { ViewMode } from "@/types/view-mode";
 
-// ... (Keep ComparePageState interface as is) ...
 export interface ComparePageState {
     state: {
         mainStatusMessage: string;
@@ -83,7 +82,6 @@ export interface ComparePageState {
 }
 
 export function useComparePageState(): ComparePageState {
-    // ... (Keep most existing useState and useRef declarations as is) ...
     const searchIsActiveRef = useRef<boolean>(false);
     const currentSearchSlugRef = useRef<string | null>(null);
     const initialPageLoadProcessedRef = useRef<boolean>(false);
@@ -117,13 +115,9 @@ export function useComparePageState(): ComparePageState {
     const [sharedLinkCopied, setSharedLinkCopied] = useState<boolean>(false);
 
     const router = useRouter();
+    // Infer the correct type for the second argument to router.replace
+    type RouterReplaceOptions = Parameters<typeof router.replace>[1];
     const pathname = usePathname();
-    /**
-     * Creates a toast notification with sanitized text content
-     */
-    /**
-     * Sanitizes text to prevent XSS in UI elements
-     */
     const sanitizeText = useCallback((text: string): string => {
         return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }, []);
@@ -169,7 +163,6 @@ export function useComparePageState(): ComparePageState {
     );
 
     const hasAddedInitialHistoryEntryRef = useRef<boolean>(false);
-    // sessionIdRef will now be more carefully managed.
     // It should represent the ID of the *active search operation* or the *identifier of the loaded shared link*.
     const sessionIdRef = useRef<string | null>(null);
     const hasTriggeredRefineRef = useRef<boolean>(false);
@@ -195,11 +188,7 @@ export function useComparePageState(): ComparePageState {
             setActiveShareableSlug(slug); // This becomes the current page's slug
             if (slug) {
                 setHasSearchBeenPerformed(true);
-                // If this slug is from initial URL load, set sessionIdRef based on it
-                // This ensures sessionIdRef is for the *current page context* when loaded from URL
-                if (!initialPageLoadProcessedRef.current && isLoadingFromUrl) {
-                    // Logic to determine session ID from loaded slug will be inside setInitialAddressLabel
-                }
+
             }
             if (!initialPageLoadProcessedRef.current) {
                 initialPageLoadProcessedRef.current = true;
@@ -221,8 +210,6 @@ export function useComparePageState(): ComparePageState {
         setParsedAddress: setParsedAddressFromSlug,
         setInitialAddressLabel: (label: string) => {
             setInitialAddressLabel(label); // Update the state for current label
-            // When initial label is set (especially from URL load), update sessionIdRef
-            // This aligns sessionIdRef with the context of the currently loaded page.
             // Check if the label indicates it's a shared search (derived from slug)
             if (activeShareableSlug && label.startsWith("Shared Search:")) {
                 sessionIdRef.current = `shared-${activeShareableSlug}`; // Or just activeShareableSlug
@@ -640,7 +627,7 @@ export function useComparePageState(): ComparePageState {
     }>({ timeoutId: null, latestUrl: null });
 
     const debouncedRouterReplace = useCallback(
-        (url: string, options: any) => {
+        (url: string, options?: RouterReplaceOptions) => {
             if (debounceRef.current.timeoutId) {
                 clearTimeout(debounceRef.current.timeoutId);
             }

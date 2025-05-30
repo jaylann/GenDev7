@@ -2,13 +2,6 @@
  * OfferGrid Module
  *
  * Displays a collection of internet service offers in grid or list form.
- * Handles various loading and empty states:
- *  1. Loading skeletons
- *  2. Initial placeholder before search
- *  3. No results after filtering
- *  4. No offers found for address
- *  5. Fallback null when appropriate
- *  6. Actual offers display
  */
 import React, { FC } from "react";
 import Image from "next/image";

@@ -2,13 +2,6 @@
  * OfferCard Module
  *
  * Renders a single offer card with summary information and interactions.
- * Handles:
- *  - Displaying provider logo, plan name, and average cost
- *  - Pricing sections (introductory and regular)
- *  - Speed, contract, and connection details
- *  - Voucher badge popovers for discounts or bonuses
- *  - Detail badges for TV, installation, data cap, and youth offers
- *  - Share button overlay when enabled
  */
 "use client";
 
@@ -670,7 +663,7 @@ export const OfferCard: FC<OfferCardProps> = ({
                                     <span className="font-medium text-slate-200">
                                         {connection_type
                                             ? getConnectionTypeDisplayName(
-                                                  connection_type as ConnectionType,
+                                                  connection_type,
                                               )
                                             : "N/A"}
                                     </span>

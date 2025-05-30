@@ -44,8 +44,6 @@ export const RecentSearchesDropdown: FC<RecentSearchesDropdownProps> = ({
     const currentPathname = usePathname();
     const currentSearchParams = useSearchParams(); // ReadonlyURLSearchParams
 
-    // Memoize the current browser params for stable comparison within the map function.
-    // This avoids re-creating URLSearchParams on every render if currentSearchParams hasn't changed.
     const memoizedCurrentBrowserParams = React.useMemo(() => {
         return new URLSearchParams(currentSearchParams.toString());
     }, [currentSearchParams]);
@@ -57,7 +55,6 @@ export const RecentSearchesDropdown: FC<RecentSearchesDropdownProps> = ({
     return (
         <div className={cn("relative", className)}>
             {" "}
-            {/* Added relative for positioning context if needed */}
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button
@@ -109,14 +106,13 @@ export const RecentSearchesDropdown: FC<RecentSearchesDropdownProps> = ({
                                 className={cn(
                                     "text-sm px-3 py-2 truncate transition-colors duration-150 ease-in-out",
                                     isCurrentItem
-                                        ? "opacity-50 cursor-not-allowed text-slate-400" // More specific styling for disabled
+                                        ? "opacity-50 cursor-not-allowed text-slate-400"
                                         : "cursor-pointer text-slate-200 hover:!bg-indigo-600/30 hover:!text-indigo-100 focus:bg-indigo-600/30 focus:text-indigo-100",
                                 )}
                                 title={search.label} // Provide full label as tooltip for truncated text
                             >
                                 <span
                                     className="truncate block"
-                                    // title attribute on span is redundant if parent DropdownMenuItem has it.
                                 >
                                     {search.label}
                                 </span>

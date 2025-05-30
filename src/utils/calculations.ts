@@ -74,7 +74,6 @@ export const getIntroPriceDurationMonths = (offer: Offer): number => {
         offer.price_cents_month_intro != null &&
         offer.price_cents_month_intro > 0
     ) {
-        // `contract_regular_months` from Pydantic has a default of 12.
         // This field defines the duration for which the intro price is typically valid.
         return offer.contract_regular_months ?? 12;
     }
@@ -104,7 +103,6 @@ export const calculateGrossTotalCostOverDynamicPeriod = (
     let totalCost = 0;
 
     if (price_cents_month_intro != null) {
-        // If regular price is not set, assume intro price continues (or use a fallback if defined).
         // Pydantic ensures at least one price, so if intro exists, regular can be null.
         const effectiveRegularPrice =
             price_cents_month_regular ?? price_cents_month_intro;

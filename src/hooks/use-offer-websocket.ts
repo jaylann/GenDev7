@@ -35,7 +35,6 @@ interface UseOfferWebSocketProps {
     initialLoadingState: boolean;
 }
 
-/* Custom React Hook: useOfferWebSocket */
 export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
     const genRef = useRef(0);
     const wsRef = useRef<WebSocket | null>(null);

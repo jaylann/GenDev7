@@ -136,7 +136,7 @@ export const useAddressAutocomplete = ({
                     const formatted = results[0].formatted_address;
                     const parsed = parseGeocodeResult(results);
 
-                    setValue(formatted, false); // ← single, final update
+                    setValue(formatted, false);
                     onAddressSelectAction(parsed, formatted);
                     return parsed;
                 }

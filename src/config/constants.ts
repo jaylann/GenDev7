@@ -16,17 +16,19 @@ import { FiltersState } from "@/types/filters-state";
 import { ConnectionType } from "@/types/connection-type";
 import { SortOption } from "@/types/sort-option";
 
+export const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 /**
  * WebSocket endpoint for real-time comparison updates.
  * Derived from API_BASE_URL by replacing http(s) with ws(s).
  */
-export const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 export const WEBSOCKET_URL = (() => {
     const wsProtocol = API_BASE_URL.startsWith("https") ? "wss" : "ws";
     const host = API_BASE_URL.split("://")[1];
     return `${wsProtocol}://${host}/ws/compare`;
 })();
+
 /**
  * Google Maps API key loaded from environment.
  * Used for address autocomplete and map rendering.
@@ -88,7 +90,7 @@ export const MAX_SPEED_FALLBACK = 1000; // Fallback max speed for slider if no o
  * Minimum speed (in Mbps) allowed by the speed filter slider.
  * Prevents setting the filter below a reasonable threshold.
  */
-export const MIN_SPEED_SLIDER_FLOOR: number = 50;
+export const MIN_SPEED_SLIDER_FLOOR: number = 10;
 
 /**
  * List of provider names available before any search.
@@ -101,3 +103,6 @@ export const AVAILABLE_PROVIDER_NAMES = [
     "ServusSpeed",
     "VerbynDich",
 ] as const;
+
+// Maximum number of recent search entries to retain.
+export const MAX_RECENT_SEARCHES = 5;

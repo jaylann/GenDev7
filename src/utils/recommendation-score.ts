@@ -5,12 +5,6 @@
  * promotion value, performance, and extras into a single normalized score between 0 and 1.
  * Utilizes utility functions for cost and voucher calculations and empirical weights
  * derived from consumer research.
- *
- * **Update May 2025**
- * - Added **bang‑for‑buck** metric (Mbps per €) to explicitly reward cost‑efficient speed.
- * - Introduced a mild penalty multiplier for plans advertising < 100 Mbps downstream.
- * - Re‑balanced weightings so the new dimension fits while total weight remains 1.
- * - All existing comments kept intact; new explanations appended where relevant.
  */
 import { ConnectionType } from "@/types/connection-type";
 import { Offer } from "@/types/offer";

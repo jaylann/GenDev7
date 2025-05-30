@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { RecentSearchItem } from "@/types/recent-search-item";
-import { getCanonicalCompareURL, extractSlug } from "@/utils/url"; // Ensure these are correctly imported
+import { getCanonicalCompareURL, extractSlug } from "@/utils/url";
+import { MAX_RECENT_SEARCHES } from "@/config/constants"; // Ensure these are correctly imported
 
-// Maximum number of recent search entries to retain.
-const MAX_RECENT_SEARCHES = 5;
+
 // Key used to persist recent search entries in sessionStorage.
 const STORAGE_KEY = "recentCompareSearches";
 
@@ -285,7 +285,6 @@ export const useRecentSearches = () => {
                     `[updateSearchSlug] New details from caller: newUrlFromCaller="${newUrlFromCaller}", newCanonicalUrl="${newCanonicalUrl}", newSlug="${newSlug}"`,
                 );
 
-                // **CRUCIAL DUPLICATE SLUG CHECK**
                 if (newSlug && newSlug !== originalSlug) {
                     const conflictingItem = prevSearches.find(
                         (s) =>
@@ -300,7 +299,7 @@ export const useRecentSearches = () => {
                                 `The item for sessionId "${sessionId}" will NOT be updated to prevent data corruption.`,
                         );
                         console.groupEnd();
-                        return prevSearches; // PREVENT UPDATE
+                        return prevSearches;
                     }
                     console.log(
                         `[updateSearchSlug] Slug for sessionId "${sessionId}" will change from "${originalSlug}" to "${newSlug}". No conflict found with other items.`,
@@ -327,7 +326,7 @@ export const useRecentSearches = () => {
                 }
 
                 const updatedItem: RecentSearchItem = {
-                    ...originalItem, // Retains original ID and label (unless label needs specific update mechanism elsewhere)
+                    ...originalItem, // Retains original ID and label
                     url: newCanonicalUrl,
                     timestamp: Date.now(),
                 };

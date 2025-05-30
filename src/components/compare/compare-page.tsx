@@ -45,7 +45,6 @@ export default function ComparePage(): JSX.Element {
                         pendingOfferCount={state.pendingOffers?.length ?? 0}
                     />
 
-                    {/* Page header displaying the cleaned status message */}
                     <div className="flex-none">
                         <PageHeader
                             mainStatusMessage={state.mainStatusMessage}
@@ -66,8 +65,8 @@ export default function ComparePage(): JSX.Element {
                     <div className="flex-none">
                         <AddressSearchSection
                             parsedAddress={
-                                state.parsedAddressFromSlug ?? // 🌟 slug address first
-                                state.parsedAddressCurrent ?? // fallback: last manual address
+                                state.parsedAddressFromSlug ??
+                                state.parsedAddressCurrent ??
                                 undefined
                             }
                             defaultAddressText={state.initialAddressLabel}

@@ -113,7 +113,6 @@ export const AddressAutocompleteInput: React.FC<
     } = useAddressAutocomplete({
         onAddressSelectAction: handleAddressParsed,
         // If externalParsedAddress is provided, its useEffect below will handle setting the value.
-        // Otherwise, use initialValueFromProps or defaultAddressText.
         initialValue: externalParsedAddress
             ? undefined
             : (initialValueFromProps ?? defaultAddressText ?? ""),
@@ -125,8 +124,6 @@ export const AddressAutocompleteInput: React.FC<
      * the prefill logic can run again for this new address.
      */
     useEffect(() => {
-        // Using stringify for a simple deep comparison, assuming Address structure is simple and consistent.
-        // For more complex objects, a proper deep comparison library or more specific checks might be needed.
         const currentAddrString = externalParsedAddress
             ? JSON.stringify(externalParsedAddress)
             : null;
@@ -135,7 +132,6 @@ export const AddressAutocompleteInput: React.FC<
             : null;
 
         if (currentAddrString !== prevAddrString) {
-            // console.log("[AddressAutocompleteInput] externalParsedAddress changed. Resetting flags.");
             hasUserTypedRef.current = false;
             hasPrefilledRef.current = false; // Allow prefilling for the new address
             prevExternalParsedAddressRef.current = externalParsedAddress;
@@ -281,11 +277,9 @@ export const AddressAutocompleteInput: React.FC<
                     await hookHandleSelect(
                         suggestions.data[highlightedIdx].description,
                     );
-                    // hookHandleSelect internally calls onAddressSelectAction (handleAddressParsed)
                 } else if (value.trim()) {
                     // User typed text and pressed Enter, or no suggestion was actively selected
                     const parsedAddrObject = await hookGeocodeAndEmit(value);
-                    // hookGeocodeAndEmit internally calls onAddressSelectAction (handleAddressParsed)
 
                     if (isAddressStructurallyValid(parsedAddrObject)) {
                         onEnterSearch?.();
@@ -300,7 +294,6 @@ export const AddressAutocompleteInput: React.FC<
 
     const handleSuggestionSelect = async (description: string) => {
         await hookHandleSelect(description);
-        // hookHandleSelect calls onAddressSelectAction (handleAddressParsed) internally
         setShowSuggestions(false);
         inputRef.current?.focus(); // Return focus to input after selection
     };
