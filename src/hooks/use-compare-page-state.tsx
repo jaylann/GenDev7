@@ -11,7 +11,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { Address } from "@/types/address";
 import type { Offer } from "@/types/offer";
 import { ParsedAddress } from "@/components/compare/address-autocomplete-input";
-import { isAddressStructurallyValid } from "@/utils/validators"; // ← NEW
+import { isAddressStructurallyValid } from "@/utils/validators";
 import { SortOptionKey } from "@/types/sort-option-key";
 import { useOfferFilters } from "@/hooks/use-offer-filters";
 import {
@@ -28,16 +28,9 @@ import { generateShareLink } from "@/utils/generate-share-link";
 import { toast as sonnerToast } from "sonner";
 import { ViewMode } from "@/types/view-mode";
 
-/**
- * Structured state and action handlers for the ComparePage component.
- *
- * @interface ComparePageState
- * @property state - Current UI state values, including status messages, offers data, filters, and derived flags.
- * @property actions - Methods to perform address selection, search, sharing, filter updates, and UI controls.
- */
+// ... (Keep ComparePageState interface as is) ...
 export interface ComparePageState {
     state: {
-        /* status / lifecycle */
         mainStatusMessage: string;
         currentOfferCount: number | null;
         isGloballyLoading: boolean;
@@ -48,8 +41,6 @@ export interface ComparePageState {
         isWaitingInitialOffers: boolean;
         isRefiningOffers: boolean;
         isUpdatePromptOpen: boolean;
-
-        /* data */
         originalOffers: Offer[];
         processedOffers: Offer[];
         pendingOffers: Offer[] | null;
@@ -57,71 +48,37 @@ export interface ComparePageState {
         filters: ReturnType<typeof useOfferFilters>["filters"];
         sortOption: SortOptionKey;
         viewMode: ViewMode;
-
-        /* meta / sharing */
         currentDisplaySlug: string | null;
         activeShareableSlug: string | null;
         sharedLinkCopied: boolean;
         activeFilterCount: number;
-
-        /* address */
         parsedAddressFromSlug: Address | null;
         parsedAddressCurrent: ParsedAddress | null;
         initialAddressLabel: string;
-        isAddressValid: boolean; // Indicates whether the parsed address meets structural validity
-
-        /* derived helpers */
+        isAddressValid: boolean;
         isSearchButtonDisabled: boolean;
         isSharePageDisabled: boolean;
         hasSearchBeenPerformed: boolean;
         areAnyOffersEverLoaded: boolean;
         isSingleOfferView: boolean;
     };
-
     actions: {
-        /* address & search */
-        handleAddressSelected: (
-            addr: ParsedAddress | null,
-            rawText: string,
-        ) => void;
+        handleAddressSelected: (addr: ParsedAddress | null, rawText: string) => void;
         handleSearchClick: () => void;
-
-        /* offer sharing */
         handleSharePage: () => void;
         handleShareSingleOffer: (offer: Offer) => void;
-
-        /* update prompt */
         handleShowPendingOffers: () => void;
         setIsUpdatePromptOpen: (open: boolean) => void;
-
-        /* ui */
         setSortOption: (opt: SortOptionKey) => void;
         setViewMode: (mode: ViewMode) => void;
         setFilters: ReturnType<typeof useOfferFilters>["setFilters"];
         resetFilters: ReturnType<typeof useOfferFilters>["resetFilters"];
-        clearRecentSearches: ReturnType<
-            typeof useRecentSearches
-        >["clearRecentSearches"];
+        clearRecentSearches: ReturnType<typeof useRecentSearches>["clearRecentSearches"];
     };
 }
 
-/**
- * Custom React hook that initializes and returns the ComparePage's state and actions.
- *
- * Manages address selection, WebSocket lifecycle, URL synchronization, offer processing,
- * filter management, history persistence, and sharing workflows.
- *
- * @returns {ComparePageState} An object containing `state` and `actions` for ComparePage.
- *
- * @remarks
- * - Ensures URL and history are updated only when necessary to prevent flicker.
- * - Validates addresses before allowing searches.
- * - Supports single-offer and shareable link workflows.
- */
 export function useComparePageState(): ComparePageState {
-    /**
-     * Initialize state and references for search lifecycle, offer data, and UI control flags.
-     */
+    // ... (Keep most existing useState and useRef declarations as is) ...
     const searchIsActiveRef = useRef<boolean>(false);
     const currentSearchSlugRef = useRef<string | null>(null);
     const initialPageLoadProcessedRef = useRef<boolean>(false);
@@ -134,7 +91,7 @@ export function useComparePageState(): ComparePageState {
         useState<ParsedAddress | null>(null);
     const [parsedAddressFromSlug, setParsedAddressFromSlug] =
         useState<Address | null>(null);
-    const [initialAddressLabel, setInitialAddressLabel] = useState<string>("");
+    const [initialAddressLabel, setInitialAddressLabel] = useState<string>(""); // This will be our source of truth for current label
     const [mainStatusMessage, setMainStatusMessage] =
         useState<string>("Initializing…");
     const [currentDisplaySlug, setCurrentDisplaySlug] = useState<string | null>(
@@ -154,9 +111,6 @@ export function useComparePageState(): ComparePageState {
         useState<boolean>(false);
     const [sharedLinkCopied, setSharedLinkCopied] = useState<boolean>(false);
 
-    /**
-     * Configure routing utilities for navigation and path tracking.
-     */
     const router = useRouter();
     const pathname = usePathname();
     const notify = useCallback(
@@ -168,9 +122,6 @@ export function useComparePageState(): ComparePageState {
         [],
     );
 
-    /**
-     * Manage filters and recent search history.
-     */
     const { filters, setFilters, resetFilters, activeFilterCount } =
         useOfferFilters(DEFAULT_FILTERS);
     const {
@@ -180,14 +131,8 @@ export function useComparePageState(): ComparePageState {
         clearRecentSearches,
     } = useRecentSearches();
 
-    /**
-     * Compute memoized values for API provider selection and fiber preference.
-     */
     const wantsFiber = useMemo(
-        () =>
-            filters.connectionTypes.some((ct) =>
-                ct.toLowerCase().includes("fiber"),
-            ),
+        () => filters.connectionTypes.some((ct) => ct.toLowerCase().includes("fiber")),
         [filters.connectionTypes],
     );
     const providersForApi = useMemo(
@@ -198,16 +143,12 @@ export function useComparePageState(): ComparePageState {
         [filters.selectedProviders],
     );
 
-    /**
-     * Initialize history and session references for slug tracking and refinement state.
-     */
     const hasAddedInitialHistoryEntryRef = useRef<boolean>(false);
+    // sessionIdRef will now be more carefully managed.
+    // It should represent the ID of the *active search operation* or the *identifier of the loaded shared link*.
     const sessionIdRef = useRef<string | null>(null);
     const hasTriggeredRefineRef = useRef<boolean>(false);
 
-    /**
-     * Initialize page state based on URL slug and shared comparisons.
-     */
     useComparePageInitializer({
         setOriginalOffersAction: (offers: Offer[]) => {
             setOriginalOffers(offers);
@@ -226,11 +167,13 @@ export function useComparePageState(): ComparePageState {
                 setIsRefiningOffers(false);
             }
             setCurrentDisplaySlug(slug);
-            setActiveShareableSlug(slug);
+            setActiveShareableSlug(slug); // This becomes the current page's slug
             if (slug) {
                 setHasSearchBeenPerformed(true);
+                // If this slug is from initial URL load, set sessionIdRef based on it
+                // This ensures sessionIdRef is for the *current page context* when loaded from URL
                 if (!initialPageLoadProcessedRef.current && isLoadingFromUrl) {
-                    sessionIdRef.current = `shared-${slug}`;
+                    // Logic to determine session ID from loaded slug will be inside setInitialAddressLabel
                 }
             }
             if (!initialPageLoadProcessedRef.current) {
@@ -251,65 +194,51 @@ export function useComparePageState(): ComparePageState {
         setLoadingAction: setIsLoadingFromUrl,
         setIsLoadingFromSlugAction: setIsLoadingFromUrl,
         setParsedAddress: setParsedAddressFromSlug,
-        setInitialAddressLabel: (label: string) =>
-            setInitialAddressLabel(label),
+        setInitialAddressLabel: (label: string) => {
+            setInitialAddressLabel(label); // Update the state for current label
+            // When initial label is set (especially from URL load), update sessionIdRef
+            // This aligns sessionIdRef with the context of the currently loaded page.
+            // Check if the label indicates it's a shared search (derived from slug)
+            if (activeShareableSlug && label.startsWith("Shared Search:")) {
+                sessionIdRef.current = `shared-${activeShareableSlug}`; // Or just activeShareableSlug
+            } else {
+                sessionIdRef.current = label; // For address-based searches, label is session ID
+            }
+        },
     });
 
-    /**
-     * Process and filter incoming offers based on sort order and active filters.
-     */
     const processedOffers = useOfferProcessing(
         originalOffers,
         sortOption,
         filters,
     );
-
-    /**
-     * Handle WebSocket connections for live offer updates and pending-offer notifications.
-     */
     const handleWebSocketLoadingChange = useCallback((waiting: boolean) => {
         setIsWaitingInitialOffers(waiting);
     }, []);
-
-    /** called by Web-Socket: save offers **and** the yet-to-be-applied slug */
     const handlePendingOffersUpdate = useCallback(
         (offers: Offer[] | null, slug: string | null) => {
             setPendingOffers(offers);
             setPendingSlug(slug);
-            setIsRefiningOffers(false); // stop spinner immediately
+            setIsRefiningOffers(false);
         },
         [],
     );
-
-    // Track the most recent slug received timestamp to prevent race conditions
     const lastSlugTimestampRef = useRef<number>(0);
-    
+
     const handleWebSocketSlugReceived = useCallback(
         (slug: string | null, slugType: SlugType) => {
-            // If search is not active and this isn't a shared slug being processed, ignore.
-            // (Shared slugs initial load is typically handled by useComparePageInitializer based on URL)
             if (!searchIsActiveRef.current && slugType !== "SHARED") {
                 return;
             }
-            if (!slug) {
-                return;
-            }
-            
-            // Record timestamp of this slug update to prevent race conditions
+            if (!slug) return;
             const currentTimestamp = Date.now();
             lastSlugTimestampRef.current = currentTimestamp;
-
             currentSearchSlugRef.current = slug;
-            setActiveShareableSlug(slug); // Keep activeShareableSlug in sync
-            setCurrentDisplaySlug(slug); // Update display slug
-
-            const currentSearchLabel = sessionIdRef.current?.startsWith(
-                "shared-",
-            )
+            setActiveShareableSlug(slug);
+            setCurrentDisplaySlug(slug);
+            const currentSearchLabel = sessionIdRef.current?.startsWith("shared-")
                 ? null
                 : sessionIdRef.current;
-
-            // Update recent searches history
             if (currentSearchLabel) {
                 const urlForHistory = buildUrl(
                     slug,
@@ -333,9 +262,6 @@ export function useComparePageState(): ComparePageState {
                     }
                 }
             }
-
-            // Synchronize browser URL if we are on the compare page and an active search yielded this slug.
-            // This prevents unnecessary URL updates if the user navigated away or if it's not from an active search.
             const isCurrentlyOnComparePage =
                 window.location.pathname === pathname;
             if (isCurrentlyOnComparePage && searchIsActiveRef.current) {
@@ -348,15 +274,10 @@ export function useComparePageState(): ComparePageState {
                 if (newTargetUrlPathAndQuery) {
                     const currentBrowserUrlPathAndQuery =
                         window.location.pathname + window.location.search;
-                        
-                    // Capture timestamp to prevent race condition with future updates
                     const updateTimestamp = lastSlugTimestampRef.current;
-
                     if (
-                        newTargetUrlPathAndQuery !==
-                        currentBrowserUrlPathAndQuery
+                        newTargetUrlPathAndQuery !== currentBrowserUrlPathAndQuery
                     ) {
-                        // Use setTimeout to ensure we don't update if a newer slug arrived
                         setTimeout(() => {
                             if (updateTimestamp === lastSlugTimestampRef.current) {
                                 router.replace(newTargetUrlPathAndQuery, {
@@ -369,7 +290,7 @@ export function useComparePageState(): ComparePageState {
             }
         },
         [
-            sortOption, // sortOption and filters are used in buildUrl
+            sortOption,
             filters,
             addRecentSearch,
             updateSearchSlug,
@@ -394,7 +315,6 @@ export function useComparePageState(): ComparePageState {
             ) {
                 setOriginalOffers(offers);
             }
-
             if (phase === "INITIAL_OFFERS") {
                 if (willRefine) {
                     setIsRefiningOffers(true);
@@ -414,15 +334,14 @@ export function useComparePageState(): ComparePageState {
                         hasTriggeredRefineRef.current = true;
                     }
                 } else {
-                    // No refinement phase after initial offers
                     setIsRefiningOffers(false);
                     hasTriggeredRefineRef.current = false;
-                    searchIsActiveRef.current = false; // Search considered complete
+                    searchIsActiveRef.current = false;
                 }
             } else if (phase === "FINAL_OFFERS") {
                 setIsRefiningOffers(false);
                 hasTriggeredRefineRef.current = false;
-                searchIsActiveRef.current = false; // Search complete
+                searchIsActiveRef.current = false;
             }
         },
         onWebSocketSlugReceivedAction: handleWebSocketSlugReceived,
@@ -432,158 +351,112 @@ export function useComparePageState(): ComparePageState {
             setMainStatusMessage(msg);
             setIsWaitingInitialOffers(false);
             setIsRefiningOffers(false);
-            searchIsActiveRef.current = false; // Ensure search is marked inactive on error
+            searchIsActiveRef.current = false;
         },
         onPendingOffersUpdateAction: handlePendingOffersUpdate,
         onPromptOpenChangeAction: setIsUpdatePromptOpen,
-        initialLoadingState: isLoadingFromUrl, // Pass down initial loading state
+        initialLoadingState: isLoadingFromUrl,
     });
 
-    /**
-     * Synchronize originalOffers into WebSocket reference for update detection.
-     */
     useEffect(() => {
         updateWebSocketOffersRef(originalOffers);
-        
-        // Cleanup function to prevent memory leaks on unmount
         return () => {
-            // Explicitly set offers ref to empty array to prevent reference holding
             updateWebSocketOffersRef([]);
         };
     }, [originalOffers, updateWebSocketOffersRef]);
 
-    /**
-     * Update parsed address and status message based on user selection.
-     */
     const handleAddressSelected = useCallback(
         (addr: ParsedAddress | null, fullText: string) => {
-            // If an address is successfully selected or text is entered,
-            // it implies the user is interacting post-initial load.
-            // We ensure `isLoadingFromUrl` is false to enable the search button,
-            // in case the initializer hasn't cleared it yet for a no-slug scenario.
             if (isLoadingFromUrl) {
                 setIsLoadingFromUrl(false);
             }
-
             setParsedBackendAddress(addr);
             const addressText = addr
                 ? `${addr.street} ${addr.house_number}, ${addr.plz} ${addr.city}`
                 : fullText.trim();
 
             setInitialAddressLabel(addressText);
+            sessionIdRef.current = addressText || null;
+
             if (addressText) {
-                sessionIdRef.current = addressText; // Use full address text as session ID for this search
                 setMainStatusMessage(
                     addr
                         ? `Address ready: ${addressText}. Click Search!`
                         : `Could not fully verify “${addressText}”. Ensure all parts are clear.`,
                 );
             } else {
-                sessionIdRef.current = null;
                 setMainStatusMessage(
                     "Enter a complete German address to compare internet plans.",
                 );
             }
         },
-        [
-            // Add isLoadingFromUrl and setIsLoadingFromUrl to dependencies
-            isLoadingFromUrl,
-            setIsLoadingFromUrl,
-            setMainStatusMessage,
-        ],
+        [isLoadingFromUrl],
     );
 
-    /**
-     * Validate input, reset state, and initiate WebSocket search.
-     */
     const handleSearchClick = useCallback(() => {
-        abortCurrentWebSocket(); // Abort any ongoing WebSocket connection
-        if (!parsedBackendAddress && !sessionIdRef.current?.trim()) {
-            // Check sessionIdRef as fallback if parsedBackendAddress is null
+        abortCurrentWebSocket();
+        if (!parsedBackendAddress && !initialAddressLabel.trim()) {
             setMainStatusMessage("Please select a valid address first.");
             return;
         }
 
-        initialPageLoadProcessedRef.current = true; // Mark that a search action has modified the page state
-        // Reset URL to base path, clearing old slug/sort/filters for a new search.
+        initialPageLoadProcessedRef.current = true;
         router.replace(pathname, { scroll: false });
+        hasAddedInitialHistoryEntryRef.current = false;
+        searchIsActiveRef.current = true;
 
-        hasAddedInitialHistoryEntryRef.current = false; // Reset history flag for the new search
-        searchIsActiveRef.current = true; // Mark search as active
+        sessionIdRef.current = initialAddressLabel.trim();
+        currentSearchSlugRef.current = null;
 
-        // If no sessionId has been assigned yet, generate a proper UUID
-        if (!sessionIdRef.current) {
-            sessionIdRef.current = crypto.randomUUID();
-        }
-        currentSearchSlugRef.current = null; // Clear previous search slug reference
-
-        // Reset offer states
         setOriginalOffers([]);
         setPendingOffers(null);
         setIsUpdatePromptOpen(false);
-        setCurrentDisplaySlug(null); // Clear display slug
-        setActiveShareableSlug(null); // Clear shareable slug
-        setIsLoadingFromUrl(false); // Not loading from URL anymore
-        setIsWaitingInitialOffers(true); // Now waiting for initial offers from WebSocket
-        setIsRefiningOffers(false); // Reset refining state
-        setHasSearchBeenPerformed(true); // Mark that a search has been performed
-        hasTriggeredRefineRef.current = false; // Reset refine notification flag
+        setCurrentDisplaySlug(null);
+        setActiveShareableSlug(null);
+        setIsLoadingFromUrl(false);
+        setIsWaitingInitialOffers(true);
+        setHasSearchBeenPerformed(true);
 
-        connectWebSocket(); // Initiate WebSocket connection for the new search
+        connectWebSocket();
     }, [
         parsedBackendAddress,
+        initialAddressLabel,
         connectWebSocket,
         router,
         pathname,
         abortCurrentWebSocket,
-        setMainStatusMessage,
     ]);
 
-    /**
-     * Apply pending offers and update URL and history accordingly.
-     */
     const handleShowPendingOffers = useCallback(() => {
         if (pendingOffers) {
-            setOriginalOffers(pendingOffers); // Update original offers with pending ones
-            /* slug & URL switch happens *now* */
+            setOriginalOffers(pendingOffers);
             if (pendingSlug && pendingSlug !== currentDisplaySlug) {
                 setCurrentDisplaySlug(pendingSlug);
                 setActiveShareableSlug(pendingSlug);
 
-                const newUrl = buildUrl(
-                    pendingSlug,
-                    sortOption,
-                    filters,
-                    false,
-                );
+                const newUrl = buildUrl(pendingSlug, sortOption, filters, false);
                 if (newUrl) {
                     router.replace(newUrl, { scroll: false });
-                    /* update existing entry in recent-search list */
-                    if (sessionIdRef.current)
+                    if (sessionIdRef.current) {
                         updateSearchSlug(sessionIdRef.current, newUrl);
+                    }
                 }
             }
         }
-        setPendingOffers(null); // Clear pending offers
+        setPendingOffers(null);
         setPendingSlug(null);
-        setIsUpdatePromptOpen(false); // Close prompt
-        setIsRefiningOffers(false); // Ensure refining is off
+        setIsUpdatePromptOpen(false);
+        setIsRefiningOffers(false);
     }, [
         pendingOffers,
         pendingSlug,
         currentDisplaySlug,
-        activeShareableSlug,
         sortOption,
         filters,
-        addRecentSearch,
-        setMainStatusMessage,
         router,
         updateSearchSlug,
     ]);
 
-    /**
-     * Generate and copy shareable link for the entire offer list.
-     */
     const handleSharePage = useCallback(async () => {
         if (!activeShareableSlug) {
             notify("Cannot share yet – results are not ready.", 4000);
@@ -611,9 +484,6 @@ export function useComparePageState(): ComparePageState {
         }
     }, [activeShareableSlug, sortOption, filters, notify]);
 
-    /**
-     * Generate and copy shareable link for a single offer.
-     */
     const handleShareSingleOffer = useCallback(
         async (offer: Offer) => {
             if (!activeShareableSlug) {
@@ -631,7 +501,7 @@ export function useComparePageState(): ComparePageState {
                     success: async ({ shared_slug }) => {
                         const url = buildUrl(
                             shared_slug,
-                            "recommended", // Single offer links default to recommended sort
+                            "recommended",
                             DEFAULT_FILTERS,
                             true,
                         );
@@ -649,25 +519,28 @@ export function useComparePageState(): ComparePageState {
         [activeShareableSlug, notify],
     );
 
-    /**
-     * Effect: persist recent search history on sort/filter changes *after* a search is complete.
-     * This also implicitly updates the URL if the `activeShareableSlug` is stable and sort/filters change.
-     */
     const prevSortRef = useRef<SortOptionKey>(sortOption);
-    const prevFiltersJsonRef = useRef<string>(JSON.stringify(filters)); // Store serialized filters
+    const prevFiltersJsonRef = useRef<string>(JSON.stringify(filters));
 
     useEffect(() => {
         const currentFiltersJson = JSON.stringify(filters);
-        // Conditions for updating history/URL:
-        // - A shareable slug must exist (meaning a search has been completed or loaded).
-        // - It must be a user-initiated session (not a "shared-..." session).
-        // - UI should not be in a blocking state (loading, initial offers wait).
-        // - Search should not be currently active (i.e., this is for post-search adjustments).
-        // - initialPageLoadProcessedRef indicates that initial setup is done, preventing premature updates.
+        let currentPageSessionId: string | null = null;
+        let currentPageLabel: string | null = null;
+
+        if (activeShareableSlug) {
+            if (initialAddressLabel && !initialAddressLabel.startsWith("Shared Search:")) {
+                currentPageLabel = initialAddressLabel;
+                currentPageSessionId = initialAddressLabel;
+            } else {
+                currentPageLabel = `Shared Search: ${activeShareableSlug.substring(0, 20)}...`;
+                currentPageSessionId = activeShareableSlug;
+            }
+        }
+
         if (
             activeShareableSlug &&
-            sessionIdRef.current &&
-            !sessionIdRef.current.startsWith("shared-") &&
+            currentPageSessionId &&
+            currentPageLabel &&
             !isBlockingUi &&
             !searchIsActiveRef.current &&
             initialPageLoadProcessedRef.current
@@ -677,6 +550,14 @@ export function useComparePageState(): ComparePageState {
                 prevFiltersJsonRef.current !== currentFiltersJson;
 
             if (sortChanged || filtersChanged) {
+                console.log(
+                    "[useComparePageState] Sort/filter changed. Updating recent search. Label:",
+                    currentPageLabel,
+                    "SessionID:",
+                    currentPageSessionId,
+                    "Slug:",
+                    activeShareableSlug
+                );
                 prevSortRef.current = sortOption;
                 prevFiltersJsonRef.current = currentFiltersJson;
 
@@ -688,14 +569,12 @@ export function useComparePageState(): ComparePageState {
                 );
 
                 if (newUrlPathAndQuery) {
-                    // Update recent search history
                     addRecentSearch({
                         url: newUrlPathAndQuery,
-                        label: sessionIdRef.current, // Use the existing session label
-                        sessionId: sessionIdRef.current,
+                        label: currentPageLabel,
+                        sessionId: currentPageSessionId,
                     });
 
-                    // Update browser URL if it changed due to sort/filter
                     const currentBrowserUrlPathAndQuery =
                         window.location.pathname + window.location.search;
                     if (newUrlPathAndQuery !== currentBrowserUrlPathAndQuery) {
@@ -704,8 +583,6 @@ export function useComparePageState(): ComparePageState {
                 }
             }
         } else {
-            // Ensure refs are up-to-date even if conditions for update are not met
-            // to prevent stale comparisons on next valid run.
             prevSortRef.current = sortOption;
             prevFiltersJsonRef.current = currentFiltersJson;
         }
@@ -715,33 +592,23 @@ export function useComparePageState(): ComparePageState {
         activeShareableSlug,
         isBlockingUi,
         addRecentSearch,
-        router, // router and pathname are stable from Next.js hooks
+        router,
         pathname,
+        initialAddressLabel,
     ]);
 
-    /**
-     * Effect: reset refining state if currentDisplaySlug changes and it's not matching
-     * the slug of an active search, or if search is no longer active.
-     * This helps ensure the "refining" UI doesn't stick if navigating or loading a new slug.
-     */
     useEffect(() => {
         if (currentDisplaySlug) {
-            // If there's a slug being displayed
             if (
-                currentDisplaySlug !== currentSearchSlugRef.current || // And it's different from the active search's slug
-                !searchIsActiveRef.current // Or the search is no longer active
+                currentDisplaySlug !== currentSearchSlugRef.current ||
+                !searchIsActiveRef.current
             ) {
-                setIsRefiningOffers(false); // Then stop showing "refining"
+                setIsRefiningOffers(false);
             }
         } else {
-            // If no slug is displayed (e.g., new search before slug received)
-            setIsRefiningOffers(false); // Also ensure refining is off
+            setIsRefiningOffers(false);
         }
-    }, [currentDisplaySlug]); // Depends on currentDisplaySlug and refs currentSearchSlugRef, searchIsActiveRef
-
-    /**
-     * Derived computed state values for UI display.
-     */
+    }, [currentDisplaySlug]);
     const currentOfferCountForDisplay = useMemo(() => {
         if (originalOffers.length > 0) return originalOffers.length;
         if (
@@ -760,19 +627,13 @@ export function useComparePageState(): ComparePageState {
         isLoadingFromUrl,
         isRefiningOffers,
     ]);
-
     const isGloballyLoading = useMemo(() => {
         return isLoadingFromUrl || isWaitingInitialOffers;
     }, [isLoadingFromUrl, isWaitingInitialOffers]);
-
-    /**
-     * Computed UI flags for control enablement and view mode.
-     */
     const isAddressValid = useMemo(
         () => isAddressStructurallyValid(parsedBackendAddress),
         [parsedBackendAddress],
     );
-
     const isSearchButtonDisabled =
         isBlockingUi || !isAddressValid || !GOOGLE_MAPS_API_KEY_FROM_ENV;
     const isSharePageDisabled =
@@ -780,7 +641,7 @@ export function useComparePageState(): ComparePageState {
         isBlockingUi ||
         sharedLinkCopied ||
         (originalOffers.length === 1 &&
-            currentDisplaySlug === activeShareableSlug); // Disable if single offer view from shared link
+            currentDisplaySlug === activeShareableSlug);
     const areAnyOffersEverLoaded =
         originalOffers.length > 0 ||
         (pendingOffers !== null && isUpdatePromptOpen);
@@ -791,9 +652,6 @@ export function useComparePageState(): ComparePageState {
         !isLoadingFromUrl &&
         !isRefiningOffers;
 
-    /**
-     * Public API return: grouped state and action handlers for ComparePage.
-     */
     return {
         state: {
             mainStatusMessage,
@@ -806,8 +664,6 @@ export function useComparePageState(): ComparePageState {
             isWaitingInitialOffers,
             isRefiningOffers,
             isUpdatePromptOpen,
-
-            /* data */
             originalOffers,
             processedOffers,
             pendingOffers,
@@ -815,34 +671,27 @@ export function useComparePageState(): ComparePageState {
             filters,
             sortOption,
             viewMode,
-
-            /* meta / sharing */
             currentDisplaySlug,
             activeShareableSlug,
             sharedLinkCopied,
             activeFilterCount,
-
-            /* address */
             parsedAddressFromSlug,
-            parsedAddressCurrent: parsedBackendAddress, // Expose the current parsed address from autocomplete
+            parsedAddressCurrent: parsedBackendAddress,
             initialAddressLabel,
-            isAddressValid, // (optional, handy for dev tools)
-
-            /* derived helpers */
+            isAddressValid,
             isSearchButtonDisabled,
             isSharePageDisabled,
             hasSearchBeenPerformed,
             areAnyOffersEverLoaded,
             isSingleOfferView,
         },
-
         actions: {
             handleAddressSelected,
             handleSearchClick,
             handleSharePage,
             handleShareSingleOffer,
             handleShowPendingOffers,
-            setIsUpdatePromptOpen /* ui setters */,
+            setIsUpdatePromptOpen,
             setSortOption,
             setViewMode,
             setFilters,

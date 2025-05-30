@@ -11,6 +11,8 @@ import {
 } from "@/config/constants";
 import { ConnectionType } from "@/types/connection-type";
 
+
+
 /**
  * Serializes the filter state into a query string for URL sharing.
  * @param filters - The current filter state.
@@ -38,6 +40,36 @@ export const serializeFiltersForURL = (filters: FiltersState): string => {
     // Include youth offer preference if specified
     if (filters.youthOffer !== "any") params.set("yo", filters.youthOffer);
     return params.toString();
+};
+
+
+/**
+ * Extracts the 'slug' query parameter from the provided URL.
+ * @param url - The URL string to parse, absolute or relative.
+ * @returns The 'slug' parameter value, or null if not present.
+ */
+export const extractSlug = (url: string): string | null => {
+    try {
+        // Use a base URL if the provided URL is relative to handle path-only URLs correctly
+        const fullUrl = new URL(url, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+        return fullUrl.searchParams.get("slug");
+    } catch (e) {
+        console.error(`[extractSlug] Error parsing URL: ${url}`, e); // Optional: might be too noisy
+        return null;
+    }
+};
+
+/**
+ * Generates a canonical URL for a comparison page, typically including only the 'slug' query parameter.
+ * Ensures that the URL points to the root path with the slug.
+ * @param rawUrl - The raw URL string, which may contain various query parameters.
+ * @returns A canonical URL string (e.g., "/?slug=some-slug") or the original URL if no slug is found.
+ */
+export const getCanonicalCompareURL = (rawUrl: string): string => {
+    const slug = extractSlug(rawUrl);
+    // Always point to ROOT (/) with the slug for canonical compare URLs.
+    // If no slug, return the rawUrl as it might be a different kind of link.
+    return slug ? `/?slug=${slug}` : rawUrl;
 };
 
 /**
