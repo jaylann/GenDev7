@@ -60,13 +60,16 @@ export default function ComparePage(): JSX.Element {
                     searches={state.recentSearches}
                     onClear={actions.clearRecentSearches}
                     className="fixed top-4 right-4 z-50"
-                    currentSlug={state.currentDisplaySlug}
                 />
 
                 {/* Address search section for inputting and selecting an address */}
                 <div className="flex-none">
                     <AddressSearchSection
-                        parsedAddress={state.parsedAddressCurrent ?? state.parsedAddressFromSlug ?? undefined}
+                        parsedAddress={
+                            state.parsedAddressFromSlug      // 🌟 slug address first
+                            ?? state.parsedAddressCurrent  // fallback: last manual address
+                            ?? undefined
+                        }
                         defaultAddressText={state.initialAddressLabel}
                         onAddressSelect={actions.handleAddressSelected}
                         onSearchClick={actions.handleSearchClick}
