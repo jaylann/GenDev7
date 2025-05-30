@@ -64,6 +64,11 @@ export const DetailBadgeComponent: FC<DetailBadgeInfo> = ({
         role="status"
     >
         {/* Render the icon with specified size and dynamic color class. */}
-        <Icon size={12} className={cn(colorConfig.icon, "mr-0.5")} aria-hidden="true" /> {text}
+        <Icon
+            size={12}
+            className={cn(colorConfig.icon, "mr-0.5")}
+            aria-hidden="true"
+        />{" "}
+        {text}
     </Badge>
 );

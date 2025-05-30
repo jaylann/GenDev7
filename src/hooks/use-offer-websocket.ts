@@ -26,7 +26,10 @@ interface UseOfferWebSocketProps {
     onConnectionErrorAction: (msg: string) => void;
 
     /** Handler invoked when pending offers and slug are available for review */
-    onPendingOffersUpdateAction: (offers: Offer[] | null, slug: string | null) => void;
+    onPendingOffersUpdateAction: (
+        offers: Offer[] | null,
+        slug: string | null,
+    ) => void;
     onPromptOpenChangeAction: (open: boolean) => void;
 
     initialLoadingState: boolean;
@@ -34,11 +37,11 @@ interface UseOfferWebSocketProps {
 
 /* Custom React Hook: useOfferWebSocket */
 export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
-    const genRef             = useRef(0);
-    const wsRef              = useRef<WebSocket | null>(null);
-    const firstBatchTsRef    = useRef<number | null>(null);
-    const offersRef          = useRef<Offer[]>([]);
-    const reconnectAttempts  = useRef<number>(0);
+    const genRef = useRef(0);
+    const wsRef = useRef<WebSocket | null>(null);
+    const firstBatchTsRef = useRef<number | null>(null);
+    const offersRef = useRef<Offer[]>([]);
+    const reconnectAttempts = useRef<number>(0);
     const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Closes the active WebSocket connection and resets related state
@@ -48,12 +51,13 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
             clearTimeout(reconnectTimeoutRef.current);
             reconnectTimeoutRef.current = null;
         }
-        
+
         if (wsRef.current) {
             wsRef.current.onopen =
                 wsRef.current.onmessage =
-                    wsRef.current.onerror =
-                        wsRef.current.onclose = null;
+                wsRef.current.onerror =
+                wsRef.current.onclose =
+                    null;
             wsRef.current.close(1000, "Aborted by navigation/search");
         }
         wsRef.current = null;
@@ -88,7 +92,9 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
 
         // Validation checks for API key presence and selected address
         if (!hasApiKey) {
-            onConnectionErrorAction("Google Maps API key missing – cannot run search.");
+            onConnectionErrorAction(
+                "Google Maps API key missing – cannot run search.",
+            );
             return;
         }
         if (!parsedAddress) {
@@ -145,14 +151,16 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                     firstBatchTsRef.current = Date.now();
                     offersRef.current = offers;
 
-                    if (data.slug) onWebSocketSlugReceivedAction(data.slug, "INITIAL");
+                    if (data.slug)
+                        onWebSocketSlugReceivedAction(data.slug, "INITIAL");
 
-                    onOffersReceivedAction(offers, "INITIAL_OFFERS", willRefine);
+                    onOffersReceivedAction(
+                        offers,
+                        "INITIAL_OFFERS",
+                        willRefine,
+                    );
                     if (data.message) {
-
-                        onStatusUpdateAction(
-                            data.message
-                        );
+                        onStatusUpdateAction(data.message);
                     }
                     onLoadingChangeAction(false);
                     break;
@@ -166,14 +174,13 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
 
                     if (quick) {
                         // Fast refinement: update offers immediately without prompting user
-                        if (data.slug) onWebSocketSlugReceivedAction(data.slug, "FINAL");
+                        if (data.slug)
+                            onWebSocketSlugReceivedAction(data.slug, "FINAL");
 
                         offersRef.current = offers;
                         onOffersReceivedAction(offers, "FINAL_OFFERS", false);
                         if (data.message) {
-                            onStatusUpdateAction(
-                                data.message
-                            );
+                            onStatusUpdateAction(data.message);
                         }
                     } else {
                         // Slow refinement: stage pending offers and prompt user for review
@@ -185,11 +192,13 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                         onPromptOpenChangeAction(true);
 
                         // 3. Stop loading indicator without altering the displayed offers
-                        onOffersReceivedAction(offersRef.current, "FINAL_OFFERS", false);
+                        onOffersReceivedAction(
+                            offersRef.current,
+                            "FINAL_OFFERS",
+                            false,
+                        );
                         if (data.message) {
-                            onStatusUpdateAction(
-                                data.message
-                            );
+                            onStatusUpdateAction(data.message);
                         }
                     }
 
@@ -198,21 +207,23 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                     break;
                 }
 
-
                 // Handle status update messages
                 case "STATUS_UPDATE":
-                    if (data.message?.trim()) onStatusUpdateAction(data.message);
+                    if (data.message?.trim())
+                        onStatusUpdateAction(data.message);
                     break;
 
                 // Handle error messages from the server
                 case "ERROR":
-                    onConnectionErrorAction(data.message ?? "WebSocket connection error.");
+                    onConnectionErrorAction(
+                        data.message ?? "WebSocket connection error.",
+                    );
                     onLoadingChangeAction(false);
                     break;
 
                 default:
                     // Only log in development mode
-                    if (process.env.NODE_ENV !== 'production') {
+                    if (process.env.NODE_ENV !== "production") {
                         console.warn("Unknown WebSocket message:", data);
                     }
             }
@@ -230,27 +241,35 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                 // Expected closure - no need to reconnect
                 return;
             }
-            
+
             onStatusUpdateAction("Connection lost. Attempting to reconnect...");
-            
+
             // Don't attempt reconnection if we've exceeded maximum attempts (5)
             if (reconnectAttempts.current >= 5) {
-                onStatusUpdateAction("Connection failed after multiple attempts. Displaying last known results.");
+                onStatusUpdateAction(
+                    "Connection failed after multiple attempts. Displaying last known results.",
+                );
                 onLoadingChangeAction(false);
                 return;
             }
-            
+
             // Implement exponential backoff for reconnection
-            const backoffTime = Math.min(1000 * (2 ** reconnectAttempts.current), 30000); // Max 30s delay
+            const backoffTime = Math.min(
+                1000 * 2 ** reconnectAttempts.current,
+                30000,
+            ); // Max 30s delay
             reconnectAttempts.current += 1;
-            
+
             reconnectTimeoutRef.current = setTimeout(() => {
-                if (gen === genRef.current) { // Ensure this reconnect is still valid
-                    onStatusUpdateAction(`Reconnecting... (Attempt ${reconnectAttempts.current}/5)`);
+                if (gen === genRef.current) {
+                    // Ensure this reconnect is still valid
+                    onStatusUpdateAction(
+                        `Reconnecting... (Attempt ${reconnectAttempts.current}/5)`,
+                    );
                     connectWebSocket(); // Reconnect
                 }
             }, backoffTime);
-            
+
             // If this is the first reconnect attempt, ensure UI shows as loading
             if (reconnectAttempts.current === 1) {
                 onLoadingChangeAction(true);

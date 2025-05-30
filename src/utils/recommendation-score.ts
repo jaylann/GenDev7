@@ -86,7 +86,7 @@ const CONNECTION_QUALITY: Record<ConnectionType, number> = {
  * have the greatest influence. The sum of all weights equals 1.
  */
 const WEIGHTS = {
-    price: 0.30,
+    price: 0.3,
     bangForBuck: 0.08, // Mbps per € efficiency
     speed: 0.26,
     connection: 0.15,
@@ -196,7 +196,10 @@ export function calculateRecommendationScore(
     };
 
     /* ---------- metric scores for *this* offer --------------------------- */
-    const baseCost = calculateGrossTotalCostOverDynamicPeriod(offer, TERM_MONTHS);
+    const baseCost = calculateGrossTotalCostOverDynamicPeriod(
+        offer,
+        TERM_MONTHS,
+    );
     const priceMonthly =
         baseCost == null ? Number.POSITIVE_INFINITY : baseCost / TERM_MONTHS;
 

@@ -80,7 +80,7 @@ export const useComparePageInitializer = ({
         // Create an AbortController to cancel fetch requests when component unmounts or URL changes
         const abortController = new AbortController();
         const signal = abortController.signal;
-        
+
         const slugFromUrl = searchParams.get("slug");
         const sortFromUrl = searchParams.get("sort") as SortOptionKey | null;
         const filtersFromUrl = deserializeFiltersFromURL(searchParams);
@@ -129,7 +129,9 @@ export const useComparePageInitializer = ({
                     try {
                         data = JSON.parse(raw);
                     } catch {
-                        throw new Error(`Invalid JSON from backend: ${raw.slice(0, 200)}`);
+                        throw new Error(
+                            `Invalid JSON from backend: ${raw.slice(0, 200)}`,
+                        );
                     }
 
                     setOriginalOffersAction(data.offers);
@@ -156,7 +158,7 @@ export const useComparePageInitializer = ({
                     const errorMessage =
                         err instanceof Error ? err.message : String(err);
                     // Only log detailed errors in development
-                    if (process.env.NODE_ENV !== 'production') {
+                    if (process.env.NODE_ENV !== "production") {
                         console.error("Error loading shared offers:", err);
                     }
                     setStatusAction(
@@ -172,7 +174,7 @@ export const useComparePageInitializer = ({
                     setIsLoadingFromSlugAction(false);
                 }
             })();
-        // Initialize default state when no slug is present.
+            // Initialize default state when no slug is present.
         } else {
             setOriginalOffersAction([]);
             setSlugAction(null);
@@ -182,7 +184,7 @@ export const useComparePageInitializer = ({
             setLoadingAction(false);
             setIsLoadingFromSlugAction(false);
         }
-        
+
         // Cleanup function to abort any in-flight requests when the component unmounts or deps change
         return () => {
             abortController.abort();

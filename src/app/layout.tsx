@@ -33,11 +33,14 @@ export default function RootLayout({
     children,
 }: Readonly<{ children: React.ReactNode }>) {
     return (
-        <html lang="en" className="overscroll-y-contain  bg-gradient-to-br
+        <html
+            lang="en"
+            className="overscroll-y-contain  bg-gradient-to-br
     from-[#0B0B2D]
     via-[#1C1044]
     to-[#3C0E4C]
-    bg-fixed">
+    bg-fixed"
+        >
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased overscroll-y-contain`}
             >

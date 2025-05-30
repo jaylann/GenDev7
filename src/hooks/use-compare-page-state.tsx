@@ -63,7 +63,10 @@ export interface ComparePageState {
         isSingleOfferView: boolean;
     };
     actions: {
-        handleAddressSelected: (addr: ParsedAddress | null, rawText: string) => void;
+        handleAddressSelected: (
+            addr: ParsedAddress | null,
+            rawText: string,
+        ) => void;
         handleSearchClick: () => void;
         handleSharePage: () => void;
         handleShareSingleOffer: (offer: Offer) => void;
@@ -73,7 +76,9 @@ export interface ComparePageState {
         setViewMode: (mode: ViewMode) => void;
         setFilters: ReturnType<typeof useOfferFilters>["setFilters"];
         resetFilters: ReturnType<typeof useOfferFilters>["resetFilters"];
-        clearRecentSearches: ReturnType<typeof useRecentSearches>["clearRecentSearches"];
+        clearRecentSearches: ReturnType<
+            typeof useRecentSearches
+        >["clearRecentSearches"];
     };
 }
 
@@ -120,7 +125,7 @@ export function useComparePageState(): ComparePageState {
      * Sanitizes text to prevent XSS in UI elements
      */
     const sanitizeText = useCallback((text: string): string => {
-        return text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }, []);
 
     /**
@@ -132,11 +137,8 @@ export function useComparePageState(): ComparePageState {
             const sanitizedText = sanitizeText(text);
             return sonnerToast(
                 // Use text content only, no HTML interpretation
-                <p className="text-white">{sanitizedText}</p>, 
-                {
-                    duration,
-                    id: `toast-${Date.now()}`,
-                }
+                <p className="text-white">{sanitizedText}</p>,
+                { duration, id: `toast-${Date.now()}` },
             );
         },
         [sanitizeText],
@@ -152,7 +154,10 @@ export function useComparePageState(): ComparePageState {
     } = useRecentSearches();
 
     const wantsFiber = useMemo(
-        () => filters.connectionTypes.some((ct) => ct.toLowerCase().includes("fiber")),
+        () =>
+            filters.connectionTypes.some((ct) =>
+                ct.toLowerCase().includes("fiber"),
+            ),
         [filters.connectionTypes],
     );
     const providersForApi = useMemo(
@@ -256,7 +261,9 @@ export function useComparePageState(): ComparePageState {
             currentSearchSlugRef.current = slug;
             setActiveShareableSlug(slug);
             setCurrentDisplaySlug(slug);
-            const currentSearchLabel = sessionIdRef.current?.startsWith("shared-")
+            const currentSearchLabel = sessionIdRef.current?.startsWith(
+                "shared-",
+            )
                 ? null
                 : sessionIdRef.current;
             if (currentSearchLabel) {
@@ -295,7 +302,8 @@ export function useComparePageState(): ComparePageState {
                     const currentBrowserUrlPathAndQuery =
                         window.location.pathname + window.location.search;
                     if (
-                        newTargetUrlPathAndQuery !== currentBrowserUrlPathAndQuery
+                        newTargetUrlPathAndQuery !==
+                        currentBrowserUrlPathAndQuery
                     ) {
                         debouncedRouterReplace(newTargetUrlPathAndQuery, {
                             scroll: false,
@@ -450,7 +458,12 @@ export function useComparePageState(): ComparePageState {
                 setCurrentDisplaySlug(pendingSlug);
                 setActiveShareableSlug(pendingSlug);
 
-                const newUrl = buildUrl(pendingSlug, sortOption, filters, false);
+                const newUrl = buildUrl(
+                    pendingSlug,
+                    sortOption,
+                    filters,
+                    false,
+                );
                 if (newUrl) {
                     router.replace(newUrl, { scroll: false });
                     if (sessionIdRef.current) {
@@ -546,7 +559,10 @@ export function useComparePageState(): ComparePageState {
         let currentPageLabel: string | null = null;
 
         if (activeShareableSlug) {
-            if (initialAddressLabel && !initialAddressLabel.startsWith("Shared Search:")) {
+            if (
+                initialAddressLabel &&
+                !initialAddressLabel.startsWith("Shared Search:")
+            ) {
                 currentPageLabel = initialAddressLabel;
                 currentPageSessionId = initialAddressLabel;
             } else {
@@ -574,7 +590,7 @@ export function useComparePageState(): ComparePageState {
                     "SessionID:",
                     currentPageSessionId,
                     "Slug:",
-                    activeShareableSlug
+                    activeShareableSlug,
                 );
                 prevSortRef.current = sortOption;
                 prevFiltersJsonRef.current = currentFiltersJson;
@@ -596,7 +612,9 @@ export function useComparePageState(): ComparePageState {
                     const currentBrowserUrlPathAndQuery =
                         window.location.pathname + window.location.search;
                     if (newUrlPathAndQuery !== currentBrowserUrlPathAndQuery) {
-                        debouncedRouterReplace(newUrlPathAndQuery, { scroll: false });
+                        debouncedRouterReplace(newUrlPathAndQuery, {
+                            scroll: false,
+                        });
                     }
                 }
             }
@@ -620,24 +638,27 @@ export function useComparePageState(): ComparePageState {
         timeoutId: NodeJS.Timeout | null;
         latestUrl: string | null;
     }>({ timeoutId: null, latestUrl: null });
-    
-    const debouncedRouterReplace = useCallback((url: string, options: any) => {
-        if (debounceRef.current.timeoutId) {
-            clearTimeout(debounceRef.current.timeoutId);
-        }
-        
-        debounceRef.current.latestUrl = url;
-        
-        debounceRef.current.timeoutId = setTimeout(() => {
-            const currentUrl = debounceRef.current.latestUrl;
-            if (currentUrl) {
-                router.replace(currentUrl, options);
-                debounceRef.current.latestUrl = null;
+
+    const debouncedRouterReplace = useCallback(
+        (url: string, options: any) => {
+            if (debounceRef.current.timeoutId) {
+                clearTimeout(debounceRef.current.timeoutId);
             }
-            debounceRef.current.timeoutId = null;
-        }, 100); // 100ms debounce time for URL updates
-    }, [router]);
-    
+
+            debounceRef.current.latestUrl = url;
+
+            debounceRef.current.timeoutId = setTimeout(() => {
+                const currentUrl = debounceRef.current.latestUrl;
+                if (currentUrl) {
+                    router.replace(currentUrl, options);
+                    debounceRef.current.latestUrl = null;
+                }
+                debounceRef.current.timeoutId = null;
+            }, 100); // 100ms debounce time for URL updates
+        },
+        [router],
+    );
+
     useEffect(() => {
         if (currentDisplaySlug) {
             if (
@@ -650,7 +671,7 @@ export function useComparePageState(): ComparePageState {
             setIsRefiningOffers(false);
         }
     }, [currentDisplaySlug]);
-    
+
     // Clean up any pending timeouts on unmount
     useEffect(() => {
         return () => {

@@ -11,8 +11,6 @@ import {
 } from "@/config/constants";
 import { ConnectionType } from "@/types/connection-type";
 
-
-
 /**
  * Serializes the filter state into a query string for URL sharing.
  * @param filters - The current filter state.
@@ -42,7 +40,6 @@ export const serializeFiltersForURL = (filters: FiltersState): string => {
     return params.toString();
 };
 
-
 /**
  * Extracts the 'slug' query parameter from the provided URL.
  * @param url - The URL string to parse, absolute or relative.
@@ -51,7 +48,12 @@ export const serializeFiltersForURL = (filters: FiltersState): string => {
 export const extractSlug = (url: string): string | null => {
     try {
         // Use a base URL if the provided URL is relative to handle path-only URLs correctly
-        const fullUrl = new URL(url, typeof window !== "undefined" ? window.location.origin : "http://localhost");
+        const fullUrl = new URL(
+            url,
+            typeof window !== "undefined"
+                ? window.location.origin
+                : "http://localhost",
+        );
         return fullUrl.searchParams.get("slug");
     } catch (e) {
         console.error(`[extractSlug] Error parsing URL: ${url}`, e); // Optional: might be too noisy

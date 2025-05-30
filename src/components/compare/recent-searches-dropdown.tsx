@@ -25,13 +25,11 @@ interface RecentSearchesDropdownProps {
     className?: string;
 }
 
-
 const isUrlEffectivelyEqualToCurrent = (
     itemUrl: string,
     _currentPathname: string,
     currentBrowserParams: URLSearchParams,
-): boolean =>
-    extractSlug(itemUrl) === currentBrowserParams.get("slug"); // ignore pathname entirely
+): boolean => extractSlug(itemUrl) === currentBrowserParams.get("slug"); // ignore pathname entirely
 /**
  * Renders a dropdown menu displaying recently visited search pages.
  * Allows users to quickly navigate back to previous searches or clear their search history.

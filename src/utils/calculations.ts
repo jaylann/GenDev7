@@ -14,7 +14,7 @@ const calculatePercentageVoucherValue = (
     offer: Offer,
     calculationPeriodMonths: number,
     overallMaxCapCents: number,
-    introPriceDuration: number
+    introPriceDuration: number,
 ): number => {
     if (
         offer.voucher_value_percent == null ||
@@ -26,7 +26,7 @@ const calculatePercentageVoucherValue = (
     let total = 0;
     const voucherEffectiveMonths = Math.min(
         offer.voucher_max_runtime_months ?? calculationPeriodMonths,
-        calculationPeriodMonths
+        calculationPeriodMonths,
     );
     for (let month = 0; month < voucherEffectiveMonths; month++) {
         if (total >= overallMaxCapCents) {
@@ -48,7 +48,7 @@ const calculatePercentageVoucherValue = (
         const discountThisMonth = currentMonthlyPrice * percentOff;
         const applicableDiscount = Math.min(
             discountThisMonth,
-            overallMaxCapCents - total
+            overallMaxCapCents - total,
         );
         total += applicableDiscount;
     }
@@ -205,7 +205,7 @@ export const calculateEffectiveVoucherValue = (
                 offer,
                 calculationPeriodMonths,
                 overallMaxCapCents,
-                introPriceDuration
+                introPriceDuration,
             );
             break;
 
@@ -229,7 +229,7 @@ export const calculateEffectiveVoucherValue = (
                     offer,
                     calculationPeriodMonths,
                     overallMaxCapCents,
-                    introPriceDuration
+                    introPriceDuration,
                 );
             }
             // If neither cents nor percent value is present for DISCOUNT, value remains 0.

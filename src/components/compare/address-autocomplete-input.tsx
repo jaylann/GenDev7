@@ -60,15 +60,15 @@ export interface AddressAutocompleteInputProps {
 export const AddressAutocompleteInput: React.FC<
     AddressAutocompleteInputProps
 > = ({
-         initialValue: initialValueFromProps, // Renamed to avoid conflict
-         parsedAddress: externalParsedAddress,
-         defaultAddressText,
-         onAddressSelectAction,
-         inputClassName,
-         containerClassName,
-         disabled,
-         onEnterSearch,
-     }): JSX.Element => {
+    initialValue: initialValueFromProps, // Renamed to avoid conflict
+    parsedAddress: externalParsedAddress,
+    defaultAddressText,
+    onAddressSelectAction,
+    inputClassName,
+    containerClassName,
+    disabled,
+    onEnterSearch,
+}): JSX.Element => {
     const [error, setError] = useState<boolean>(false);
     const [showSuggestions, setShowSuggestions] = useState<boolean>(false);
     const [highlightedIdx, setHighlightedIdx] = useState<number>(-1);
@@ -82,8 +82,9 @@ export const AddressAutocompleteInput: React.FC<
     // Ref to track if the user has typed in the input since the last externalParsedAddress was set.
     const hasUserTypedRef = useRef(false);
     // Ref to store the previous externalParsedAddress to detect changes.
-    const prevExternalParsedAddressRef = useRef<ParsedAddress | null | undefined>(null);
-
+    const prevExternalParsedAddressRef = useRef<
+        ParsedAddress | null | undefined
+    >(null);
 
     /**
      * handleAddressParsed
@@ -115,7 +116,7 @@ export const AddressAutocompleteInput: React.FC<
         // Otherwise, use initialValueFromProps or defaultAddressText.
         initialValue: externalParsedAddress
             ? undefined
-            : initialValueFromProps ?? defaultAddressText ?? "",
+            : (initialValueFromProps ?? defaultAddressText ?? ""),
     });
 
     /**
@@ -126,8 +127,12 @@ export const AddressAutocompleteInput: React.FC<
     useEffect(() => {
         // Using stringify for a simple deep comparison, assuming Address structure is simple and consistent.
         // For more complex objects, a proper deep comparison library or more specific checks might be needed.
-        const currentAddrString = externalParsedAddress ? JSON.stringify(externalParsedAddress) : null;
-        const prevAddrString = prevExternalParsedAddressRef.current ? JSON.stringify(prevExternalParsedAddressRef.current) : null;
+        const currentAddrString = externalParsedAddress
+            ? JSON.stringify(externalParsedAddress)
+            : null;
+        const prevAddrString = prevExternalParsedAddressRef.current
+            ? JSON.stringify(prevExternalParsedAddressRef.current)
+            : null;
 
         if (currentAddrString !== prevAddrString) {
             // console.log("[AddressAutocompleteInput] externalParsedAddress changed. Resetting flags.");
@@ -137,7 +142,6 @@ export const AddressAutocompleteInput: React.FC<
         }
     }, [externalParsedAddress]);
 
-
     /**
      * Effect to prefill the input when a valid `externalParsedAddress` is provided
      * and the Maps API is ready. This is useful for setting the input from a slug
@@ -145,10 +149,10 @@ export const AddressAutocompleteInput: React.FC<
      */
     useEffect(() => {
         if (
-            !ready ||                   // Maps API/hook not ready
-            !externalParsedAddress ||   // No external address to prefill from
-            hasPrefilledRef.current ||  // Already prefilled for THIS specific externalParsedAddress
-            hasUserTypedRef.current     // User has typed since THIS externalParsedAddress was set
+            !ready || // Maps API/hook not ready
+            !externalParsedAddress || // No external address to prefill from
+            hasPrefilledRef.current || // Already prefilled for THIS specific externalParsedAddress
+            hasUserTypedRef.current // User has typed since THIS externalParsedAddress was set
         ) {
             return;
         }
@@ -163,23 +167,41 @@ export const AddressAutocompleteInput: React.FC<
             if (window.google?.maps?.Geocoder && !signal.aborted) {
                 try {
                     const geocoder = new window.google.maps.Geocoder();
-                    const { results } = await geocoder.geocode({ address: rawQueryText }, (results, status) => {
-                        if (signal.aborted) return;
-                        if (status === window.google.maps.GeocoderStatus.OK && results && results.length > 0) {
-                            googleFormattedAddress = results[0].formatted_address || rawQueryText;
-                        } else {
-                            console.warn(`[AddressAutocompleteInput] Geocoding for prefill of "${rawQueryText}" failed with status: ${status}`);
-                        }
-                    });
+                    const { results } = await geocoder.geocode(
+                        { address: rawQueryText },
+                        (results, status) => {
+                            if (signal.aborted) return;
+                            if (
+                                status ===
+                                    window.google.maps.GeocoderStatus.OK &&
+                                results &&
+                                results.length > 0
+                            ) {
+                                googleFormattedAddress =
+                                    results[0].formatted_address ||
+                                    rawQueryText;
+                            } else {
+                                console.warn(
+                                    `[AddressAutocompleteInput] Geocoding for prefill of "${rawQueryText}" failed with status: ${status}`,
+                                );
+                            }
+                        },
+                    );
                     // The callback above might be called after the promise resolves for geocode
                     // To be safe, re-check results if promise resolves successfully
-                    if (results && results.length > 0 && results[0].formatted_address) {
+                    if (
+                        results &&
+                        results.length > 0 &&
+                        results[0].formatted_address
+                    ) {
                         googleFormattedAddress = results[0].formatted_address;
                     }
-
                 } catch (e) {
                     if (!signal.aborted) {
-                        console.warn(`[AddressAutocompleteInput] Geocoding error during prefill for "${rawQueryText}":`, e);
+                        console.warn(
+                            `[AddressAutocompleteInput] Geocoding error during prefill for "${rawQueryText}":`,
+                            e,
+                        );
                     }
                     // googleFormattedAddress remains `rawQueryText`
                 }
@@ -192,7 +214,10 @@ export const AddressAutocompleteInput: React.FC<
                 setValue(googleFormattedAddress, false); // Update the input field's text
                 // Notify parent about this prefilled, formatted address AND the original structured object
                 // This will also trigger validation (setError) via handleAddressParsed.
-                onAddressSelectAction(externalParsedAddress, googleFormattedAddress);
+                onAddressSelectAction(
+                    externalParsedAddress,
+                    googleFormattedAddress,
+                );
                 hasPrefilledRef.current = true; // Mark that prefilling for this externalParsedAddress instance is done.
             }
         })();
@@ -201,7 +226,6 @@ export const AddressAutocompleteInput: React.FC<
             abortController.abort();
         };
     }, [externalParsedAddress, ready, setValue, onAddressSelectAction]);
-
 
     /**
      * Effect to handle cases where the input is cleared or externalParsedAddress becomes null.
@@ -213,7 +237,6 @@ export const AddressAutocompleteInput: React.FC<
             handleAddressParsed(null, "");
         }
     }, [value, externalParsedAddress, handleAddressParsed]);
-
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         hasUserTypedRef.current = true; // User is now interacting
@@ -255,7 +278,9 @@ export const AddressAutocompleteInput: React.FC<
                     totalSuggestions > 0 &&
                     highlightedIdx !== -1 // Ensure a suggestion was actually highlighted
                 ) {
-                    await hookHandleSelect(suggestions.data[highlightedIdx].description);
+                    await hookHandleSelect(
+                        suggestions.data[highlightedIdx].description,
+                    );
                     // hookHandleSelect internally calls onAddressSelectAction (handleAddressParsed)
                 } else if (value.trim()) {
                     // User typed text and pressed Enter, or no suggestion was actively selected
@@ -313,7 +338,7 @@ export const AddressAutocompleteInput: React.FC<
                     "h-12 bg-slate-800/50 dark:bg-slate-800/50",
                     inputClassName,
                     error &&
-                    "border-red-500 focus:border-red-500 focus:ring-red-500",
+                        "border-red-500 focus:border-red-500 focus:ring-red-500",
                 )}
                 disabled={disabled || !ready}
                 autoComplete="off"

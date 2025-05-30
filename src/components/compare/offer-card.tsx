@@ -68,12 +68,17 @@ interface DetailBadgePropsForUserComponent
  * @returns Descriptive text explaining what the badge indicates
  */
 const getBadgeDescription = (badgeKey: string): string => {
-    switch(badgeKey) {
-        case 'tv': return 'Television package included with this offer';
-        case 'install': return 'Information about installation service';
-        case 'dataCap': return 'Data usage limit information';
-        case 'youth': return 'Special offer for young customers';
-        default: return '';
+    switch (badgeKey) {
+        case "tv":
+            return "Television package included with this offer";
+        case "install":
+            return "Information about installation service";
+        case "dataCap":
+            return "Data usage limit information";
+        case "youth":
+            return "Special offer for young customers";
+        default:
+            return "";
     }
 };
 
@@ -315,7 +320,11 @@ export const OfferCard: FC<OfferCardProps> = ({
             );
         }
         return null;
-    }, [price_cents_month_intro, introPriceDuration, price_cents_month_regular]);
+    }, [
+        price_cents_month_intro,
+        introPriceDuration,
+        price_cents_month_regular,
+    ]);
 
     const regularPriceSection = useMemo<JSX.Element | null>(() => {
         if (
@@ -448,7 +457,7 @@ export const OfferCard: FC<OfferCardProps> = ({
         voucher_value_percent,
         voucher_min_order_value_cents,
         voucher_max_value_cents,
-        voucher_max_runtime_months
+        voucher_max_runtime_months,
     ]);
 
     // Prepare the interactive voucher badge with popover trigger, memoized for performance
@@ -510,7 +519,7 @@ export const OfferCard: FC<OfferCardProps> = ({
         voucher_min_order_value_cents,
         voucher_max_value_cents,
         voucher_max_runtime_months,
-        renderVoucherPopoverContent
+        renderVoucherPopoverContent,
     ]);
 
     // Show placeholder card if no offer data is available
@@ -683,8 +692,12 @@ export const OfferCard: FC<OfferCardProps> = ({
                                                 badgeKey={badgeProps.badgeKey}
                                                 icon={badgeProps.icon}
                                                 text={badgeProps.text}
-                                                colorConfig={badgeProps.colorConfig}
-                                                description={getBadgeDescription(badgeProps.badgeKey)}
+                                                colorConfig={
+                                                    badgeProps.colorConfig
+                                                }
+                                                description={getBadgeDescription(
+                                                    badgeProps.badgeKey,
+                                                )}
                                             />
                                         ))}
                                     </div>

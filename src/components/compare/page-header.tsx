@@ -27,11 +27,11 @@ interface PageHeaderProps {
  * @returns JSX.Element
  */
 export const PageHeader: FC<PageHeaderProps> = ({
-                                                    mainStatusMessage,
-                                                    offerCount,
-                                                    isLoading,
-                                                    isRefining,
-                                                }) => {
+    mainStatusMessage,
+    offerCount,
+    isLoading,
+    isRefining,
+}) => {
     const hasApiKey = !!GOOGLE_MAPS_API_KEY_FROM_ENV;
 
     return (
@@ -61,7 +61,9 @@ export const PageHeader: FC<PageHeaderProps> = ({
                     <div className="flex items-center gap-1 text-slate-400">
                         <Loader2 className="size-4 animate-spin" />
                         <span className="text-xs sm:text-sm">
-                            {isRefining ? "Refining results..." : "Loading offers..."}
+                            {isRefining
+                                ? "Refining results..."
+                                : "Loading offers..."}
                         </span>
                     </div>
                 )}
@@ -69,14 +71,17 @@ export const PageHeader: FC<PageHeaderProps> = ({
                 {/* Offer Count - only show if not actively initial loading and offers exist */}
                 {!isLoading && offerCount !== null && offerCount > 0 && (
                     <p className="text-xs sm:text-sm text-slate-300">
-                        {offerCount} {offerCount === 1 ? "offer" : "offers"} found
+                        {offerCount} {offerCount === 1 ? "offer" : "offers"}{" "}
+                        found
                     </p>
                 )}
-                {!isLoading && offerCount === 0 && !mainStatusMessage.includes("Enter an address") && (
-                    <p className="text-xs sm:text-sm text-slate-400">
-                        No offers found for this address.
-                    </p>
-                )}
+                {!isLoading &&
+                    offerCount === 0 &&
+                    !mainStatusMessage.includes("Enter an address") && (
+                        <p className="text-xs sm:text-sm text-slate-400">
+                            No offers found for this address.
+                        </p>
+                    )}
             </div>
         </header>
     );

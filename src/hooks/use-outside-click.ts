@@ -28,4 +28,3 @@ export const useOutsideClick = (
         };
     }, [refs, onOutside]);
 };
-

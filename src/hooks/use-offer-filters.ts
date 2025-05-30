@@ -34,23 +34,42 @@ export const useOfferFilters = (
     const activeFilterCount = useMemo(() => {
         // Guard against missing or malformed filters
         if (!filters) return 0;
-        
+
         let count = 0;
-        
+
         // Check if arrays exist before checking their length
-        if (Array.isArray(filters.contractDurations) && filters.contractDurations.length > 0) count++;
-        if (Array.isArray(filters.connectionTypes) && filters.connectionTypes.length > 0) count++;
-        if (Array.isArray(filters.selectedProviders) && filters.selectedProviders.length > 0) count++;
-        
+        if (
+            Array.isArray(filters.contractDurations) &&
+            filters.contractDurations.length > 0
+        )
+            count++;
+        if (
+            Array.isArray(filters.connectionTypes) &&
+            filters.connectionTypes.length > 0
+        )
+            count++;
+        if (
+            Array.isArray(filters.selectedProviders) &&
+            filters.selectedProviders.length > 0
+        )
+            count++;
+
         // Check if numeric values are actually numbers
-        if (typeof filters.minSpeed === 'number' && filters.minSpeed > 0) count++;
-        
+        if (typeof filters.minSpeed === "number" && filters.minSpeed > 0)
+            count++;
+
         // Check if boolean values exist before comparison
-        if (typeof filters.tvIncluded === 'boolean' && 
-            filters.tvIncluded !== DEFAULT_FILTERS.tvIncluded) count++;
-        if (typeof filters.youthOffer === 'boolean' && 
-            filters.youthOffer !== DEFAULT_FILTERS.youthOffer) count++;
-            
+        if (
+            typeof filters.tvIncluded === "boolean" &&
+            filters.tvIncluded !== DEFAULT_FILTERS.tvIncluded
+        )
+            count++;
+        if (
+            typeof filters.youthOffer === "boolean" &&
+            filters.youthOffer !== DEFAULT_FILTERS.youthOffer
+        )
+            count++;
+
         return count;
     }, [filters]);
 

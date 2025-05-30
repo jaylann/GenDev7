@@ -35,7 +35,12 @@ export const ProviderLogo: FC<{ providerName: string; className?: string }> = ({
             )}
             title={providerName}
         >
-            <Image src={imageSrc} alt={providerName} fill className="object-contain rounded-full" />
+            <Image
+                src={imageSrc}
+                alt={providerName}
+                fill
+                className="object-contain rounded-full"
+            />
         </div>
     );
 };
