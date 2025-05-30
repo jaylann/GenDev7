@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import usePlacesAutocomplete, { getGeocode } from "use-places-autocomplete";
 import { parseGeocodeResult } from "@/utils/address";
 import type { Address } from "@/types/address";
+import { logger } from "@/utils/logger";
 
 /**
  * @interface UseAddressAutocomplete
@@ -146,7 +147,7 @@ export const useAddressAutocomplete = ({
                 onAddressSelectAction(null, description);
                 return null;
             } catch (err) {
-                console.error("[AddressAutocomplete] geocode failed:", err);
+                logger.error("AddressAutocomplete", "Geocode failed during selection", err);
                 onAddressSelectAction(null, description);
                 return null;
             }
@@ -176,8 +177,9 @@ export const useAddressAutocomplete = ({
             }
 
             if (!hookReady || !sdkReady) {
-                console.warn(
-                    "[AddressAutocomplete] SDK not ready during geocodeAndEmit. Emitting raw address.",
+                logger.warn(
+                    "AddressAutocomplete", 
+                    "SDK not ready during geocodeAndEmit. Emitting raw address."
                 );
                 onAddressSelectAction(null, trimmedAddress);
                 return null;
@@ -191,9 +193,10 @@ export const useAddressAutocomplete = ({
                 onAddressSelectAction(parsed, formatted);
                 return parsed;
             } catch (err: unknown) {
-                console.error(
-                    `[AddressAutocomplete] Geocoding failed for "${trimmedAddress}":`,
-                    err,
+                logger.error(
+                    "AddressAutocomplete",
+                    `Geocoding failed for "${trimmedAddress}"`,
+                    err
                 );
                 onAddressSelectAction(null, trimmedAddress);
                 return null;

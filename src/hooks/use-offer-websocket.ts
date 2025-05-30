@@ -5,6 +5,7 @@ import type { ParsedAddress } from "@/components/compare/address-autocomplete-in
 import type { Offer } from "@/types/offer";
 import { WEBSOCKET_URL } from "@/config/constants";
 import type { WebSocketMessage } from "@/types/web-socket-message";
+import { logger } from "@/utils/logger";
 
 /* Type Definitions */
 export type SlugType = "INITIAL" | "FINAL" | "SHARED";
@@ -221,10 +222,7 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                     break;
 
                 default:
-                    // Only log in development mode
-                    if (process.env.NODE_ENV !== "production") {
-                        console.warn("Unknown WebSocket message:", data);
-                    }
+                    logger.warn("WebSocketHandler", "Unknown WebSocket message type received", data);
             }
         };
 

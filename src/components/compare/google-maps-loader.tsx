@@ -7,6 +7,7 @@
 "use client";
 import Script from "next/script";
 import React from "react";
+import { logger } from "@/utils/logger";
 
 /**
  * GoogleMapsLoader component dynamically injects the Google Maps SDK script.
@@ -23,8 +24,9 @@ export const GoogleMapsLoader: React.FC = () => {
     if (!apiKey) {
         // If the API key is not set, log an error in development and skip loading the SDK
         if (process.env.NODE_ENV === "development") {
-            console.error(
-                "❌ Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY – Google SDK disabled.",
+            logger.error(
+                "GoogleMapsLoader",
+                "❌ Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY – Google SDK disabled."
             );
         }
         return null;
@@ -37,7 +39,7 @@ export const GoogleMapsLoader: React.FC = () => {
             src={`https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`}
             strategy="afterInteractive"
             async
-            onError={(e) => console.error("Failed to load Google Maps SDK", e)}
+            onError={(e) => logger.error("GoogleMapsLoader", "Failed to load Google Maps SDK", e)}
         />
     );
 };

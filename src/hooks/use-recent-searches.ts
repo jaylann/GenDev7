@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { RecentSearchItem } from "@/types/recent-search-item";
 import { getCanonicalCompareURL, extractSlug } from "@/utils/url";
 import { MAX_RECENT_SEARCHES } from "@/config/constants"; // Ensure these are correctly imported
+import { logger } from "@/utils/logger";
 
 
 // Key used to persist recent search entries in sessionStorage.
@@ -41,8 +42,9 @@ export const useRecentSearches = () => {
          */
         const parseAndUpdateSearches = (stored: string | null): void => {
             if (!stored) {
-                console.log(
-                    "[useRecentSearches:useEffect] No stored searches found, initializing empty.",
+                logger.info(
+                    "RecentSearches",
+                    "No stored searches found, initializing empty."
                 );
                 setRecentSearches([]);
                 return;
@@ -66,31 +68,35 @@ export const useRecentSearches = () => {
                     const sortedSearches = parsed.sort(
                         (a, b) => b.timestamp - a.timestamp,
                     );
-                    console.log(
-                        "[useRecentSearches:useEffect] Successfully parsed and sorted searches from storage:",
-                        sortedSearches,
+                    logger.info(
+                        "RecentSearches",
+                        "Successfully parsed and sorted searches from storage",
+                        sortedSearches
                     );
                     setRecentSearches(sortedSearches);
                 } else {
-                    console.warn(
-                        "[useRecentSearches:useEffect] Invalid data format in sessionStorage. Resetting. Parsed data:",
-                        parsed,
+                    logger.warn(
+                        "RecentSearches",
+                        "Invalid data format in sessionStorage. Resetting",
+                        parsed
                     );
                     setRecentSearches([]);
                     sessionStorage.removeItem(STORAGE_KEY);
                 }
             } catch (err) {
-                console.error(
-                    "[useRecentSearches:useEffect] Failed to parse recent searches from sessionStorage:",
-                    err,
+                logger.error(
+                    "RecentSearches",
+                    "Failed to parse recent searches from sessionStorage",
+                    err
                 );
                 setRecentSearches([]);
                 sessionStorage.removeItem(STORAGE_KEY); // Corrupted data, clear it
             }
         };
 
-        console.log(
-            "[useRecentSearches:useEffect] Initializing recent searches from sessionStorage.",
+        logger.info(
+            "RecentSearches",
+            "Initializing recent searches from sessionStorage"
         );
         const stored = sessionStorage.getItem(STORAGE_KEY);
         parseAndUpdateSearches(stored);
@@ -104,9 +110,9 @@ export const useRecentSearches = () => {
                 event.key === STORAGE_KEY &&
                 event.storageArea === sessionStorage
             ) {
-                console.log(
-                    "[useRecentSearches:useEffect] Storage event detected for key:",
-                    STORAGE_KEY,
+                logger.info(
+                    "RecentSearches",
+                    `Storage event detected for key: ${STORAGE_KEY}`
                 );
                 parseAndUpdateSearches(event.newValue);
             }
@@ -114,8 +120,9 @@ export const useRecentSearches = () => {
 
         window.addEventListener("storage", handleStorageChange);
         return () => {
-            console.log(
-                "[useRecentSearches:useEffect] Cleaning up storage event listener.",
+            logger.info(
+                "RecentSearches",
+                "Cleaning up storage event listener"
             );
             window.removeEventListener("storage", handleStorageChange);
         };
@@ -126,24 +133,9 @@ export const useRecentSearches = () => {
      * @param data - The data for the new search item.
      */
     const addRecentSearch = useCallback((data: AddRecentSearchData) => {
-        console.log("[addRecentSearch] Called with data:", data);
+        logger.info("RecentSearches", "Adding new recent search", data);
         setRecentSearches((prevSearches) => {
-            console.log(
-                "[addRecentSearch] prevSearches:",
-                JSON.parse(
-                    JSON.stringify(
-                        prevSearches.map((s) => ({
-                            sessionId: s.sessionId,
-                            url: s.url,
-                            label: s.label,
-                        })),
-                    ),
-                ),
-            );
             const canonicalUrl = getCanonicalCompareURL(data.url);
-            console.log(
-                `[addRecentSearch] Canonical URL for "${data.url}" is "${canonicalUrl}"`,
-            );
 
             // Try to find an existing entry by sessionId or canonical URL
             const existingIndex = prevSearches.findIndex(
@@ -160,9 +152,6 @@ export const useRecentSearches = () => {
 
             if (existingIndex > -1) {
                 const existingItem = prevSearches[existingIndex];
-                console.log(
-                    `[addRecentSearch] Found existing item at index ${existingIndex} (sessionId: ${existingItem.sessionId}, url: ${existingItem.url}). Will update.`,
-                );
 
                 const itemToUpdate: RecentSearchItem = {
                     ...existingItem, // Preserves original ID
@@ -172,34 +161,17 @@ export const useRecentSearches = () => {
                     (s, i) => i !== existingIndex,
                 );
                 updatedSearches.unshift(itemToUpdate);
-                console.log(
-                    `[addRecentSearch] Updated item (sessionId: ${itemToUpdate.sessionId}, url: ${itemToUpdate.url}, label: "${itemToUpdate.label}"). Moved to top.`,
-                );
             } else {
-                console.log(
-                    `[addRecentSearch] No existing item found for sessionId "${data.sessionId}" or url "${canonicalUrl}". Will add new.`,
-                );
                 const newItem: RecentSearchItem = {
                     ...newEntryBase,
                     id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`, // Generate new ID
                 };
                 updatedSearches = [newItem, ...prevSearches];
-                console.log(
-                    `[addRecentSearch] Added new item (sessionId: ${newItem.sessionId}, url: ${newItem.url}, label: "${newItem.label}").`,
-                );
             }
 
             // Limit number of recent searches
             if (updatedSearches.length > MAX_RECENT_SEARCHES) {
-                const removedItems = updatedSearches.slice(MAX_RECENT_SEARCHES);
                 updatedSearches = updatedSearches.slice(0, MAX_RECENT_SEARCHES);
-                console.log(
-                    `[addRecentSearch] List exceeded MAX_RECENT_SEARCHES. Trimmed. Removed items:`,
-                    removedItems.map((s) => ({
-                        sessionId: s.sessionId,
-                        label: s.label,
-                    })),
-                );
             }
 
             try {
@@ -207,13 +179,11 @@ export const useRecentSearches = () => {
                     STORAGE_KEY,
                     JSON.stringify(updatedSearches),
                 );
-                console.log(
-                    "[addRecentSearch] Successfully persisted updated searches to sessionStorage.",
-                );
             } catch (err) {
-                console.error(
-                    "[addRecentSearch] Failed to persist recent searches to sessionStorage:",
-                    err,
+                logger.error(
+                    "RecentSearches",
+                    "Failed to persist recent searches to sessionStorage",
+                    err
                 );
             }
             return updatedSearches;
@@ -228,30 +198,18 @@ export const useRecentSearches = () => {
     const updateSearchSlug = useCallback(
         (sessionId: string, newUrlFromCaller: string) => {
             if (!sessionId) {
-                console.warn(
-                    "[updateSearchSlug] ABORTED: No sessionId provided. newUrlFromCaller:",
-                    newUrlFromCaller,
+                logger.warn(
+                    "RecentSearches",
+                    "Update aborted: No sessionId provided",
+                    { newUrlFromCaller }
                 );
                 return;
             }
 
             setRecentSearches((prevSearches) => {
-                console.groupCollapsed(
-                    `[updateSearchSlug] Attempting update for sessionId: "${sessionId}" with newUrlFromCaller: "${newUrlFromCaller}"`,
-                );
-                console.log(
-                    "[updateSearchSlug] Current prevSearches (before update):",
-                    JSON.parse(
-                        JSON.stringify(
-                            prevSearches.map((s) => ({
-                                id: s.id,
-                                sessionId: s.sessionId,
-                                url: s.url,
-                                label: s.label,
-                                timestamp: s.timestamp,
-                            })),
-                        ),
-                    ),
+                logger.info(
+                    "RecentSearches",
+                    `Attempting update for sessionId: "${sessionId}" with newUrlFromCaller: "${newUrlFromCaller}"`
                 );
 
                 const targetIndex = prevSearches.findIndex(
@@ -259,11 +217,11 @@ export const useRecentSearches = () => {
                 );
 
                 if (targetIndex === -1) {
-                    console.warn(
-                        `[updateSearchSlug] ABORTED: No item found for sessionId "${sessionId}". ` +
-                            `Available sessionIds: [${prevSearches.map((s) => s.sessionId).join(", ")}]`,
+                    logger.warn(
+                        "RecentSearches",
+                        `Update aborted: No item found for sessionId "${sessionId}". ` +
+                            `Available sessionIds: [${prevSearches.map((s) => s.sessionId).join(", ")}]`
                     );
-                    console.groupEnd();
                     return prevSearches;
                 }
 
@@ -274,17 +232,6 @@ export const useRecentSearches = () => {
                     getCanonicalCompareURL(newUrlFromCaller);
                 const newSlug = extractSlug(newCanonicalUrl);
 
-                console.log(
-                    `[updateSearchSlug] Item to update (sessionId "${sessionId}"):`,
-                    JSON.parse(JSON.stringify(originalItem)),
-                );
-                console.log(
-                    `[updateSearchSlug] Original details: url="${originalItem.url}", slug="${originalSlug}"`,
-                );
-                console.log(
-                    `[updateSearchSlug] New details from caller: newUrlFromCaller="${newUrlFromCaller}", newCanonicalUrl="${newCanonicalUrl}", newSlug="${newSlug}"`,
-                );
-
                 if (newSlug && newSlug !== originalSlug) {
                     const conflictingItem = prevSearches.find(
                         (s) =>
@@ -292,37 +239,15 @@ export const useRecentSearches = () => {
                             extractSlug(s.url) === newSlug,
                     );
                     if (conflictingItem) {
-                        console.warn(
-                            `[updateSearchSlug] DANGER! ABORTING UPDATE for sessionId "${sessionId}". ` +
+                        logger.warn(
+                            "RecentSearches",
+                            `DANGER! ABORTING UPDATE for sessionId "${sessionId}". ` +
                                 `Attempted to change its slug from "${originalSlug}" (derived from originalItem.url "${originalItem.url}") to "${newSlug}" (derived from newUrlFromCaller "${newUrlFromCaller}"). ` +
                                 `However, slug "${newSlug}" is ALREADY IN USE by a DIFFERENT item: sessionId "${conflictingItem.sessionId}", url "${conflictingItem.url}", label "${conflictingItem.label}". ` +
-                                `The item for sessionId "${sessionId}" will NOT be updated to prevent data corruption.`,
+                                `The item for sessionId "${sessionId}" will NOT be updated to prevent data corruption.`
                         );
-                        console.groupEnd();
                         return prevSearches;
                     }
-                    console.log(
-                        `[updateSearchSlug] Slug for sessionId "${sessionId}" will change from "${originalSlug}" to "${newSlug}". No conflict found with other items.`,
-                    );
-                } else if (newSlug && newSlug === originalSlug) {
-                    console.log(
-                        `[updateSearchSlug] The new slug "${newSlug}" is the same as the original slug for sessionId "${sessionId}". URL might change due to other params, or only timestamp update needed.`,
-                    );
-                } else if (!newSlug) {
-                    console.log(
-                        `[updateSearchSlug] The new URL "${newCanonicalUrl}" does not contain a slug. Original slug was "${originalSlug}". This means the item might lose its slug.`,
-                    );
-                }
-
-                // If the canonical URL itself hasn't changed, but we still want to bump it (e.g. re-affirm recency)
-                if (originalItem.url === newCanonicalUrl) {
-                    console.log(
-                        `[updateSearchSlug] Canonical URL for sessionId "${sessionId}" ("${newCanonicalUrl}") is identical to original. Will update timestamp and reorder.`,
-                    );
-                } else {
-                    console.log(
-                        `[updateSearchSlug] Canonical URL for sessionId "${sessionId}" will change from "${originalItem.url}" to "${newCanonicalUrl}".`,
-                    );
                 }
 
                 const updatedItem: RecentSearchItem = {
@@ -330,13 +255,6 @@ export const useRecentSearches = () => {
                     url: newCanonicalUrl,
                     timestamp: Date.now(),
                 };
-
-                console.log(
-                    `[updateSearchSlug] Proceeding with update for sessionId "${sessionId}". ` +
-                        `Old URL: "${originalItem.url}", New URL: "${updatedItem.url}". ` +
-                        `Updated Item:`,
-                    JSON.parse(JSON.stringify(updatedItem)),
-                );
 
                 // Remove the old version of the item and add the updated version to the front.
                 let newUpdatedSearches = prevSearches.filter(
@@ -346,8 +264,9 @@ export const useRecentSearches = () => {
 
                 // Ensure list doesn't exceed max length - should not happen here as we replace, not add.
                 if (newUpdatedSearches.length > MAX_RECENT_SEARCHES) {
-                    console.warn(
-                        "[updateSearchSlug] List somehow grew beyond MAX_RECENT_SEARCHES during an update. Trimming.",
+                    logger.warn(
+                        "RecentSearches",
+                        "List somehow grew beyond MAX_RECENT_SEARCHES during an update. Trimming."
                     );
                     newUpdatedSearches = newUpdatedSearches.slice(
                         0,
@@ -360,16 +279,13 @@ export const useRecentSearches = () => {
                         STORAGE_KEY,
                         JSON.stringify(newUpdatedSearches),
                     );
-                    console.log(
-                        "[updateSearchSlug] Successfully persisted updated searches to sessionStorage.",
-                    );
                 } catch (err) {
-                    console.error(
-                        "[updateSearchSlug] Failed to persist updated recent searches to sessionStorage:",
-                        err,
+                    logger.error(
+                        "RecentSearches",
+                        "Failed to persist updated recent searches to sessionStorage",
+                        err
                     );
                 }
-                console.groupEnd();
                 return newUpdatedSearches;
             });
         },
@@ -380,19 +296,18 @@ export const useRecentSearches = () => {
      * Clears all recent search history from state and sessionStorage.
      */
     const clearRecentSearches = useCallback(() => {
-        console.log(
-            "[clearRecentSearches] Called. Clearing all recent searches.",
+        logger.info(
+            "RecentSearches",
+            "Clearing all recent searches"
         );
         setRecentSearches([]);
         try {
             sessionStorage.removeItem(STORAGE_KEY);
-            console.log(
-                "[clearRecentSearches] Successfully removed recent searches from sessionStorage.",
-            );
         } catch (err) {
-            console.error(
-                "[clearRecentSearches] Failed to clear recent searches from sessionStorage:",
-                err,
+            logger.error(
+                "RecentSearches",
+                "Failed to clear recent searches from sessionStorage",
+                err
             );
         }
     }, []);

@@ -5,7 +5,7 @@
  */
 "use client";
 
-import React, { FC, JSX, useMemo, useCallback } from "react";
+import React, { FC, JSX, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
     AlertTriangle,
@@ -45,10 +45,7 @@ import { cn } from "@/lib/utils";
 import { Offer } from "@/types/offer";
 import { getVoucherKindDisplayName, VoucherKind } from "@/types/voucher-kind";
 import { ProviderLogo } from "@/components/compare/provider-logo";
-import {
-    ConnectionType,
-    getConnectionTypeDisplayName,
-} from "@/types/connection-type";
+import { getConnectionTypeDisplayName } from "@/types/connection-type";
 
 interface DetailBadgePropsForUserComponent
     extends Omit<CustomDetailBadgeInfo, "icon"> {
@@ -506,8 +503,7 @@ export const OfferCard: FC<OfferCardProps> = ({
         voucher_type,
         prominentBonusText,
         voucher_value_percent,
-        voucher_value_cents,
-        // renderVoucherPopoverContent depends on voucher properties, so we need to include them
+        voucher_value_cents, // renderVoucherPopoverContent depends on voucher properties, so we need to include them
         // in this useMemo dependency array to ensure proper re-rendering when they change
         voucher_min_order_value_cents,
         voucher_max_value_cents,

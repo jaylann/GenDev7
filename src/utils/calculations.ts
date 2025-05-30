@@ -6,6 +6,7 @@
  */
 import { Offer } from "@/types/offer";
 import { VoucherKind } from "@/types/voucher-kind";
+import { logger } from "@/utils/logger";
 
 /**
  * Applies a percentage voucher discount over a period.
@@ -123,8 +124,9 @@ export const calculateGrossTotalCostOverDynamicPeriod = (
     } else {
         // This case should ideally not be reached if the Pydantic model ensures
         // that at least one price (intro or regular) is always present.
-        console.warn(
-            `Offer ${offer.product_id} has no valid price information.`,
+        logger.warn(
+            "PriceCalculation",
+            `Offer ${offer.product_id} has no valid price information.`
         );
         return null;
     }
@@ -236,8 +238,9 @@ export const calculateEffectiveVoucherValue = (
         default:
             // Ensure exhaustive handling of VoucherKind values; any new type will trigger a compile-time error
             const _exhaustiveCheck: never = offer.voucher_type;
-            console.warn(
-                `Unknown voucher type encountered: ${_exhaustiveCheck}`,
+            logger.warn(
+                "VoucherCalculation",
+                `Unknown voucher type encountered: ${_exhaustiveCheck}`
             );
             return 0;
     }

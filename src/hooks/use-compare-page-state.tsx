@@ -27,6 +27,7 @@ import { buildUrl } from "@/utils/url";
 import { generateShareLink } from "@/utils/generate-share-link";
 import { toast as sonnerToast } from "sonner";
 import { ViewMode } from "@/types/view-mode";
+import { logger } from "@/utils/logger";
 
 export interface ComparePageState {
     state: {
@@ -571,13 +572,10 @@ export function useComparePageState(): ComparePageState {
                 prevFiltersJsonRef.current !== currentFiltersJson;
 
             if (sortChanged || filtersChanged) {
-                console.log(
-                    "[useComparePageState] Sort/filter changed. Updating recent search. Label:",
-                    currentPageLabel,
-                    "SessionID:",
-                    currentPageSessionId,
-                    "Slug:",
-                    activeShareableSlug,
+                logger.info(
+                    "ComparePageState",
+                    "Sort/filter changed. Updating recent search",
+                    { label: currentPageLabel, sessionId: currentPageSessionId, slug: activeShareableSlug }
                 );
                 prevSortRef.current = sortOption;
                 prevFiltersJsonRef.current = currentFiltersJson;

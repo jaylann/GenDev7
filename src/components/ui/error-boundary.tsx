@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, RefreshCcw } from "lucide-react";
 import React, { Component, ErrorInfo, ReactNode } from "react";
+import { logger } from "@/utils/logger";
 
 interface Props {
     children: ReactNode;
@@ -27,7 +28,7 @@ class ErrorBoundary extends Component<Props, State> {
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error("Error caught by ErrorBoundary:", error, errorInfo);
+        logger.error("ErrorBoundary", "Error caught by ErrorBoundary", error, errorInfo);
     }
 
     handleReset = () => {

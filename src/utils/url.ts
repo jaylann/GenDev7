@@ -12,6 +12,7 @@ import {
 import { ConnectionType } from "@/types/connection-type";
 import { SortOptionKey } from "@/types/sort-option-key";
 import { useOfferFilters } from "@/hooks/use-offer-filters";
+import { logger } from "@/utils/logger";
 
 /**
  * Serializes the filter state into a query string for URL sharing.
@@ -58,7 +59,7 @@ export const extractSlug = (url: string): string | null => {
         );
         return fullUrl.searchParams.get("slug");
     } catch (e) {
-        console.error(`[extractSlug] Error parsing URL: ${url}`, e); // Optional: might be too noisy
+        logger.error("URL", `Error parsing URL: ${url}`, e);
         return null;
     }
 };

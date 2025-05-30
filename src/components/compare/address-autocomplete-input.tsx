@@ -9,13 +9,15 @@ import type { Address } from "@/types/address";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 import { AddressSuggestionsList } from "./address-suggestion-list";
 import { isAddressStructurallyValid } from "@/utils/validators";
+import { logger } from "@/utils/logger";
 
 export type ParsedAddress = Address;
 
 const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 if (!apiKey) {
-    console.error(
-        "❌ PRE-CHECK: Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY – autocomplete disabled.",
+    logger.error(
+        "AddressAutocomplete",
+        "❌ Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY – autocomplete disabled."
     );
 }
 
@@ -177,8 +179,9 @@ export const AddressAutocompleteInput: React.FC<
                                     results[0].formatted_address ||
                                     rawQueryText;
                             } else {
-                                console.warn(
-                                    `[AddressAutocompleteInput] Geocoding for prefill of "${rawQueryText}" failed with status: ${status}`,
+                                logger.warn(
+                                    "AddressAutocompleteInput",
+                                    `Geocoding for prefill of "${rawQueryText}" failed with status: ${status}`
                                 );
                             }
                         },
@@ -194,9 +197,10 @@ export const AddressAutocompleteInput: React.FC<
                     }
                 } catch (e) {
                     if (!signal.aborted) {
-                        console.warn(
-                            `[AddressAutocompleteInput] Geocoding error during prefill for "${rawQueryText}":`,
-                            e,
+                        logger.warn(
+                            "AddressAutocompleteInput",
+                            `Geocoding error during prefill for "${rawQueryText}"`,
+                            e
                         );
                     }
                     // googleFormattedAddress remains `rawQueryText`
