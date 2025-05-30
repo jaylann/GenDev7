@@ -62,6 +62,21 @@ interface DetailBadgePropsForUserComponent
     icon: React.ElementType;
 }
 
+/**
+ * Helper function to get descriptive text for badge keys to improve accessibility
+ * @param badgeKey - Identifier for the badge type
+ * @returns Descriptive text explaining what the badge indicates
+ */
+const getBadgeDescription = (badgeKey: string): string => {
+    switch(badgeKey) {
+        case 'tv': return 'Television package included with this offer';
+        case 'install': return 'Information about installation service';
+        case 'dataCap': return 'Data usage limit information';
+        case 'youth': return 'Special offer for young customers';
+        default: return '';
+    }
+};
+
 const BADGE_COLORS: Record<string, CustomDetailBadgeInfo["colorConfig"]> = {
     tv: {
         bg: "bg-purple-600/20",
@@ -490,7 +505,12 @@ export const OfferCard: FC<OfferCardProps> = ({
         prominentBonusText,
         voucher_value_percent,
         voucher_value_cents,
-        renderVoucherPopoverContent,  // ← added
+        // renderVoucherPopoverContent depends on voucher properties, so we need to include them
+        // in this useMemo dependency array to ensure proper re-rendering when they change
+        voucher_min_order_value_cents,
+        voucher_max_value_cents,
+        voucher_max_runtime_months,
+        renderVoucherPopoverContent
     ]);
 
     // Show placeholder card if no offer data is available
@@ -663,9 +683,8 @@ export const OfferCard: FC<OfferCardProps> = ({
                                                 badgeKey={badgeProps.badgeKey}
                                                 icon={badgeProps.icon}
                                                 text={badgeProps.text}
-                                                colorConfig={
-                                                    badgeProps.colorConfig
-                                                }
+                                                colorConfig={badgeProps.colorConfig}
+                                                description={getBadgeDescription(badgeProps.badgeKey)}
                                             />
                                         ))}
                                     </div>

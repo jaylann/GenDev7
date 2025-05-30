@@ -135,16 +135,25 @@ export const AddressAutocompleteInput: React.FC<
             hasUserTypedRef.current
         )
             return;
+            
+        // Create an AbortController to cancel pending operations if the component unmounts
+        const abortController = new AbortController();
+        
         (async () => {
             const raw = `${externalParsedAddress.street} ${externalParsedAddress.house_number}, ${externalParsedAddress.plz} ${externalParsedAddress.city}`;
             let formatted = raw;
-            if (window.google?.maps?.Geocoder) {
+            
+            if (window.google?.maps?.Geocoder && !abortController.signal.aborted) {
                 try {
                     const { results } =
                         await new window.google.maps.Geocoder().geocode({
                             address: raw,
                         });
                     formatted = results[0]?.formatted_address ?? raw;
+                    
+                    // Check if the component has been unmounted or dependencies changed
+                    if (abortController.signal.aborted) return;
+                    
                     if (formatted === value) {
                         // Check if value already matches to prevent loop
                         hasPrefilledRef.current = true;
@@ -154,11 +163,20 @@ export const AddressAutocompleteInput: React.FC<
                     /* Silently ignore and use raw */
                 }
             }
-            setValue(formatted, false);
-            // Do not call handleAddressParsed here; prefilled slugs are assumed valid until user interaction.
-            // If validation of prefilled slugs is desired, call handleAddressParsed(externalParsedAddress, formatted);
-            hasPrefilledRef.current = true;
+            
+            // Only update state if the component is still mounted
+            if (!abortController.signal.aborted) {
+                setValue(formatted, false);
+                // Do not call handleAddressParsed here; prefilled slugs are assumed valid until user interaction.
+                // If validation of prefilled slugs is desired, call handleAddressParsed(externalParsedAddress, formatted);
+                hasPrefilledRef.current = true;
+            }
         })();
+        
+        // Cleanup function to abort any in-flight operations when component unmounts
+        return () => {
+            abortController.abort();
+        };
     }, [externalParsedAddress, ready, setValue, value]); // Added value to deps to re-evaluate if value changes externally
 
     useEffect(() => {

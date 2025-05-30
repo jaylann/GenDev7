@@ -29,15 +29,28 @@ export const useOfferFilters = (
 
     /**
      * Computes the number of filters that differ from default settings.
+     * Includes defensive coding to prevent errors with malformed filter state.
      */
     const activeFilterCount = useMemo(() => {
+        // Guard against missing or malformed filters
+        if (!filters) return 0;
+        
         let count = 0;
-        if (filters.contractDurations.length > 0) count++;
-        if (filters.connectionTypes.length > 0) count++;
-        if (filters.minSpeed > 0) count++; // DEFAULT_FILTERS.minSpeed is 0
-        if (filters.tvIncluded !== DEFAULT_FILTERS.tvIncluded) count++;
-        if (filters.selectedProviders.length > 0) count++;
-        if (filters.youthOffer !== DEFAULT_FILTERS.youthOffer) count++;
+        
+        // Check if arrays exist before checking their length
+        if (Array.isArray(filters.contractDurations) && filters.contractDurations.length > 0) count++;
+        if (Array.isArray(filters.connectionTypes) && filters.connectionTypes.length > 0) count++;
+        if (Array.isArray(filters.selectedProviders) && filters.selectedProviders.length > 0) count++;
+        
+        // Check if numeric values are actually numbers
+        if (typeof filters.minSpeed === 'number' && filters.minSpeed > 0) count++;
+        
+        // Check if boolean values exist before comparison
+        if (typeof filters.tvIncluded === 'boolean' && 
+            filters.tvIncluded !== DEFAULT_FILTERS.tvIncluded) count++;
+        if (typeof filters.youthOffer === 'boolean' && 
+            filters.youthOffer !== DEFAULT_FILTERS.youthOffer) count++;
+            
         return count;
     }, [filters]);
 

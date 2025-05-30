@@ -56,5 +56,14 @@ export const parseGeocodeResult = (
     // Validate that all components exist and postal code matches five digits
     if (!street || !house || !city || !plz || !/^\d{5}$/.test(plz)) return null;
 
-    return { street, house_number: house, city, plz, country_code: "DE" };
+    // Explicitly create Address object to ensure type safety
+    const address: Address = { 
+        street, 
+        house_number: house, 
+        city, 
+        plz, 
+        country_code: "DE" 
+    };
+    
+    return address;
 };
