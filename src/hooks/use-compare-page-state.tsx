@@ -281,6 +281,9 @@ export function useComparePageState(): ComparePageState {
         [],
     );
 
+    // Track the most recent slug received timestamp to prevent race conditions
+    const lastSlugTimestampRef = useRef<number>(0);
+    
     const handleWebSocketSlugReceived = useCallback(
         (slug: string | null, slugType: SlugType) => {
             // If search is not active and this isn't a shared slug being processed, ignore.
@@ -291,6 +294,10 @@ export function useComparePageState(): ComparePageState {
             if (!slug) {
                 return;
             }
+            
+            // Record timestamp of this slug update to prevent race conditions
+            const currentTimestamp = Date.now();
+            lastSlugTimestampRef.current = currentTimestamp;
 
             currentSearchSlugRef.current = slug;
             setActiveShareableSlug(slug); // Keep activeShareableSlug in sync
@@ -341,14 +348,22 @@ export function useComparePageState(): ComparePageState {
                 if (newTargetUrlPathAndQuery) {
                     const currentBrowserUrlPathAndQuery =
                         window.location.pathname + window.location.search;
+                        
+                    // Capture timestamp to prevent race condition with future updates
+                    const updateTimestamp = lastSlugTimestampRef.current;
 
                     if (
                         newTargetUrlPathAndQuery !==
                         currentBrowserUrlPathAndQuery
                     ) {
-                        router.replace(newTargetUrlPathAndQuery, {
-                            scroll: false,
-                        });
+                        // Use setTimeout to ensure we don't update if a newer slug arrived
+                        setTimeout(() => {
+                            if (updateTimestamp === lastSlugTimestampRef.current) {
+                                router.replace(newTargetUrlPathAndQuery, {
+                                    scroll: false,
+                                });
+                            }
+                        }, 0);
                     }
                 }
             }
@@ -429,6 +444,12 @@ export function useComparePageState(): ComparePageState {
      */
     useEffect(() => {
         updateWebSocketOffersRef(originalOffers);
+        
+        // Cleanup function to prevent memory leaks on unmount
+        return () => {
+            // Explicitly set offers ref to empty array to prevent reference holding
+            updateWebSocketOffersRef([]);
+        };
     }, [originalOffers, updateWebSocketOffersRef]);
 
     /**

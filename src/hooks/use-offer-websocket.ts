@@ -38,9 +38,17 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
     const wsRef              = useRef<WebSocket | null>(null);
     const firstBatchTsRef    = useRef<number | null>(null);
     const offersRef          = useRef<Offer[]>([]);
+    const reconnectAttempts  = useRef<number>(0);
+    const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Closes the active WebSocket connection and resets related state
     const abortCurrentWebSocket = useCallback(() => {
+        // Clear any pending reconnect timeouts
+        if (reconnectTimeoutRef.current) {
+            clearTimeout(reconnectTimeoutRef.current);
+            reconnectTimeoutRef.current = null;
+        }
+        
         if (wsRef.current) {
             wsRef.current.onopen =
                 wsRef.current.onmessage =
@@ -48,8 +56,9 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                         wsRef.current.onclose = null;
             wsRef.current.close(1000, "Aborted by navigation/search");
         }
-        wsRef.current        = null;
+        wsRef.current = null;
         firstBatchTsRef.current = null;
+        reconnectAttempts.current = 0;
     }, []);
 
     // Updates internal offers reference for consistent data across components
@@ -202,7 +211,10 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                     break;
 
                 default:
-                    console.warn("Unknown WebSocket message:", data);
+                    // Only log in development mode
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.warn("Unknown WebSocket message:", data);
+                    }
             }
         };
 
@@ -214,13 +226,45 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
 
         sock.onclose = (ev) => {
             if (gen !== genRef.current) return;
-            if (ev.wasClean || ev.code === 1000) return;     // expected
-            onStatusUpdateAction("Connection lost. Displaying last known results.");
-            onLoadingChangeAction(false);
+            if (ev.wasClean || ev.code === 1000) {
+                // Expected closure - no need to reconnect
+                return;
+            }
+            
+            onStatusUpdateAction("Connection lost. Attempting to reconnect...");
+            
+            // Don't attempt reconnection if we've exceeded maximum attempts (5)
+            if (reconnectAttempts.current >= 5) {
+                onStatusUpdateAction("Connection failed after multiple attempts. Displaying last known results.");
+                onLoadingChangeAction(false);
+                return;
+            }
+            
+            // Implement exponential backoff for reconnection
+            const backoffTime = Math.min(1000 * (2 ** reconnectAttempts.current), 30000); // Max 30s delay
+            reconnectAttempts.current += 1;
+            
+            reconnectTimeoutRef.current = setTimeout(() => {
+                if (gen === genRef.current) { // Ensure this reconnect is still valid
+                    onStatusUpdateAction(`Reconnecting... (Attempt ${reconnectAttempts.current}/5)`);
+                    connectWebSocket(); // Reconnect
+                }
+            }, backoffTime);
+            
+            // If this is the first reconnect attempt, ensure UI shows as loading
+            if (reconnectAttempts.current === 1) {
+                onLoadingChangeAction(true);
+            }
         };
     }, [abortCurrentWebSocket, props]);
 
-    useEffect(() => abortCurrentWebSocket, [abortCurrentWebSocket]);
+    useEffect(() => {
+        // Set up websocket cleanup
+        return () => {
+            // Clean up WebSocket on unmount
+            abortCurrentWebSocket();
+        };
+    }, [abortCurrentWebSocket]);
 
     return {
         connectWebSocket,

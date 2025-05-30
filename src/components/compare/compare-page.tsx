@@ -3,6 +3,7 @@
 import React, { JSX } from "react";
 import { useComparePageState } from "@/hooks/use-compare-page-state";
 
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { UpdatePromptDialog } from "@/components/compare/update-prompt-dialog";
 import { PageHeader } from "@/components/compare/page-header";
 import { RecentSearchesDropdown } from "@/components/compare/recent-searches-dropdown";
@@ -29,6 +30,7 @@ export default function ComparePage(): JSX.Element {
     const { state, actions } = useComparePageState();
 
     return (
+        <ErrorBoundary>
         <div className="flex flex-col h-screen bg-gradient-to-br from-[#0B0B2D] via-[#1C1044] to-[#3C0E4C] text-slate-100 selection:bg-indigo-500 selection:text-white">
             <main
                 className="container mx-auto max-w-7xl px-4 pt-12 pb-0 sm:pt-16 sm:pb-0
@@ -115,5 +117,6 @@ export default function ComparePage(): JSX.Element {
                 </div>
             </main>
         </div>
+        </ErrorBoundary>
     );
 }

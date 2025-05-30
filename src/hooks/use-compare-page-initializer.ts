@@ -77,6 +77,10 @@ export const useComparePageInitializer = ({
 
     // Listen for changes in URL parameters to initialize or update page state.
     useEffect(() => {
+        // Create an AbortController to cancel fetch requests when component unmounts or URL changes
+        const abortController = new AbortController();
+        const signal = abortController.signal;
+        
         const slugFromUrl = searchParams.get("slug");
         const sortFromUrl = searchParams.get("sort") as SortOptionKey | null;
         const filtersFromUrl = deserializeFiltersFromURL(searchParams);
@@ -108,6 +112,7 @@ export const useComparePageInitializer = ({
                         {
                             headers: { Accept: "application/json" },
                             cache: "no-store",
+                            signal, // Add abort signal to allow cancellation
                         },
                     );
 
@@ -120,7 +125,6 @@ export const useComparePageInitializer = ({
                         );
                     }
                     const raw = await res.text();
-                    console.log("▶️ RAW RESPONSE:", raw);
                     let data: SharedOffersResponse;
                     try {
                         data = JSON.parse(raw);
@@ -151,7 +155,10 @@ export const useComparePageInitializer = ({
                 } catch (err: unknown) {
                     const errorMessage =
                         err instanceof Error ? err.message : String(err);
-                    console.error("Error loading shared offers:", err);
+                    // Only log detailed errors in development
+                    if (process.env.NODE_ENV !== 'production') {
+                        console.error("Error loading shared offers:", err);
+                    }
                     setStatusAction(
                         `Error: Could not load shared comparison. ${errorMessage}. Link may be invalid or expired.`,
                     );
@@ -175,5 +182,10 @@ export const useComparePageInitializer = ({
             setLoadingAction(false);
             setIsLoadingFromSlugAction(false);
         }
+        
+        // Cleanup function to abort any in-flight requests when the component unmounts or deps change
+        return () => {
+            abortController.abort();
+        };
     }, [searchParams]);
 };
