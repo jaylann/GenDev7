@@ -9,10 +9,10 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { GOOGLE_MAPS_API_KEY_FROM_ENV } from "@/config/constants";
 
 interface PageHeaderProps {
-    mainStatusMessage: string; // Renamed for clarity
-    offerCount: number | null; // New prop for offer count
-    isLoading: boolean; // New prop for loading state
-    isRefining: boolean; // New prop for refining state
+    mainStatusMessage: string;
+    offerCount: number | null;
+    isLoading: boolean;
+    isRefining: boolean;
 }
 
 /**

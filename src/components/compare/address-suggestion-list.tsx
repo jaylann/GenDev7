@@ -10,7 +10,7 @@ import React, { forwardRef, ReactNode } from "react";
 interface AddressSuggestionsListProps {
     show: boolean;
     suggestions: import("use-places-autocomplete").Suggestions;
-    highlightedIndex: number;               // NEW
+    highlightedIndex: number;
     onSelect: (desc: string) => void;
 }
 
@@ -58,12 +58,12 @@ export const AddressSuggestionsList = forwardRef<
                 role="listbox"
             >
                 {data.map(({ place_id, description, structured_formatting }, idx) => {
-                    const highlighted = idx === highlightedIndex; // NEW
+                    const highlighted = idx === highlightedIndex;
                     return (
                         <li
                             key={place_id}
-                            id={`addr-opt-${idx}`}                              // NEW
-                            onMouseDown={(e) => e.preventDefault()}             // keep input focus
+                            id={`addr-opt-${idx}`}
+                            onMouseDown={(e) => e.preventDefault()} // keep input focus
                             onClick={() => onSelect(description)}
                             className={cn(
                                 "cursor-pointer px-4 py-2.5 text-sm",

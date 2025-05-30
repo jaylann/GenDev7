@@ -87,7 +87,7 @@ const CONNECTION_QUALITY: Record<ConnectionType, number> = {
  */
 const WEIGHTS = {
     price: 0.30,
-    bangForBuck: 0.08, // NEW weight for Mbps per € efficiency
+    bangForBuck: 0.08, // Mbps per € efficiency
     speed: 0.26,
     connection: 0.15,
     voucher: 0.07,

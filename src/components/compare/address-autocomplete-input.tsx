@@ -23,7 +23,7 @@ export interface AddressAutocompleteInputProps {
     /** Optional initial raw input text. Used if `parsedAddress` is not provided. */
     initialValue?: string;
     /** Prefills the input from a trusted Address object if provided. Takes precedence over `initialValue`. */
-    parsedAddress?: ParsedAddress | null; // Added null to type
+    parsedAddress?: ParsedAddress | null;
     /** Fallback placeholder text if no initial value or parsedAddress is given. */
     defaultAddressText?: string;
     /** Callback invoked with `(parsedAddress | null, fullText)` on selection, typing, or clearing. */
