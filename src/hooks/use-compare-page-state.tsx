@@ -113,13 +113,33 @@ export function useComparePageState(): ComparePageState {
 
     const router = useRouter();
     const pathname = usePathname();
+    /**
+     * Creates a toast notification with sanitized text content
+     */
+    /**
+     * Sanitizes text to prevent XSS in UI elements
+     */
+    const sanitizeText = useCallback((text: string): string => {
+        return text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }, []);
+
+    /**
+     * Creates a toast notification with sanitized text content
+     */
     const notify = useCallback(
-        (text: string, duration = 3000) =>
-            sonnerToast(<p className="text-white">{text}</p>, {
-                duration,
-                id: `toast-${Date.now()}`,
-            }),
-        [],
+        (text: string, duration = 3000) => {
+            // No HTML allowed in text - we display as plain text only
+            const sanitizedText = sanitizeText(text);
+            return sonnerToast(
+                // Use text content only, no HTML interpretation
+                <p className="text-white">{sanitizedText}</p>, 
+                {
+                    duration,
+                    id: `toast-${Date.now()}`,
+                }
+            );
+        },
+        [sanitizeText],
     );
 
     const { filters, setFilters, resetFilters, activeFilterCount } =
@@ -274,17 +294,12 @@ export function useComparePageState(): ComparePageState {
                 if (newTargetUrlPathAndQuery) {
                     const currentBrowserUrlPathAndQuery =
                         window.location.pathname + window.location.search;
-                    const updateTimestamp = lastSlugTimestampRef.current;
                     if (
                         newTargetUrlPathAndQuery !== currentBrowserUrlPathAndQuery
                     ) {
-                        setTimeout(() => {
-                            if (updateTimestamp === lastSlugTimestampRef.current) {
-                                router.replace(newTargetUrlPathAndQuery, {
-                                    scroll: false,
-                                });
-                            }
-                        }, 0);
+                        debouncedRouterReplace(newTargetUrlPathAndQuery, {
+                            scroll: false,
+                        });
                     }
                 }
             }
@@ -319,6 +334,7 @@ export function useComparePageState(): ComparePageState {
                 if (willRefine) {
                     setIsRefiningOffers(true);
                     if (!hasTriggeredRefineRef.current) {
+                        // Safe static string content, no user input/variables used
                         sonnerToast(
                             <div>
                                 <p className="font-semibold text-white">
@@ -494,10 +510,12 @@ export function useComparePageState(): ComparePageState {
                 return;
             }
             const offerKey = `${offer.provider}:${offer.product_id}`;
+            // Sanitize plan name for display in messages
+            const safePlanName = sanitizeText(offer.plan_name);
             sonnerToast.promise(
                 generateShareLink(activeShareableSlug, offerKey),
                 {
-                    loading: `Creating link for “${offer.plan_name}”…`,
+                    loading: `Creating link for “${safePlanName}”…`,
                     success: async ({ shared_slug }) => {
                         const url = buildUrl(
                             shared_slug,
@@ -578,7 +596,7 @@ export function useComparePageState(): ComparePageState {
                     const currentBrowserUrlPathAndQuery =
                         window.location.pathname + window.location.search;
                     if (newUrlPathAndQuery !== currentBrowserUrlPathAndQuery) {
-                        router.replace(newUrlPathAndQuery, { scroll: false });
+                        debouncedRouterReplace(newUrlPathAndQuery, { scroll: false });
                     }
                 }
             }
@@ -597,6 +615,29 @@ export function useComparePageState(): ComparePageState {
         initialAddressLabel,
     ]);
 
+    // Add debounce helper function for router navigation
+    const debounceRef = useRef<{
+        timeoutId: NodeJS.Timeout | null;
+        latestUrl: string | null;
+    }>({ timeoutId: null, latestUrl: null });
+    
+    const debouncedRouterReplace = useCallback((url: string, options: any) => {
+        if (debounceRef.current.timeoutId) {
+            clearTimeout(debounceRef.current.timeoutId);
+        }
+        
+        debounceRef.current.latestUrl = url;
+        
+        debounceRef.current.timeoutId = setTimeout(() => {
+            const currentUrl = debounceRef.current.latestUrl;
+            if (currentUrl) {
+                router.replace(currentUrl, options);
+                debounceRef.current.latestUrl = null;
+            }
+            debounceRef.current.timeoutId = null;
+        }, 100); // 100ms debounce time for URL updates
+    }, [router]);
+    
     useEffect(() => {
         if (currentDisplaySlug) {
             if (
@@ -609,6 +650,15 @@ export function useComparePageState(): ComparePageState {
             setIsRefiningOffers(false);
         }
     }, [currentDisplaySlug]);
+    
+    // Clean up any pending timeouts on unmount
+    useEffect(() => {
+        return () => {
+            if (debounceRef.current.timeoutId) {
+                clearTimeout(debounceRef.current.timeoutId);
+            }
+        };
+    }, []);
     const currentOfferCountForDisplay = useMemo(() => {
         if (originalOffers.length > 0) return originalOffers.length;
         if (

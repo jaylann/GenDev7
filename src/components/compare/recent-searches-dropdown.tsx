@@ -132,8 +132,7 @@ export const RecentSearchesDropdown: FC<RecentSearchesDropdownProps> = ({
                     )}
 
                     <DropdownMenuItem
-                        onClick={(e) => {
-                            // e.stopPropagation(); // Generally not needed unless specific event bubbling issues arise.
+                        onClick={() => {
                             onClear();
                         }}
                         className={cn(
