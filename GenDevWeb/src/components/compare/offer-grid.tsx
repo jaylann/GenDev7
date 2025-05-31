@@ -2,13 +2,6 @@
  * OfferGrid Module
  *
  * Displays a collection of internet service offers in grid or list form.
- * Handles various loading and empty states:
- *  1. Loading skeletons
- *  2. Initial placeholder before search
- *  3. No results after filtering
- *  4. No offers found for address
- *  5. Fallback null when appropriate
- *  6. Actual offers display
  */
 import React, { FC } from "react";
 import Image from "next/image";
@@ -43,7 +36,7 @@ interface OfferGridProps {
     onResetFilters: () => void;
     hasSearchBeenPerformed: boolean;
     /** Callback to handle sharing a single offer. */
-    onShareOffer: (offer: Offer) => void;
+    onShareOffer: (offer: Offer, e?: React.MouseEvent) => void;
     /** The slug for the current full list of offers, required for sharing. */
     activeShareableSlug: string | null;
 }

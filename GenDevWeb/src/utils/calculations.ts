@@ -6,6 +6,7 @@
  */
 import { Offer } from "@/types/offer";
 import { VoucherKind } from "@/types/voucher-kind";
+import { logger } from "@/utils/logger";
 
 /**
  * Applies a percentage voucher discount over a period.
@@ -14,7 +15,7 @@ const calculatePercentageVoucherValue = (
     offer: Offer,
     calculationPeriodMonths: number,
     overallMaxCapCents: number,
-    introPriceDuration: number
+    introPriceDuration: number,
 ): number => {
     if (
         offer.voucher_value_percent == null ||
@@ -26,7 +27,7 @@ const calculatePercentageVoucherValue = (
     let total = 0;
     const voucherEffectiveMonths = Math.min(
         offer.voucher_max_runtime_months ?? calculationPeriodMonths,
-        calculationPeriodMonths
+        calculationPeriodMonths,
     );
     for (let month = 0; month < voucherEffectiveMonths; month++) {
         if (total >= overallMaxCapCents) {
@@ -48,7 +49,7 @@ const calculatePercentageVoucherValue = (
         const discountThisMonth = currentMonthlyPrice * percentOff;
         const applicableDiscount = Math.min(
             discountThisMonth,
-            overallMaxCapCents - total
+            overallMaxCapCents - total,
         );
         total += applicableDiscount;
     }
@@ -74,7 +75,6 @@ export const getIntroPriceDurationMonths = (offer: Offer): number => {
         offer.price_cents_month_intro != null &&
         offer.price_cents_month_intro > 0
     ) {
-        // `contract_regular_months` from Pydantic has a default of 12.
         // This field defines the duration for which the intro price is typically valid.
         return offer.contract_regular_months ?? 12;
     }
@@ -104,7 +104,6 @@ export const calculateGrossTotalCostOverDynamicPeriod = (
     let totalCost = 0;
 
     if (price_cents_month_intro != null) {
-        // If regular price is not set, assume intro price continues (or use a fallback if defined).
         // Pydantic ensures at least one price, so if intro exists, regular can be null.
         const effectiveRegularPrice =
             price_cents_month_regular ?? price_cents_month_intro;
@@ -125,7 +124,8 @@ export const calculateGrossTotalCostOverDynamicPeriod = (
     } else {
         // This case should ideally not be reached if the Pydantic model ensures
         // that at least one price (intro or regular) is always present.
-        console.warn(
+        logger.warn(
+            "PriceCalculation",
             `Offer ${offer.product_id} has no valid price information.`,
         );
         return null;
@@ -205,7 +205,7 @@ export const calculateEffectiveVoucherValue = (
                 offer,
                 calculationPeriodMonths,
                 overallMaxCapCents,
-                introPriceDuration
+                introPriceDuration,
             );
             break;
 
@@ -229,7 +229,7 @@ export const calculateEffectiveVoucherValue = (
                     offer,
                     calculationPeriodMonths,
                     overallMaxCapCents,
-                    introPriceDuration
+                    introPriceDuration,
                 );
             }
             // If neither cents nor percent value is present for DISCOUNT, value remains 0.
@@ -238,7 +238,8 @@ export const calculateEffectiveVoucherValue = (
         default:
             // Ensure exhaustive handling of VoucherKind values; any new type will trigger a compile-time error
             const _exhaustiveCheck: never = offer.voucher_type;
-            console.warn(
+            logger.warn(
+                "VoucherCalculation",
                 `Unknown voucher type encountered: ${_exhaustiveCheck}`,
             );
             return 0;

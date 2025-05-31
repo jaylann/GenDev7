@@ -49,7 +49,7 @@ export const UpdatePromptDialog: FC<UpdatePromptDialogProps> = ({
                         onClick={() => onOpenChange(false)}
                         className="bg-transparent dark:bg-transparent border-slate-600 hover:bg-slate-700 dark:hover:bg-slate-700 text-slate-300 hover:text-white"
                     >
-                        Later
+                        Discard
                     </AlertDialogCancel>
                     <AlertDialogAction
                         onClick={() => {

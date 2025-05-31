@@ -13,8 +13,6 @@ export interface WebSocketMessage {
     slug?: string;
     /** Optional text message for status updates or error details. */
     message?: string;
-    /** Flag indicating whether the backend has finished sending offers. */
-    is_complete?: boolean;
     /** Indicates if the server will perform additional refinements on the current offers. */
     will_refine?: boolean;
 }

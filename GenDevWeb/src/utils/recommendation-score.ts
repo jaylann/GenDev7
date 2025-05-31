@@ -5,12 +5,6 @@
  * promotion value, performance, and extras into a single normalized score between 0 and 1.
  * Utilizes utility functions for cost and voucher calculations and empirical weights
  * derived from consumer research.
- *
- * **Update May 2025**
- * - Added **bang‑for‑buck** metric (Mbps per €) to explicitly reward cost‑efficient speed.
- * - Introduced a mild penalty multiplier for plans advertising < 100 Mbps downstream.
- * - Re‑balanced weightings so the new dimension fits while total weight remains 1.
- * - All existing comments kept intact; new explanations appended where relevant.
  */
 import { ConnectionType } from "@/types/connection-type";
 import { Offer } from "@/types/offer";
@@ -86,8 +80,8 @@ const CONNECTION_QUALITY: Record<ConnectionType, number> = {
  * have the greatest influence. The sum of all weights equals 1.
  */
 const WEIGHTS = {
-    price: 0.30,
-    bangForBuck: 0.08, // NEW weight for Mbps per € efficiency
+    price: 0.3,
+    bangForBuck: 0.08, // Mbps per € efficiency
     speed: 0.26,
     connection: 0.15,
     voucher: 0.07,
@@ -196,7 +190,10 @@ export function calculateRecommendationScore(
     };
 
     /* ---------- metric scores for *this* offer --------------------------- */
-    const baseCost = calculateGrossTotalCostOverDynamicPeriod(offer, TERM_MONTHS);
+    const baseCost = calculateGrossTotalCostOverDynamicPeriod(
+        offer,
+        TERM_MONTHS,
+    );
     const priceMonthly =
         baseCost == null ? Number.POSITIVE_INFINITY : baseCost / TERM_MONTHS;
 

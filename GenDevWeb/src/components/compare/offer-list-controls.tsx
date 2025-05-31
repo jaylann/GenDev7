@@ -38,7 +38,7 @@ import { ViewMode } from "@/types/view-mode";
  * @property activeFilterCount - Number of filters currently active.
  * @property originalOffers - Array of unfiltered offers for popover calculations.
  * @property isLoadingOffers - True when offers are loading; disables controls.
- * @property areAnyOffersLoaded - T<>rue if any offers have been loaded at all.
+ * @property areAnyOffersLoaded - True if any offers have been loaded at all.
  * @property isSingleOfferView - Optional flag to disable certain controls in single-offer mode.
  */
 interface OfferListControlsProps {
@@ -55,7 +55,7 @@ interface OfferListControlsProps {
     originalOffers: Offer[];
     isLoadingOffers: boolean; // For disabling controls during initial load
     areAnyOffersLoaded: boolean; // To disable controls if no offers at all
-    isSingleOfferView?: boolean; // Add this
+    isSingleOfferView?: boolean;
 }
 
 /**
