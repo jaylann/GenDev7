@@ -2,14 +2,20 @@
 FROM python:3.12-slim AS base
 
 # --- system & runtime settings ---------------------------------------------
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+ENV HOME=/home/app \
+    XDG_CACHE_HOME=/home/app/.cache \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH=/app
 
 RUN addgroup --system app \
-    && adduser --system --ingroup app app \
-    && apt-get update \
-    && apt-get install -y curl --no-install-recommends \
-    && rm -rf /var/lib/apt/lists/*
+ && adduser  --system --home "$HOME" --shell /usr/sbin/nologin --ingroup app app \
+ && mkdir -p "$XDG_CACHE_HOME"
+
+RUN apt-get update \
+ && apt-get install -y curl --no-install-recommends \
+ && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 # --- dependency layer ------------------------------------------------------
@@ -22,8 +28,10 @@ RUN uv pip install --system -r requirements.txt
 # --- application code ------------------------------------------------------
 COPY . .
 
+RUN chown -R app:app "$HOME" /app
+
 USER app
 
 EXPOSE 8000
-# 4 workers ≈ 2 × vCPU; tune as needed (GUNICORN_WORKERS env also works)
-CMD ["gunicorn", "--bind=0.0.0.0:8000", "--workers=4", "--worker-class=uvicorn.workers.UvicornWorker", "--access-logfile=-", "main:app"]
+CMD ["gunicorn", "--bind=0.0.0.0:8000", "--workers=4", \
+     "--worker-class=uvicorn.workers.UvicornWorker", "--access-logfile=-", "main:app"]

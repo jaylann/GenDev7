@@ -81,8 +81,7 @@ def create_app() -> FastAPI:
     # ---------- CORS (configure allowed origins and methods; restrict in production) ----------
     fast_api_app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        # In production, restrict allowed_methods and origins for security
+        allow_origins=["https://gendev-web.vercel.app"],
         allow_methods=[
             "GET",
             "POST",
