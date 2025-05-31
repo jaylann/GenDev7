@@ -19,7 +19,7 @@ interface UseOfferWebSocketProps {
     onOffersReceivedAction: (
         offers: Offer[],
         phase: "INITIAL_OFFERS" | "FINAL_OFFERS",
-        willRefine: boolean,
+        willRefine: boolean
     ) => void;
     onWebSocketSlugReceivedAction: (slug: string | null, t: SlugType) => void;
     onLoadingChangeAction: (waiting: boolean) => void;
@@ -27,10 +27,7 @@ interface UseOfferWebSocketProps {
     onConnectionErrorAction: (msg: string) => void;
 
     /** Handler invoked when pending offers and slug are available for review */
-    onPendingOffersUpdateAction: (
-        offers: Offer[] | null,
-        slug: string | null,
-    ) => void;
+    onPendingOffersUpdateAction: (offers: Offer[] | null, slug: string | null) => void;
     onPromptOpenChangeAction: (open: boolean) => void;
 
     initialLoadingState: boolean;
@@ -46,18 +43,16 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
 
     // Closes the active WebSocket connection and resets related state
     const abortCurrentWebSocket = useCallback(() => {
-        // Clear any pending reconnect timeouts
         if (reconnectTimeoutRef.current) {
             clearTimeout(reconnectTimeoutRef.current);
             reconnectTimeoutRef.current = null;
         }
-
         if (wsRef.current) {
             wsRef.current.onopen =
                 wsRef.current.onmessage =
-                wsRef.current.onerror =
-                wsRef.current.onclose =
-                    null;
+                    wsRef.current.onerror =
+                        wsRef.current.onclose =
+                            null;
             wsRef.current.close(1000, "Aborted by navigation/search");
         }
         wsRef.current = null;
@@ -90,11 +85,9 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
             onPromptOpenChangeAction,
         } = props;
 
-        // Validation checks for API key presence and selected address
+        // Validation
         if (!hasApiKey) {
-            onConnectionErrorAction(
-                "Google Maps API key missing – cannot run search.",
-            );
+            onConnectionErrorAction("Google Maps API key missing – cannot run search.");
             return;
         }
         if (!parsedAddress) {
@@ -102,11 +95,9 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
             return;
         }
 
-        // Initialize UI loading state and reset slug indicator
         onLoadingChangeAction(true);
         onWebSocketSlugReceivedAction(null, "INITIAL");
 
-        // Create and configure the WebSocket instance
         const sock = new WebSocket(WEBSOCKET_URL);
         wsRef.current = sock;
 
@@ -117,7 +108,7 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                     ...parsedAddress,
                     providers: providers.length ? providers : undefined,
                     wants_fiber: wantsFiber,
-                }),
+                })
             );
         };
 
@@ -133,32 +124,28 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                 return;
             }
 
-            // Remove duplicate offers based on provider and plan identifiers
+            // Dedupe offers by provider+plan
             const seen = new Set<string>();
             const offers: Offer[] = [];
             (data.offers ?? []).forEach((o) => {
-                const k = `${o.provider}-${o.product_id ?? o.plan_name}`;
-                if (!seen.has(k)) {
+                const key = `${o.provider}-${o.product_id ?? o.plan_name}`;
+                if (!seen.has(key)) {
                     offers.push(o);
-                    seen.add(k);
+                    seen.add(key);
                 }
             });
 
             switch (data.type) {
-                // Handle initial offers from the server
                 case "INITIAL_OFFERS": {
                     const willRefine = Boolean(data.will_refine);
                     firstBatchTsRef.current = Date.now();
                     offersRef.current = offers;
 
-                    if (data.slug)
+                    if (data.slug) {
                         onWebSocketSlugReceivedAction(data.slug, "INITIAL");
+                    }
 
-                    onOffersReceivedAction(
-                        offers,
-                        "INITIAL_OFFERS",
-                        willRefine,
-                    );
+                    onOffersReceivedAction(offers, "INITIAL_OFFERS", willRefine);
                     if (data.message) {
                         onStatusUpdateAction(data.message);
                     }
@@ -166,39 +153,55 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                     break;
                 }
 
-                // Handle final offers refinement from the server
                 case "FINAL_OFFERS": {
+                    // ────────────────────────────────────────────────────────────────────────────
+                    // NEW: “No currently displayed offers” → immediately load these as if they were
+                    // INITIAL, so that `handleWebSocketSlugReceived(..., "INITIAL")` still adds to recent searches.
+                    if (offersRef.current.length === 0) {
+                        if (data.slug) {
+                            // Treat this slug as “INITIAL” to trigger the “add recent search” logic
+                            onWebSocketSlugReceivedAction(data.slug, "INITIAL");
+                        }
+                        // Immediately push these offers into the UI:
+                        offersRef.current = offers;
+                        onOffersReceivedAction(offers, "FINAL_OFFERS", false);
+                        if (data.message) {
+                            onStatusUpdateAction(data.message);
+                        }
+                        onLoadingChangeAction(false);
+                        firstBatchTsRef.current = null;
+                        break;
+                    }
+                    // ────────────────────────────────────────────────────────────────────────────
+
                     const quick =
                         !!firstBatchTsRef.current &&
                         Date.now() - firstBatchTsRef.current <= 5_000;
 
                     if (quick) {
                         // Fast refinement: update offers immediately without prompting user
-                        if (data.slug)
+                        if (data.slug) {
                             onWebSocketSlugReceivedAction(data.slug, "FINAL");
-
+                        }
                         offersRef.current = offers;
                         onOffersReceivedAction(offers, "FINAL_OFFERS", false);
                         if (data.message) {
                             onStatusUpdateAction(data.message);
                         }
                     } else {
-                        // Slow refinement: stage pending offers and prompt user for review
-
-                        // 1. Store pending offers and slug for later use
-                        onPendingOffersUpdateAction(offers, data.slug ?? null);
-
-                        // 2. Trigger display of the "new results" dialog
-                        onPromptOpenChangeAction(true);
-
-                        // 3. Stop loading indicator without altering the displayed offers
-                        onOffersReceivedAction(
-                            offersRef.current,
-                            "FINAL_OFFERS",
-                            false,
-                        );
-                        if (data.message) {
-                            onStatusUpdateAction(data.message);
+                        // Slow refinement: if there are existing displayed offers, prompt for review
+                        if (offersRef.current.length === 0) {
+                            onOffersReceivedAction(offers, "FINAL_OFFERS", false);
+                            if (data.message) {
+                                onStatusUpdateAction(data.message);
+                            }
+                        } else {
+                            onPendingOffersUpdateAction(offers, data.slug ?? null);
+                            onPromptOpenChangeAction(true);
+                            onOffersReceivedAction(offersRef.current, "FINAL_OFFERS", false);
+                            if (data.message) {
+                                onStatusUpdateAction(data.message);
+                            }
                         }
                     }
 
@@ -207,22 +210,23 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                     break;
                 }
 
-                // Handle status update messages
                 case "STATUS_UPDATE":
-                    if (data.message?.trim())
+                    if (data.message?.trim()) {
                         onStatusUpdateAction(data.message);
+                    }
                     break;
 
-                // Handle error messages from the server
                 case "ERROR":
-                    onConnectionErrorAction(
-                        data.message ?? "WebSocket connection error.",
-                    );
+                    onConnectionErrorAction(data.message ?? "WebSocket connection error.");
                     onLoadingChangeAction(false);
                     break;
 
                 default:
-                    logger.warn("WebSocketHandler", "Unknown WebSocket message type received", data);
+                    logger.warn(
+                        "WebSocketHandler",
+                        "Unknown WebSocket message type received",
+                        data
+                    );
             }
         };
 
@@ -235,39 +239,30 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
         sock.onclose = (ev) => {
             if (gen !== genRef.current) return;
             if (ev.wasClean || ev.code === 1000) {
-                // Expected closure - no need to reconnect
-                return;
+                return; // Expected closure—do not reconnect
             }
 
             onStatusUpdateAction("Connection lost. Attempting to reconnect...");
-
-            // Don't attempt reconnection if we've exceeded maximum attempts (5)
             if (reconnectAttempts.current >= 5) {
                 onStatusUpdateAction(
-                    "Connection failed after multiple attempts. Displaying last known results.",
+                    "Connection failed after multiple attempts. Displaying last known results."
                 );
                 onLoadingChangeAction(false);
                 return;
             }
 
-            // Implement exponential backoff for reconnection
-            const backoffTime = Math.min(
-                1000 * 2 ** reconnectAttempts.current,
-                30000,
-            ); // Max 30s delay
+            const backoffTime = Math.min(1000 * 2 ** reconnectAttempts.current, 30_000);
             reconnectAttempts.current += 1;
 
             reconnectTimeoutRef.current = setTimeout(() => {
                 if (gen === genRef.current) {
-                    // Ensure this reconnect is still valid
                     onStatusUpdateAction(
-                        `Reconnecting... (Attempt ${reconnectAttempts.current}/5)`,
+                        `Reconnecting... (Attempt ${reconnectAttempts.current}/5)`
                     );
-                    connectWebSocket(); // Reconnect
+                    connectWebSocket();
                 }
             }, backoffTime);
 
-            // If this is the first reconnect attempt, ensure UI shows as loading
             if (reconnectAttempts.current === 1) {
                 onLoadingChangeAction(true);
             }
@@ -275,9 +270,7 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
     }, [abortCurrentWebSocket, props]);
 
     useEffect(() => {
-        // Set up websocket cleanup
         return () => {
-            // Clean up WebSocket on unmount
             abortCurrentWebSocket();
         };
     }, [abortCurrentWebSocket]);

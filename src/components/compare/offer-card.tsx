@@ -107,7 +107,7 @@ const BADGE_COLORS: Record<string, CustomDetailBadgeInfo["colorConfig"]> = {
 
 interface OfferCardProps {
     offer: Offer;
-    onShareOffer?: (offer: Offer) => void;
+    onShareOffer?: (offer: Offer, e?: React.MouseEvent) => void;
     activeShareableSlug?: string | null;
     className?: string;
 }
@@ -580,7 +580,7 @@ export const OfferCard: FC<OfferCardProps> = ({
                                     <button
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            onShareOffer(offer);
+                                            onShareOffer(offer, e);
                                         }}
                                         disabled={!activeShareableSlug}
                                         aria-label={`Share ${plan_name}`}
@@ -590,6 +590,7 @@ export const OfferCard: FC<OfferCardProps> = ({
                                             "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100",
                                             "focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1C203C]",
                                             "transition-all duration-200 ease-in-out hover:bg-indigo-500/20",
+                                            "focus:transition-none focus:animate-quick-blur",
                                         )}
                                     >
                                         <Share2Icon

@@ -36,7 +36,7 @@ interface OfferGridProps {
     onResetFilters: () => void;
     hasSearchBeenPerformed: boolean;
     /** Callback to handle sharing a single offer. */
-    onShareOffer: (offer: Offer) => void;
+    onShareOffer: (offer: Offer, e?: React.MouseEvent) => void;
     /** The slug for the current full list of offers, required for sharing. */
     activeShareableSlug: string | null;
 }
