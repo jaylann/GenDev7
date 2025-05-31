@@ -244,7 +244,7 @@ Comprehensive testing with **Pytest**.
 -   **Unit Tests**: Isolate modules (data processing, provider integrations, validators). Simulate API responses (errors, edge cases) with Pytest fixtures and Hypothesis. Test `Offer` model validators.
 -   **Integration Tests**: Validate end-to-end workflows (FastAPI `TestClient`). Key test (`test_comparison_service.py`) simulates WebSocket flow with dummy providers (monkey-patching). Test sharing logic.
 -   **API Mocking**: **External provider APIs never called during tests.** Monkey-patch `httpx.AsyncClient` to return predefined `Response` objects. Simulates timeouts/exceptions for retry/circuit breaker logic.
--   **Test Coverage**: High coverage (**100% files exercised, ~94% line coverage** via `coverage.py`). Critical logic, complex flows, and edge cases tested. CI runs prevent regressions.
+-   **Test Coverage**: High coverage (**100% files exercised, ~93% line coverage** via `coverage.py`). Critical logic, complex flows, and edge cases tested. CI runs prevent regressions.
 *   **Continuous Integration (Backend)**: The backend code within the `GenDevBackend` subdirectory is subject to automated testing via a GitHub Actions CI pipeline. This workflow, configured in its original private development repository, runs the complete Pytest suite on pushes and pull requests to `main`, publishing test results. The code in this submission is identical to the version validated by this CI process.
 
 ---
@@ -293,7 +293,19 @@ Potential enhancements:
 
 ---
 
-## 11. 🚧 Known Issues
+## 11. 🚧 Known Issues & Considerations
 
-*   **Frontend Status Message Synchronization:**
-    *   **Issue:** Occasionally, the primary frontend status message may display information slightly out of sync with the current application state. This can be fixed by improving state updates and making sure they trigger only when needed.
+While *BetterSurf* is a robust and feature-rich application, the following points are noted for transparency and potential future refinement:
+
+*   **Minor Visual Artifacts:**
+    *   Occasional, minor visual artifacts, such as a brief flicker in the status bar or during the offer loading sequence, may be observed. These are superficial and do not impact core application functionality or the overall user experience.
+*   **Frontend Modularity Enhancements:**
+    *   The frontend codebase presents opportunities for further modularization. Certain larger React components and custom hooks could be decomposed into smaller, more granular units to further enhance long-term maintainability and code clarity. The current architecture, however, remains robust and understandable.
+*   **Google Places API Versioning:**
+    *   The Google Places API integration may generate console warnings from the SDK, recommending an update to a newer version. The currently implemented SDK version remains fully supported by Google and is not scheduled for deprecation for at least the next 12 months. Migration, when deemed necessary, is anticipated to be a straightforward process with minimal development overhead.
+*   **Transient Google Maps SDK Diagnostic:**
+    *   A transient CORS-related warning from the Google Maps SDK may occasionally appear in the browser console, typically upon the first interaction with the address input field. This diagnostic message is non-disruptive, and the address autocompletion feature initializes and functions correctly without any perceptible impact on its performance or the user experience.
+
+---
+
+Made with ❤️ by Justin Lanfermann
