@@ -295,16 +295,16 @@ Potential enhancements:
 
 ## 11. 🚧 Known Issues & Considerations
 
-While *BetterSurf* is a robust and feature-rich application, the following points are noted for transparency and potential future refinement:
+While *BetterSurf* is a robust application, the following points are noted for transparency:
 
 *   **Minor Visual Artifacts:**
-    *   Occasional, minor visual artifacts, such as a brief flicker in the status bar or during the offer loading sequence, may be observed. These are superficial and do not impact core application functionality or the overall user experience.
-*   **Frontend Modularity Enhancements:**
-    *   The frontend codebase presents opportunities for further modularization. Certain larger React components and custom hooks could be decomposed into smaller, more granular units to further enhance long-term maintainability and code clarity. The current architecture, however, remains robust and understandable.
+    *   Occasional, superficial visual flickers in the UI (e.g., status bar) may occur but do not impact core functionality.
+*   **Frontend Modularity Opportunities:**
+    *   Some frontend components and hooks could be further decomposed for enhanced maintainability. The current structure remains clear and robust.
 *   **Google Places API Versioning:**
-    *   The Google Places API integration may generate console warnings from the SDK, recommending an update to a newer version. The currently implemented SDK version remains fully supported by Google and is not scheduled for deprecation for at least the next 12 months. Migration, when deemed necessary, is anticipated to be a straightforward process with minimal development overhead.
+    *   Console warnings may suggest updating the Google Places API SDK. The current version is fully supported (wont be deprecated for at least 12 months), and future migration is straightforward.
 *   **Transient Google Maps SDK Diagnostic:**
-    *   A transient CORS-related error from the Google Maps SDK may occasionally appear in the browser console, typically upon the first page laod. This diagnostic message is non-disruptive, and the address autocompletion feature initializes and functions correctly without any perceptible impact on its performance or the user experience.
+    *   A non-disruptive CORS-related console warning from the Google Maps SDK may occasionally appear on first page load; autocompletion remains unaffected. This can safely be ignored.
 
 ---
 
