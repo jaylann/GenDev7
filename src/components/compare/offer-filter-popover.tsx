@@ -44,63 +44,44 @@ interface OfferFilterPopoverProps {
     activeFilterCount: number;
 }
 
-/**
- * OfferFilterPopover component renders filter controls for offer listings.
- *
- * Props:
- *  - appliedFilters: current filter state from parent
- *  - onApplyFilters: callback to apply updated filters
- *  - originalOffers: list of offers to compute dynamic filter ranges
- *  - isLoadingOffers: loading state to disable controls
- *  - activeFilterCount: number of filters currently active
- *
- * @returns JSX.Element
- */
+const POPOVER_COLLISION_PADDING: number = 16;
+
 export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
-    appliedFilters,
-    onApplyFiltersAction,
-    originalOffers,
-    isLoadingOffers,
-    activeFilterCount,
-}) => {
-    // Local state to track popover or sheet open/closed
+                                                                    appliedFilters,
+                                                                    onApplyFiltersAction,
+                                                                    originalOffers,
+                                                                    isLoadingOffers,
+                                                                    activeFilterCount,
+                                                                }) => {
     const [isOpen, setIsOpen] = useState(false);
-    // Draft filter values updated by the user before applying
     const [draftFilters, setDraftFilters] =
         useState<FiltersState>(appliedFilters);
 
-    // Reset draft filters when parent-applied filters change externally
     useEffect(() => {
         setDraftFilters(appliedFilters);
     }, [appliedFilters]);
 
-    // Disable controls when loading initial offers
     const controlsDisabled = isLoadingOffers && originalOffers.length === 0;
 
-    // Update a single filter key in draftFilters
     const handleDraftFilterChange = <K extends keyof FiltersState>(
         key: K,
         value: FiltersState[K],
     ) => setDraftFilters((prev) => ({ ...prev, [key]: value }));
 
-    // Apply draft filters and close the popover/sheet
     const handleApply = () => {
         onApplyFiltersAction(draftFilters);
         setIsOpen(false);
     };
 
-    // Reset draft filters to the default configuration
     const handleReset = () => {
         setDraftFilters(DEFAULT_FILTERS);
     };
 
-    // Sorted list of available provider names for checkbox list
     const providerList = useMemo(
         () => [...AVAILABLE_PROVIDER_NAMES].sort(),
         [],
     );
 
-    // Extract and sort unique contract durations from offers
     const uniqueContractDurations = useMemo(
         () =>
             Array.from(
@@ -111,7 +92,6 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
         [originalOffers],
     );
 
-    // Determine maximum slider value based on offer speeds or fallback
     const maxSpeedAvailable = useMemo(() => {
         if (originalOffers.length === 0) return MAX_SPEED_FALLBACK;
         return Math.max(
@@ -120,19 +100,18 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
         );
     }, [originalOffers]);
 
-    // Detect mobile layout to choose between Popover or Sheet
     const isMobile = useIsMobile();
 
-    // Extract the inner content so we can re-use it in both PopoverContent & SheetContent
     const Content = (
         <>
-            {/* Header section with title */}
-            <div className="p-4 pt-3 pb-3 border-b border-[#303558]">
+            <div className="p-4 pt-3 pb-3 border-b border-[#303558] shrink-0">
                 <h4 className="font-semibold text-xl text-white">
                     Filter Offers
                 </h4>
             </div>
-            <ScrollArea className="max-h-[calc(100vh-250px)] sm:max-h-[60vh]">
+
+            {/* Main scrollable area: Using a simple div with overflow-y-auto */}
+            <div className="flex-1 min-h-0 overflow-y-auto">
                 <div className="p-5 space-y-4">
                     {/* Minimum download speed filter */}
                     <div>
@@ -185,8 +164,8 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                             className="flex space-x-2.5"
                         >
                             {(uniqueContractDurations.length
-                                ? uniqueContractDurations
-                                : AVAILABLE_CONTRACT_DURATIONS
+                                    ? uniqueContractDurations
+                                    : AVAILABLE_CONTRACT_DURATIONS
                             )
                                 .filter((d) => [12, 24, 36].includes(d))
                                 .map((d) => (
@@ -224,12 +203,12 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                                         onCheckedChange={(checked) => {
                                             const newTypes = checked
                                                 ? [
-                                                      ...draftFilters.connectionTypes,
-                                                      type,
-                                                  ]
+                                                    ...draftFilters.connectionTypes,
+                                                    type,
+                                                ]
                                                 : draftFilters.connectionTypes.filter(
-                                                      (t) => t !== type,
-                                                  );
+                                                    (t) => t !== type,
+                                                );
                                             handleDraftFilterChange(
                                                 "connectionTypes",
                                                 newTypes,
@@ -254,6 +233,7 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                         <Label className="text-[0.9rem] font-medium text-slate-200 block mb-2.5">
                             Providers
                         </Label>
+                        {/* This nested ScrollArea is fine as its height is fixed (max-h-36) */}
                         <ScrollArea className="max-h-36 pr-2">
                             <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                                 {providerList.map((provider) => (
@@ -269,12 +249,12 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                                             onCheckedChange={(checked) => {
                                                 const newList = checked
                                                     ? [
-                                                          ...draftFilters.selectedProviders,
-                                                          provider,
-                                                      ]
+                                                        ...draftFilters.selectedProviders,
+                                                        provider,
+                                                    ]
                                                     : draftFilters.selectedProviders.filter(
-                                                          (p) => p !== provider,
-                                                      );
+                                                        (p) => p !== provider,
+                                                    );
                                                 handleDraftFilterChange(
                                                     "selectedProviders",
                                                     newList,
@@ -367,8 +347,9 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                         </div>
                     </div>
                 </div>
-            </ScrollArea>
-            <div className="p-4 py-3 flex justify-between items-center border-t border-[#303558]">
+            </div>
+
+            <div className="p-4 py-3 flex justify-between items-center border-t border-[#303558] shrink-0">
                 <Button
                     variant="ghost"
                     onClick={handleReset}
@@ -413,7 +394,11 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
             <SheetContent
                 title=""
                 side="bottom"
-                className="bg-[#1A1D2E] border-[#303558] text-slate-300 shadow-2xl p-0 max-h-[80vh] overflow-hidden"
+                className={cn(
+                    "bg-[#1A1D2E] border-[#303558] text-slate-300 shadow-2xl p-0 max-h-[80vh]",
+                    "flex flex-col",
+                    "overflow-hidden", // Important: SheetContent clips its children
+                )}
             >
                 {Content}
             </SheetContent>
@@ -423,7 +408,7 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
             <PopoverTrigger asChild>
                 <Button
                     variant="ghost"
-                    className="text-slate-300 hover:text-white  px-3 py-1.5 relative"
+                    className="text-slate-300 hover:text-white px-3 py-1.5 relative"
                     disabled={controlsDisabled}
                 >
                     <SlidersHorizontal className="mr-2 size-4" /> Filters
@@ -438,9 +423,17 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                 </Button>
             </PopoverTrigger>
             <PopoverContent
-                className="w-[320px] sm:w-[340px] bg-[#1A1D2E] border-[#303558] text-slate-300 shadow-2xl p-0 max-h-[80vh] overflow-hidden"
+                className={cn(
+                    "w-[320px] sm:w-[340px] bg-[#1A1D2E] border-[#303558] text-slate-300 shadow-2xl p-0",
+                    "flex flex-col",
+                    "overflow-hidden", // Important: PopoverContent clips its children
+                )}
                 sideOffset={10}
                 align="end"
+                collisionPadding={POPOVER_COLLISION_PADDING}
+                style={{
+                    maxHeight: `var(--radix-popover-content-available-height)`,
+                }}
             >
                 {Content}
             </PopoverContent>

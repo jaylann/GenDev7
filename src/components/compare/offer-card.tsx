@@ -4,11 +4,11 @@ import React, { FC, JSX, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
     CalendarClock,
-    Database,
+    Database, DownloadIcon,
     HardHat,
     Share2Icon,
     Tv2,
-    Wifi,
+    Wifi
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import {
@@ -257,7 +257,7 @@ export const OfferCard: FC<OfferCardProps> = ({
                         {/* Download speed display */}
                         <div className="text-center mb-2 sm:mb-4">
                             <div className="flex items-center justify-center text-[0.65rem] sm:text-[0.7rem] text-indigo-300 mb-0.5 font-medium">
-                                <Share2Icon
+                                <DownloadIcon
                                     size={14}
                                     className="mr-1 text-indigo-400"
                                 />{" "}
