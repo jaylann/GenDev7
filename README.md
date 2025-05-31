@@ -7,17 +7,17 @@
 
 ## 📖 Table of Contents
 
-1. [📌 About](#about)
-2. [🚀 Features](#features)
-3. [🛠️ Prerequisites](#prerequisites)
-4. [🏁 Getting Started](#getting-started)
-    - [Clone & Install](#clone-install)
-    - [Environment Variables](#environment-variables)
-    - [Run Locally](#run-locally)
-    - [Build & Export](#build-export)
-5. [📜 Scripts](#scripts)
-6. [⚙️ Environment Config](#environment-config)
-7. [🎨 Styling & Fonts](#styling--fonts)
+1. 📌 [About](#about)
+2. 🚀 [Features](#features)
+3. 🛠️ [Prerequisites](#prerequisites)
+4. 🏁 [Getting Started](#getting-started)
+    - 📥 [Clone & Install](#clone-install)
+    - 🔑 [Environment Variables](#environment-variables)
+    - 💻 [Run Locally](#run-locally)
+    - 📦 [Build & Export](#build-export)
+5. 📜 [Scripts](#scripts)
+6. ⚙️ [Environment Config](#environment-config)
+7. 🎨 [Styling & Fonts](#styling--fonts)
 
 ---
 
@@ -148,3 +148,7 @@ yarn start
     - `Geist Mono` (mono)
 
 Dark gradient background is applied at the `<html>` level via Tailwind classes.
+
+---
+
+Made with ❤️ by Justin Lanfermann
