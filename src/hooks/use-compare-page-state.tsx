@@ -29,11 +29,11 @@ import { generateShareLink } from "@/utils/generate-share-link";
 import { buildUrl } from "@/utils/url";
 
 import {
-  useNotifications,
-  useUrlSynchronization,
-  useShareFeatures,
-  useUiState,
-  useSearchFeatures
+    useNotifications,
+    useUrlSynchronization,
+    useShareFeatures,
+    useUiState,
+    useSearchFeatures,
 } from "@/hooks/compare-page";
 
 export interface ComparePageState {
@@ -96,37 +96,49 @@ export function useComparePageState(): ComparePageState {
     const [pendingSlug, setPendingSlug] = useState<string | null>(null);
 
     // State for address
-    const [parsedBackendAddress, setParsedBackendAddress] = useState<ParsedAddress | null>(null);
-    const [parsedAddressFromSlug, setParsedAddressFromSlug] = useState<Address | null>(null);
+    const [parsedBackendAddress, setParsedBackendAddress] =
+        useState<ParsedAddress | null>(null);
+    const [parsedAddressFromSlug, setParsedAddressFromSlug] =
+        useState<Address | null>(null);
     const [initialAddressLabel, setInitialAddressLabel] = useState<string>("");
 
     // State for slugs
-    const [currentDisplaySlug, setCurrentDisplaySlug] = useState<string | null>(null);
-    const [activeShareableSlug, setActiveShareableSlug] = useState<string | null>(null);
+    const [currentDisplaySlug, setCurrentDisplaySlug] = useState<string | null>(
+        null,
+    );
+    const [activeShareableSlug, setActiveShareableSlug] = useState<
+        string | null
+    >(null);
 
     // State for sorting
     const [sortOption, setSortOption] = useState<SortOptionKey>("recommended");
 
     // Initialize utility hooks
     const { notify, sanitizeText } = useNotifications();
-    const { debouncedRouterReplace, updateBrowserUrl, cleanup: cleanupUrlSync } = useUrlSynchronization();
-    const { filters, setFilters, resetFilters, activeFilterCount } = useOfferFilters(DEFAULT_FILTERS);
-    const { recentSearches, addRecentSearch, updateSearchSlug, clearRecentSearches } = useRecentSearches();
+    const {
+        debouncedRouterReplace,
+        updateBrowserUrl,
+        cleanup: cleanupUrlSync,
+    } = useUrlSynchronization();
+    const { filters, setFilters, resetFilters, activeFilterCount } =
+        useOfferFilters(DEFAULT_FILTERS);
+    const {
+        recentSearches,
+        addRecentSearch,
+        updateSearchSlug,
+        clearRecentSearches,
+    } = useRecentSearches();
     const pathname = usePathname();
 
     // UI state hook
-    const uiState = useUiState({
-      parsedBackendAddress,
-    });
+    const uiState = useUiState({ parsedBackendAddress });
 
     // Share features hook
-    const {
-      sharedLinkCopied,
-      handleSharePage: sharePageHandler
-    } = useShareFeatures({
-      notify,
-      sanitizeText
-    });
+    const { sharedLinkCopied, handleSharePage: sharePageHandler } =
+        useShareFeatures({
+            notifyAction: notify,
+            sanitizeTextAction: sanitizeText,
+        });
 
     // Computed values for API
     const wantsFiber = useMemo(
@@ -193,10 +205,17 @@ export function useComparePageState(): ComparePageState {
             }
         },
         onWebSocketSlugReceivedAction: (slug, slugType) =>
-            searchFeatures.handleWebSocketSlugReceived(slug, slugType, sortOption, filters),
-        onLoadingChangeAction: (...args) => searchFeatures.handleWebSocketLoadingChange(...args),
+            searchFeatures.handleWebSocketSlugReceived(
+                slug,
+                slugType,
+                sortOption,
+                filters,
+            ),
+        onLoadingChangeAction: (...args) =>
+            searchFeatures.handleWebSocketLoadingChange(...args),
         onStatusUpdateAction: uiState.setMainStatusMessage,
-        onConnectionErrorAction: (...args) => searchFeatures.handleConnectionError(...args),
+        onConnectionErrorAction: (...args) =>
+            searchFeatures.handleConnectionError(...args),
         onPendingOffersUpdateAction: (offers, slug) => {
             setPendingOffers(offers);
             setPendingSlug(slug);
@@ -208,23 +227,23 @@ export function useComparePageState(): ComparePageState {
 
     // Search features hook
     const searchFeatures = useSearchFeatures({
-      setOriginalOffersAction: setOriginalOffers,
-      setPendingOffersAction: setPendingOffers,
-      setCurrentDisplaySlugAction: setCurrentDisplaySlug,
-      setActiveShareableSlugAction: setActiveShareableSlug,
-      setIsUpdatePromptOpenAction: uiState.setIsUpdatePromptOpen,
-      setIsLoadingFromUrlAction: uiState.setIsLoadingFromUrl,
-      setIsWaitingInitialOffersAction: uiState.setIsWaitingInitialOffers,
-      setHasSearchBeenPerformedAction: uiState.setHasSearchBeenPerformed,
-      setIsRefiningOffersAction: uiState.setIsRefiningOffers,
-      setMainStatusMessageAction: uiState.setMainStatusMessage,
-      setInitialAddressLabelAction: setInitialAddressLabel,
-      setParsedBackendAddressAction: setParsedBackendAddress,
-      addRecentSearchAction: addRecentSearch,
-      updateSearchSlugAction: updateSearchSlug,
-      connectWebSocketAction: connectWebSocket,
-      abortCurrentWebSocketAction: abortCurrentWebSocket,
-      debouncedRouterReplaceAction: debouncedRouterReplace
+        setOriginalOffersAction: setOriginalOffers,
+        setPendingOffersAction: setPendingOffers,
+        setCurrentDisplaySlugAction: setCurrentDisplaySlug,
+        setActiveShareableSlugAction: setActiveShareableSlug,
+        setIsUpdatePromptOpenAction: uiState.setIsUpdatePromptOpen,
+        setIsLoadingFromUrlAction: uiState.setIsLoadingFromUrl,
+        setIsWaitingInitialOffersAction: uiState.setIsWaitingInitialOffers,
+        setHasSearchBeenPerformedAction: uiState.setHasSearchBeenPerformed,
+        setIsRefiningOffersAction: uiState.setIsRefiningOffers,
+        setMainStatusMessageAction: uiState.setMainStatusMessage,
+        setInitialAddressLabelAction: setInitialAddressLabel,
+        setParsedBackendAddressAction: setParsedBackendAddress,
+        addRecentSearchAction: addRecentSearch,
+        updateSearchSlugAction: updateSearchSlug,
+        connectWebSocketAction: connectWebSocket,
+        abortCurrentWebSocketAction: abortCurrentWebSocket,
+        debouncedRouterReplaceAction: debouncedRouterReplace,
     });
 
     // Process offers through filters and sorting
@@ -244,9 +263,14 @@ export function useComparePageState(): ComparePageState {
             }
         },
         setSlugAction: (slug: string | null) => {
-            const isOtherSlug = slug !== searchFeatures.currentSearchSlugRef.current;
+            const isOtherSlug =
+                slug !== searchFeatures.currentSearchSlugRef.current;
 
-            if (searchFeatures.searchIsActiveRef.current && slug !== null && isOtherSlug) {
+            if (
+                searchFeatures.searchIsActiveRef.current &&
+                slug !== null &&
+                isOtherSlug
+            ) {
                 searchFeatures.searchIsActiveRef.current = false;
                 abortCurrentWebSocket();
                 uiState.setIsWaitingInitialOffers(false);
@@ -296,7 +320,10 @@ export function useComparePageState(): ComparePageState {
 
     // Handle filter and sort changes
     const prevSortRef = useMemo(() => ({ current: sortOption }), [sortOption]);
-    const prevFiltersJsonRef = useMemo(() => ({ current: JSON.stringify(filters) }), [filters]);
+    const prevFiltersJsonRef = useMemo(
+        () => ({ current: JSON.stringify(filters) }),
+        [filters],
+    );
 
     useEffect(() => {
         const currentFiltersJson = JSON.stringify(filters);
@@ -332,7 +359,11 @@ export function useComparePageState(): ComparePageState {
                 logger.info(
                     "ComparePageState",
                     "Sort/filter changed. Updating recent search",
-                    { label: currentPageLabel, sessionId: currentPageSessionId, slug: activeShareableSlug }
+                    {
+                        label: currentPageLabel,
+                        sessionId: currentPageSessionId,
+                        slug: activeShareableSlug,
+                    },
                 );
                 prevSortRef.current = sortOption;
                 prevFiltersJsonRef.current = currentFiltersJson;
@@ -341,7 +372,7 @@ export function useComparePageState(): ComparePageState {
                     activeShareableSlug,
                     sortOption,
                     filters,
-                    false
+                    false,
                 );
 
                 if (newUrlPathAndQuery) {
@@ -366,14 +397,15 @@ export function useComparePageState(): ComparePageState {
         initialAddressLabel,
         prevSortRef,
         prevFiltersJsonRef,
-        updateBrowserUrl
+        updateBrowserUrl,
     ]);
 
     // Update refining state when display slug changes
     useEffect(() => {
         if (currentDisplaySlug) {
             if (
-                currentDisplaySlug !== searchFeatures.currentSearchSlugRef.current ||
+                currentDisplaySlug !==
+                    searchFeatures.currentSearchSlugRef.current ||
                 !searchFeatures.searchIsActiveRef.current
             ) {
                 uiState.setIsRefiningOffers(false);
@@ -395,11 +427,14 @@ export function useComparePageState(): ComparePageState {
         (addr: ParsedAddress | null, rawText: string) => {
             searchFeatures.handleAddressSelected(addr, rawText);
         },
-        [searchFeatures]
+        [searchFeatures],
     );
 
     const handleSearchClick = useCallback(() => {
-        searchFeatures.handleSearchClick(parsedBackendAddress, initialAddressLabel);
+        searchFeatures.handleSearchClick(
+            parsedBackendAddress,
+            initialAddressLabel,
+        );
     }, [searchFeatures, parsedBackendAddress, initialAddressLabel]);
 
     const handleShowPendingOffers = useCallback(() => {
@@ -408,7 +443,7 @@ export function useComparePageState(): ComparePageState {
             pendingSlug,
             currentDisplaySlug,
             sortOption,
-            filters
+            filters,
         );
     }, [
         searchFeatures,
@@ -416,7 +451,7 @@ export function useComparePageState(): ComparePageState {
         pendingSlug,
         currentDisplaySlug,
         sortOption,
-        filters
+        filters,
     ]);
 
     const handleSharePage = useCallback(() => {
@@ -426,16 +461,16 @@ export function useComparePageState(): ComparePageState {
     const handleShareSingleOffer = useCallback(
         (offer: Offer) => {
             logger.debug(
-              "useComparePageState",
-              `Sharing offer: ${offer.plan_name}, activeSlug: ${activeShareableSlug}`,
-              { offer, activeShareableSlug }
+                "useComparePageState",
+                `Sharing offer: ${offer.plan_name}, activeSlug: ${activeShareableSlug}`,
+                { offer, activeShareableSlug },
             );
 
             if (!activeShareableSlug) {
                 logger.error(
-                  "useComparePageState",
-                  "Cannot share offer: no active context",
-                  { offer }
+                    "useComparePageState",
+                    "Cannot share offer: no active context",
+                    { offer },
                 );
                 notify("Cannot share offer: no active context", 4000);
                 return;
@@ -446,13 +481,16 @@ export function useComparePageState(): ComparePageState {
             const safePlanName = sanitizeText(offer.plan_name);
 
             logger.debug(
-              "useComparePageState",
-              `Generated offer key: ${offerKey}`,
-              { offerKey }
+                "useComparePageState",
+                `Generated offer key: ${offerKey}`,
+                { offerKey },
             );
 
             // Use direct promise pattern instead of the handler pattern
-            const sharePromise = generateShareLink(activeShareableSlug, offerKey);
+            const sharePromise = generateShareLink(
+                activeShareableSlug,
+                offerKey,
+            );
 
             sonnerToast.promise(sharePromise, {
                 loading: `Creating link for "${safePlanName}"…`,
@@ -462,24 +500,27 @@ export function useComparePageState(): ComparePageState {
                         shared_slug,
                         "recommended",
                         DEFAULT_FILTERS,
-                        true
+                        true,
                     );
                     await navigator.clipboard.writeText(
-                        `${window.location.origin}${url}`
+                        `${window.location.origin}${url}`,
                     );
                     return `Link for "${offer.plan_name}" copied!`;
                 },
                 error: (e) => {
                     logger.error(
-                      "useComparePageState",
-                      `Share error: ${(e as Error)?.message || e}`,
-                      { error: e }
+                        "useComparePageState",
+                        `Share error: ${(e as Error)?.message || e}`,
+                        { error: e },
                     );
-                    return (e as Error)?.message ?? "Could not share offer. Please try again.";
-                }
+                    return (
+                        (e as Error)?.message ??
+                        "Could not share offer. Please try again."
+                    );
+                },
             });
         },
-        [activeShareableSlug, sanitizeText, notify, generateShareLink]
+        [activeShareableSlug, sanitizeText, notify, generateShareLink],
     );
 
     // Compute derived values
@@ -488,23 +529,24 @@ export function useComparePageState(): ComparePageState {
         uiState.hasSearchBeenPerformed,
         uiState.isWaitingInitialOffers,
         uiState.isLoadingFromUrl,
-        uiState.isRefiningOffers
+        uiState.isRefiningOffers,
     );
 
-    const isGloballyLoading = uiState.isLoadingFromUrl || uiState.isWaitingInitialOffers;
+    const isGloballyLoading =
+        uiState.isLoadingFromUrl || uiState.isWaitingInitialOffers;
 
     const isSharePageDisabled = uiState.getSharePageDisabledState(
         activeShareableSlug,
         uiState.isBlockingUi,
         sharedLinkCopied,
         originalOffers,
-        currentDisplaySlug
+        currentDisplaySlug,
     );
 
     const areAnyOffersEverLoaded = uiState.getAreAnyOffersEverLoaded(
         originalOffers,
         pendingOffers,
-        uiState.isUpdatePromptOpen
+        uiState.isUpdatePromptOpen,
     );
 
     const isSingleOfferView = uiState.getIsSingleOfferView(
@@ -512,7 +554,7 @@ export function useComparePageState(): ComparePageState {
         uiState.hasSearchBeenPerformed,
         uiState.isWaitingInitialOffers,
         uiState.isLoadingFromUrl,
-        uiState.isRefiningOffers
+        uiState.isRefiningOffers,
     );
 
     return {

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { FC } from "react";
@@ -19,10 +18,10 @@ export interface PriceSectionProps {
  * isolation and reused elsewhere if needed.
  */
 export const PriceSection: FC<PriceSectionProps> = ({
-                                                        priceIntroCents,
-                                                        priceRegularCents,
-                                                        introDurationMonths,
-                                                    }) => {
+    priceIntroCents,
+    priceRegularCents,
+    introDurationMonths,
+}) => {
     // If intro equals regular just present a single price block.
     if (
         priceIntroCents != null &&
@@ -31,10 +30,14 @@ export const PriceSection: FC<PriceSectionProps> = ({
     ) {
         return (
             <div>
-                <span className="text-[0.7rem] text-slate-400 block mb-0">Price:</span>
+                <span className="text-[0.7rem] text-slate-400 block mb-0">
+                    Price:
+                </span>
                 <p className="text-lg sm:text-xl font-semibold text-white leading-tight">
                     {formatEur(priceIntroCents)}
-                    <span className="text-sm sm:text-base font-normal text-slate-400">/mo</span>
+                    <span className="text-sm sm:text-base font-normal text-slate-400">
+                        /mo
+                    </span>
                 </p>
             </div>
         );
@@ -45,13 +48,19 @@ export const PriceSection: FC<PriceSectionProps> = ({
             {/* Introductory price (if any) */}
             {priceIntroCents != null && priceIntroCents > 0 && (
                 <div>
-                    <span className="text-[0.7rem] text-slate-400 block mb-0">Intro Price:</span>
+                    <span className="text-[0.7rem] text-slate-400 block mb-0">
+                        Intro Price:
+                    </span>
                     <p className="text-lg sm:text-xl font-semibold text-white leading-tight">
                         {formatEur(priceIntroCents)}
-                        <span className="text-sm sm:text-base font-normal text-slate-400">/mo</span>
+                        <span className="text-sm sm:text-base font-normal text-slate-400">
+                            /mo
+                        </span>
                     </p>
                     <p className="text-[0.65rem] sm:text-xs text-slate-500 leading-tight">
-                        first {introDurationMonths > 0 ? introDurationMonths : "?"} months
+                        first{" "}
+                        {introDurationMonths > 0 ? introDurationMonths : "?"}{" "}
+                        months
                     </p>
                 </div>
             )}
@@ -59,12 +68,14 @@ export const PriceSection: FC<PriceSectionProps> = ({
             {/* Regular price */}
             {priceRegularCents != null && priceRegularCents > 0 && (
                 <div>
-          <span className="text-[0.7rem] text-slate-400 block mb-0">
-            {priceIntroCents != null ? "Then:" : "Price:"}
-          </span>
+                    <span className="text-[0.7rem] text-slate-400 block mb-0">
+                        {priceIntroCents != null ? "Then:" : "Price:"}
+                    </span>
                     <p className="text-base sm:text-lg font-medium text-slate-300 leading-tight">
                         {formatEur(priceRegularCents)}
-                        <span className="text-sm sm:text-base font-normal text-slate-400">/mo</span>
+                        <span className="text-sm sm:text-base font-normal text-slate-400">
+                            /mo
+                        </span>
                     </p>
                 </div>
             )}

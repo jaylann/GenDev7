@@ -6,7 +6,6 @@ import { getCanonicalCompareURL, extractSlug } from "@/utils/url";
 import { MAX_RECENT_SEARCHES } from "@/config/constants"; // Ensure these are correctly imported
 import { logger } from "@/utils/logger";
 
-
 // Key used to persist recent search entries in sessionStorage.
 const STORAGE_KEY = "recentCompareSearches";
 
@@ -44,7 +43,7 @@ export const useRecentSearches = () => {
             if (!stored) {
                 logger.info(
                     "RecentSearches",
-                    "No stored searches found, initializing empty."
+                    "No stored searches found, initializing empty.",
                 );
                 setRecentSearches([]);
                 return;
@@ -71,14 +70,14 @@ export const useRecentSearches = () => {
                     logger.info(
                         "RecentSearches",
                         "Successfully parsed and sorted searches from storage",
-                        sortedSearches
+                        sortedSearches,
                     );
                     setRecentSearches(sortedSearches);
                 } else {
                     logger.warn(
                         "RecentSearches",
                         "Invalid data format in sessionStorage. Resetting",
-                        parsed
+                        parsed,
                     );
                     setRecentSearches([]);
                     sessionStorage.removeItem(STORAGE_KEY);
@@ -87,7 +86,7 @@ export const useRecentSearches = () => {
                 logger.error(
                     "RecentSearches",
                     "Failed to parse recent searches from sessionStorage",
-                    err
+                    err,
                 );
                 setRecentSearches([]);
                 sessionStorage.removeItem(STORAGE_KEY); // Corrupted data, clear it
@@ -96,7 +95,7 @@ export const useRecentSearches = () => {
 
         logger.info(
             "RecentSearches",
-            "Initializing recent searches from sessionStorage"
+            "Initializing recent searches from sessionStorage",
         );
         const stored = sessionStorage.getItem(STORAGE_KEY);
         parseAndUpdateSearches(stored);
@@ -112,7 +111,7 @@ export const useRecentSearches = () => {
             ) {
                 logger.info(
                     "RecentSearches",
-                    `Storage event detected for key: ${STORAGE_KEY}`
+                    `Storage event detected for key: ${STORAGE_KEY}`,
                 );
                 parseAndUpdateSearches(event.newValue);
             }
@@ -120,10 +119,7 @@ export const useRecentSearches = () => {
 
         window.addEventListener("storage", handleStorageChange);
         return () => {
-            logger.info(
-                "RecentSearches",
-                "Cleaning up storage event listener"
-            );
+            logger.info("RecentSearches", "Cleaning up storage event listener");
             window.removeEventListener("storage", handleStorageChange);
         };
     }, []);
@@ -183,7 +179,7 @@ export const useRecentSearches = () => {
                 logger.error(
                     "RecentSearches",
                     "Failed to persist recent searches to sessionStorage",
-                    err
+                    err,
                 );
             }
             return updatedSearches;
@@ -201,7 +197,7 @@ export const useRecentSearches = () => {
                 logger.warn(
                     "RecentSearches",
                     "Update aborted: No sessionId provided",
-                    { newUrlFromCaller }
+                    { newUrlFromCaller },
                 );
                 return;
             }
@@ -209,7 +205,7 @@ export const useRecentSearches = () => {
             setRecentSearches((prevSearches) => {
                 logger.info(
                     "RecentSearches",
-                    `Attempting update for sessionId: "${sessionId}" with newUrlFromCaller: "${newUrlFromCaller}"`
+                    `Attempting update for sessionId: "${sessionId}" with newUrlFromCaller: "${newUrlFromCaller}"`,
                 );
 
                 const targetIndex = prevSearches.findIndex(
@@ -220,7 +216,7 @@ export const useRecentSearches = () => {
                     logger.warn(
                         "RecentSearches",
                         `Update aborted: No item found for sessionId "${sessionId}". ` +
-                            `Available sessionIds: [${prevSearches.map((s) => s.sessionId).join(", ")}]`
+                            `Available sessionIds: [${prevSearches.map((s) => s.sessionId).join(", ")}]`,
                     );
                     return prevSearches;
                 }
@@ -244,7 +240,7 @@ export const useRecentSearches = () => {
                             `DANGER! ABORTING UPDATE for sessionId "${sessionId}". ` +
                                 `Attempted to change its slug from "${originalSlug}" (derived from originalItem.url "${originalItem.url}") to "${newSlug}" (derived from newUrlFromCaller "${newUrlFromCaller}"). ` +
                                 `However, slug "${newSlug}" is ALREADY IN USE by a DIFFERENT item: sessionId "${conflictingItem.sessionId}", url "${conflictingItem.url}", label "${conflictingItem.label}". ` +
-                                `The item for sessionId "${sessionId}" will NOT be updated to prevent data corruption.`
+                                `The item for sessionId "${sessionId}" will NOT be updated to prevent data corruption.`,
                         );
                         return prevSearches;
                     }
@@ -266,7 +262,7 @@ export const useRecentSearches = () => {
                 if (newUpdatedSearches.length > MAX_RECENT_SEARCHES) {
                     logger.warn(
                         "RecentSearches",
-                        "List somehow grew beyond MAX_RECENT_SEARCHES during an update. Trimming."
+                        "List somehow grew beyond MAX_RECENT_SEARCHES during an update. Trimming.",
                     );
                     newUpdatedSearches = newUpdatedSearches.slice(
                         0,
@@ -283,7 +279,7 @@ export const useRecentSearches = () => {
                     logger.error(
                         "RecentSearches",
                         "Failed to persist updated recent searches to sessionStorage",
-                        err
+                        err,
                     );
                 }
                 return newUpdatedSearches;
@@ -296,10 +292,7 @@ export const useRecentSearches = () => {
      * Clears all recent search history from state and sessionStorage.
      */
     const clearRecentSearches = useCallback(() => {
-        logger.info(
-            "RecentSearches",
-            "Clearing all recent searches"
-        );
+        logger.info("RecentSearches", "Clearing all recent searches");
         setRecentSearches([]);
         try {
             sessionStorage.removeItem(STORAGE_KEY);
@@ -307,7 +300,7 @@ export const useRecentSearches = () => {
             logger.error(
                 "RecentSearches",
                 "Failed to clear recent searches from sessionStorage",
-                err
+                err,
             );
         }
     }, []);

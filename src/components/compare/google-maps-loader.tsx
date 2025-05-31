@@ -26,7 +26,7 @@ export const GoogleMapsLoader: React.FC = () => {
         if (process.env.NODE_ENV === "development") {
             logger.error(
                 "GoogleMapsLoader",
-                "❌ Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY – Google SDK disabled."
+                "❌ Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY – Google SDK disabled.",
             );
         }
         return null;
@@ -39,7 +39,13 @@ export const GoogleMapsLoader: React.FC = () => {
             src={`https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async`}
             strategy="afterInteractive"
             async
-            onError={(e) => logger.error("GoogleMapsLoader", "Failed to load Google Maps SDK", e)}
+            onError={(e) =>
+                logger.error(
+                    "GoogleMapsLoader",
+                    "Failed to load Google Maps SDK",
+                    e,
+                )
+            }
         />
     );
 };

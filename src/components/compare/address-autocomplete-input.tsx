@@ -17,7 +17,7 @@ const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 if (!apiKey) {
     logger.error(
         "AddressAutocomplete",
-        "❌ Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY – autocomplete disabled."
+        "❌ Missing NEXT_PUBLIC_GOOGLE_MAPS_API_KEY – autocomplete disabled.",
     );
 }
 
@@ -181,7 +181,7 @@ export const AddressAutocompleteInput: React.FC<
                             } else {
                                 logger.warn(
                                     "AddressAutocompleteInput",
-                                    `Geocoding for prefill of "${rawQueryText}" failed with status: ${status}`
+                                    `Geocoding for prefill of "${rawQueryText}" failed with status: ${status}`,
                                 );
                             }
                         },
@@ -200,7 +200,7 @@ export const AddressAutocompleteInput: React.FC<
                         logger.warn(
                             "AddressAutocompleteInput",
                             `Geocoding error during prefill for "${rawQueryText}"`,
-                            e
+                            e,
                         );
                     }
                     // googleFormattedAddress remains `rawQueryText`

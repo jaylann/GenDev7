@@ -8,10 +8,7 @@ import { Tv2, HardHat, Database, ShieldCheck } from "lucide-react";
 /**
  * Tailwind color classes for badge variants.
  */
-export const BADGE_COLORS: Record<
-    string,
-    DetailBadgeInfo["colorConfig"]
-> = {
+export const BADGE_COLORS: Record<string, DetailBadgeInfo["colorConfig"]> = {
     tv: {
         bg: "bg-purple-600/20",
         text: "text-purple-300",

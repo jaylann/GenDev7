@@ -147,7 +147,11 @@ export const useAddressAutocomplete = ({
                 onAddressSelectAction(null, description);
                 return null;
             } catch (err) {
-                logger.error("AddressAutocomplete", "Geocode failed during selection", err);
+                logger.error(
+                    "AddressAutocomplete",
+                    "Geocode failed during selection",
+                    err,
+                );
                 onAddressSelectAction(null, description);
                 return null;
             }
@@ -178,8 +182,8 @@ export const useAddressAutocomplete = ({
 
             if (!hookReady || !sdkReady) {
                 logger.warn(
-                    "AddressAutocomplete", 
-                    "SDK not ready during geocodeAndEmit. Emitting raw address."
+                    "AddressAutocomplete",
+                    "SDK not ready during geocodeAndEmit. Emitting raw address.",
                 );
                 onAddressSelectAction(null, trimmedAddress);
                 return null;
@@ -196,7 +200,7 @@ export const useAddressAutocomplete = ({
                 logger.error(
                     "AddressAutocomplete",
                     `Geocoding failed for "${trimmedAddress}"`,
-                    err
+                    err,
                 );
                 onAddressSelectAction(null, trimmedAddress);
                 return null;

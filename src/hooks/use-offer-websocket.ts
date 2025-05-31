@@ -19,7 +19,7 @@ interface UseOfferWebSocketProps {
     onOffersReceivedAction: (
         offers: Offer[],
         phase: "INITIAL_OFFERS" | "FINAL_OFFERS",
-        willRefine: boolean
+        willRefine: boolean,
     ) => void;
     onWebSocketSlugReceivedAction: (slug: string | null, t: SlugType) => void;
     onLoadingChangeAction: (waiting: boolean) => void;
@@ -27,7 +27,10 @@ interface UseOfferWebSocketProps {
     onConnectionErrorAction: (msg: string) => void;
 
     /** Handler invoked when pending offers and slug are available for review */
-    onPendingOffersUpdateAction: (offers: Offer[] | null, slug: string | null) => void;
+    onPendingOffersUpdateAction: (
+        offers: Offer[] | null,
+        slug: string | null,
+    ) => void;
     onPromptOpenChangeAction: (open: boolean) => void;
 
     initialLoadingState: boolean;
@@ -50,9 +53,9 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
         if (wsRef.current) {
             wsRef.current.onopen =
                 wsRef.current.onmessage =
-                    wsRef.current.onerror =
-                        wsRef.current.onclose =
-                            null;
+                wsRef.current.onerror =
+                wsRef.current.onclose =
+                    null;
             wsRef.current.close(1000, "Aborted by navigation/search");
         }
         wsRef.current = null;
@@ -87,7 +90,9 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
 
         // Validation
         if (!hasApiKey) {
-            onConnectionErrorAction("Google Maps API key missing – cannot run search.");
+            onConnectionErrorAction(
+                "Google Maps API key missing – cannot run search.",
+            );
             return;
         }
         if (!parsedAddress) {
@@ -108,7 +113,7 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                     ...parsedAddress,
                     providers: providers.length ? providers : undefined,
                     wants_fiber: wantsFiber,
-                })
+                }),
             );
         };
 
@@ -145,7 +150,11 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                         onWebSocketSlugReceivedAction(data.slug, "INITIAL");
                     }
 
-                    onOffersReceivedAction(offers, "INITIAL_OFFERS", willRefine);
+                    onOffersReceivedAction(
+                        offers,
+                        "INITIAL_OFFERS",
+                        willRefine,
+                    );
                     if (data.message) {
                         onStatusUpdateAction(data.message);
                     }
@@ -191,14 +200,25 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                     } else {
                         // Slow refinement: if there are existing displayed offers, prompt for review
                         if (offersRef.current.length === 0) {
-                            onOffersReceivedAction(offers, "FINAL_OFFERS", false);
+                            onOffersReceivedAction(
+                                offers,
+                                "FINAL_OFFERS",
+                                false,
+                            );
                             if (data.message) {
                                 onStatusUpdateAction(data.message);
                             }
                         } else {
-                            onPendingOffersUpdateAction(offers, data.slug ?? null);
+                            onPendingOffersUpdateAction(
+                                offers,
+                                data.slug ?? null,
+                            );
                             onPromptOpenChangeAction(true);
-                            onOffersReceivedAction(offersRef.current, "FINAL_OFFERS", false);
+                            onOffersReceivedAction(
+                                offersRef.current,
+                                "FINAL_OFFERS",
+                                false,
+                            );
                             if (data.message) {
                                 onStatusUpdateAction(data.message);
                             }
@@ -217,7 +237,9 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                     break;
 
                 case "ERROR":
-                    onConnectionErrorAction(data.message ?? "WebSocket connection error.");
+                    onConnectionErrorAction(
+                        data.message ?? "WebSocket connection error.",
+                    );
                     onLoadingChangeAction(false);
                     break;
 
@@ -225,7 +247,7 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
                     logger.warn(
                         "WebSocketHandler",
                         "Unknown WebSocket message type received",
-                        data
+                        data,
                     );
             }
         };
@@ -245,19 +267,22 @@ export const useOfferWebSocket = (props: UseOfferWebSocketProps) => {
             onStatusUpdateAction("Connection lost. Attempting to reconnect...");
             if (reconnectAttempts.current >= 5) {
                 onStatusUpdateAction(
-                    "Connection failed after multiple attempts. Displaying last known results."
+                    "Connection failed after multiple attempts. Displaying last known results.",
                 );
                 onLoadingChangeAction(false);
                 return;
             }
 
-            const backoffTime = Math.min(1000 * 2 ** reconnectAttempts.current, 30_000);
+            const backoffTime = Math.min(
+                1000 * 2 ** reconnectAttempts.current,
+                30_000,
+            );
             reconnectAttempts.current += 1;
 
             reconnectTimeoutRef.current = setTimeout(() => {
                 if (gen === genRef.current) {
                     onStatusUpdateAction(
-                        `Reconnecting... (Attempt ${reconnectAttempts.current}/5)`
+                        `Reconnecting... (Attempt ${reconnectAttempts.current}/5)`,
                     );
                     connectWebSocket();
                 }

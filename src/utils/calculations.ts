@@ -126,7 +126,7 @@ export const calculateGrossTotalCostOverDynamicPeriod = (
         // that at least one price (intro or regular) is always present.
         logger.warn(
             "PriceCalculation",
-            `Offer ${offer.product_id} has no valid price information.`
+            `Offer ${offer.product_id} has no valid price information.`,
         );
         return null;
     }
@@ -240,7 +240,7 @@ export const calculateEffectiveVoucherValue = (
             const _exhaustiveCheck: never = offer.voucher_type;
             logger.warn(
                 "VoucherCalculation",
-                `Unknown voucher type encountered: ${_exhaustiveCheck}`
+                `Unknown voucher type encountered: ${_exhaustiveCheck}`,
             );
             return 0;
     }

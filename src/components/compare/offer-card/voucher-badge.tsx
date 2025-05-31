@@ -70,18 +70,28 @@ export const VoucherBadge: FC<VoucherBadgeProps> = (props) => {
         if (prominentBonusText) {
             text = prominentBonusText;
             Icon = Sparkles;
-        } else if (voucher_type === VoucherKind.PERCENTAGE && voucher_value_percent != null) {
+        } else if (
+            voucher_type === VoucherKind.PERCENTAGE &&
+            voucher_value_percent != null
+        ) {
             text = `${voucher_value_percent}% Off`;
             Icon = Percent;
         } else if (voucher_type === VoucherKind.DISCOUNT) {
-            if (voucher_value_cents != null) text = `${formatEur(voucher_value_cents)} Discount`;
-            else if (voucher_value_percent != null) text = `${voucher_value_percent}% Discount`;
+            if (voucher_value_cents != null)
+                text = `${formatEur(voucher_value_cents)} Discount`;
+            else if (voucher_value_percent != null)
+                text = `${voucher_value_percent}% Discount`;
             else text = "Special Discount";
             Icon = Tag;
         }
 
         return { summaryText: text, IconComponent: Icon } as const;
-    }, [voucher_type, prominentBonusText, voucher_value_percent, voucher_value_cents]);
+    }, [
+        voucher_type,
+        prominentBonusText,
+        voucher_value_percent,
+        voucher_value_cents,
+    ]);
 
     /**
      * Renders the detailed popover content; extracted so the main render tree is
@@ -89,7 +99,11 @@ export const VoucherBadge: FC<VoucherBadgeProps> = (props) => {
      */
     const renderVoucherPopoverContent = useCallback((): JSX.Element => {
         if (!voucher_type) {
-            return <p className="p-4 text-sm text-slate-400">No active voucher for this offer.</p>;
+            return (
+                <p className="p-4 text-sm text-slate-400">
+                    No active voucher for this offer.
+                </p>
+            );
         }
 
         const details: JSX.Element[] = [];
@@ -98,19 +112,22 @@ export const VoucherBadge: FC<VoucherBadgeProps> = (props) => {
             voucher_value_cents != null &&
             (voucher_type === VoucherKind.ABSOLUTE ||
                 voucher_type === VoucherKind.CASHBACK ||
-                (voucher_type === VoucherKind.DISCOUNT && voucher_value_percent == null))
+                (voucher_type === VoucherKind.DISCOUNT &&
+                    voucher_value_percent == null))
         ) {
             details.push(
                 <div className="flex items-center" key="val-cents">
                     <Tag size={16} className="mr-2 text-sky-400 shrink-0" />
-                    Value:&nbsp;<strong>{formatEur(voucher_value_cents)}</strong>
+                    Value:&nbsp;
+                    <strong>{formatEur(voucher_value_cents)}</strong>
                 </div>,
             );
         }
 
         if (
             voucher_value_percent != null &&
-            (voucher_type === VoucherKind.PERCENTAGE || voucher_type === VoucherKind.DISCOUNT)
+            (voucher_type === VoucherKind.PERCENTAGE ||
+                voucher_type === VoucherKind.DISCOUNT)
         ) {
             details.push(
                 <div className="flex items-center" key="val-percent">
@@ -123,8 +140,12 @@ export const VoucherBadge: FC<VoucherBadgeProps> = (props) => {
         if (voucher_max_value_cents != null) {
             details.push(
                 <div className="flex items-center" key="max-val">
-                    <AlertTriangle size={16} className="mr-2 text-orange-400 shrink-0" />
-                    Max. Benefit:&nbsp;<strong>{formatEur(voucher_max_value_cents)}</strong>
+                    <AlertTriangle
+                        size={16}
+                        className="mr-2 text-orange-400 shrink-0"
+                    />
+                    Max. Benefit:&nbsp;
+                    <strong>{formatEur(voucher_max_value_cents)}</strong>
                 </div>,
             );
         }
@@ -133,7 +154,8 @@ export const VoucherBadge: FC<VoucherBadgeProps> = (props) => {
             details.push(
                 <div className="flex items-center" key="min-order">
                     <Info size={16} className="mr-2 text-slate-400 shrink-0" />
-                    Min. Order Value:&nbsp;<strong>{formatEur(voucher_min_order_value_cents)}</strong>
+                    Min. Order Value:&nbsp;
+                    <strong>{formatEur(voucher_min_order_value_cents)}</strong>
                 </div>,
             );
         }
@@ -141,8 +163,12 @@ export const VoucherBadge: FC<VoucherBadgeProps> = (props) => {
         if (voucher_max_runtime_months != null) {
             details.push(
                 <div className="flex items-center" key="max-runtime">
-                    <CalendarClock size={16} className="mr-2 text-purple-400 shrink-0" />
-                    Max. Duration:&nbsp;<strong>{voucher_max_runtime_months} months</strong>
+                    <CalendarClock
+                        size={16}
+                        className="mr-2 text-purple-400 shrink-0"
+                    />
+                    Max. Duration:&nbsp;
+                    <strong>{voucher_max_runtime_months} months</strong>
                 </div>,
             );
         }
@@ -162,10 +188,12 @@ export const VoucherBadge: FC<VoucherBadgeProps> = (props) => {
                 </h4>
                 {details}
                 {(voucher_type === VoucherKind.PERCENTAGE ||
-                    (voucher_type === VoucherKind.DISCOUNT && voucher_value_percent != null)) && (
+                    (voucher_type === VoucherKind.DISCOUNT &&
+                        voucher_value_percent != null)) && (
                     <p className="text-xs text-slate-400 mt-3 pt-2 border-t border-[#303558]/50">
-                        Percentage discount applies monthly to the current tariff price, up to the maximum benefit and
-                        duration shown.
+                        Percentage discount applies monthly to the current
+                        tariff price, up to the maximum benefit and duration
+                        shown.
                     </p>
                 )}
             </div>
@@ -189,15 +217,21 @@ export const VoucherBadge: FC<VoucherBadgeProps> = (props) => {
                     variant="default"
                     className={cn(
                         "w-full cursor-pointer justify-center gap-1 text-xs font-semibold py-1 rounded-md leading-tight transition-all hover:opacity-80 focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-[#1C203C]",
-                        prominentBonusText ? "bg-green-500 hover:bg-green-600 text-white" : "bg-pink-600 hover:bg-pink-700 text-white",
+                        prominentBonusText
+                            ? "bg-green-500 hover:bg-green-600 text-white"
+                            : "bg-pink-600 hover:bg-pink-700 text-white",
                     )}
                 >
                     <IconComponent size={14} /> {summaryText}
                 </ShadcnBadge>
             </PopoverTrigger>
-            <PopoverContent className="w-80 z-50 p-0 border-none bg-transparent" side="top" align="center">
+            <PopoverContent
+                className="w-80 z-50 p-0 border-none bg-transparent"
+                side="top"
+                align="center"
+            >
                 {renderVoucherPopoverContent()}
             </PopoverContent>
         </Popover>
     );
-}
+};

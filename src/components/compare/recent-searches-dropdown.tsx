@@ -20,7 +20,7 @@ interface RecentSearchesDropdownProps {
     /** Array of recent search items to display. */
     searches: RecentSearchItem[];
     /** Callback function invoked when the "Clear History" action is triggered. */
-    onClear: () => void;
+    onClearAction: () => void;
     /** Optional CSS class name for custom styling of the root dropdown element. */
     className?: string;
 }
@@ -37,7 +37,7 @@ const isUrlEffectivelyEqualToCurrent = (
  */
 export const RecentSearchesDropdown: FC<RecentSearchesDropdownProps> = ({
     searches,
-    onClear,
+    onClearAction,
     className,
 }) => {
     const router = useRouter();
@@ -111,9 +111,7 @@ export const RecentSearchesDropdown: FC<RecentSearchesDropdownProps> = ({
                                 )}
                                 title={search.label} // Provide full label as tooltip for truncated text
                             >
-                                <span
-                                    className="truncate block"
-                                >
+                                <span className="truncate block">
                                     {search.label}
                                 </span>
                             </DropdownMenuItem>
@@ -127,7 +125,7 @@ export const RecentSearchesDropdown: FC<RecentSearchesDropdownProps> = ({
 
                     <DropdownMenuItem
                         onClick={() => {
-                            onClear();
+                            onClearAction();
                         }}
                         className={cn(
                             "text-xs px-3 py-2 cursor-pointer transition-colors duration-150 ease-in-out",

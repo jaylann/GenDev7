@@ -12,8 +12,8 @@ type NotifyFunction = (text: string, duration?: number) => void;
 type SanitizeFunction = (text: string) => string;
 
 interface UseShareFeaturesProps {
-    notify: NotifyFunction;
-    sanitizeText: SanitizeFunction;
+    notifyAction: NotifyFunction;
+    sanitizeTextAction: SanitizeFunction;
 }
 
 /**
@@ -22,8 +22,8 @@ interface UseShareFeaturesProps {
  * @returns Sharing-related state and functions
  */
 export function useShareFeatures({
-    notify,
-    sanitizeText,
+    notifyAction,
+    sanitizeTextAction,
 }: UseShareFeaturesProps) {
     const [sharedLinkCopied, setSharedLinkCopied] = useState<boolean>(false);
 
@@ -37,7 +37,7 @@ export function useShareFeatures({
             filters: FiltersState,
         ) => {
             if (!activeShareableSlug) {
-                notify("Cannot share yet – results are not ready.", 4000);
+                notifyAction("Cannot share yet – results are not ready.", 4000);
                 return;
             }
 
@@ -49,7 +49,7 @@ export function useShareFeatures({
             );
 
             if (!sharePath) {
-                notify("Cannot share yet – results are not ready.", 4000);
+                notifyAction("Cannot share yet – results are not ready.", 4000);
                 return;
             }
 
@@ -58,13 +58,16 @@ export function useShareFeatures({
                     `${window.location.origin}${sharePath}`,
                 );
                 setSharedLinkCopied(true);
-                notify("🔗\u00A0Page link copied to clipboard!");
+                notifyAction("🔗\u00A0Page link copied to clipboard!");
                 setTimeout(() => setSharedLinkCopied(false), 2500);
             } catch {
-                notify("Failed to copy page link. Please try manually.", 5000);
+                notifyAction(
+                    "Failed to copy page link. Please try manually.",
+                    5000,
+                );
             }
         },
-        [notify],
+        [notifyAction],
     );
 
     /**
@@ -73,7 +76,7 @@ export function useShareFeatures({
     const handleShareSingleOffer = useCallback(
         async (offer: Offer, activeShareableSlug: string | null) => {
             if (!activeShareableSlug) {
-                notify(
+                notifyAction(
                     "Cannot share offer: main list context is missing.",
                     4000,
                 );
@@ -82,7 +85,7 @@ export function useShareFeatures({
 
             const offerKey = `${offer.provider}:${offer.product_id}`;
             // Sanitize plan name for display in messages
-            const safePlanName = sanitizeText(offer.plan_name);
+            const safePlanName = sanitizeTextAction(offer.plan_name);
 
             // Use toast.promise to show loading/success/error states
             const promise = generateShareLink(activeShareableSlug, offerKey);
@@ -110,7 +113,7 @@ export function useShareFeatures({
                     "Could not share offer. Please try again.",
             };
         },
-        [notify, sanitizeText],
+        [notifyAction, sanitizeTextAction],
     );
 
     return { sharedLinkCopied, handleSharePage, handleShareSingleOffer };

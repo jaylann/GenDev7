@@ -129,7 +129,9 @@ export function useSearchFeatures({
             abortCurrentWebSocketAction();
 
             if (!parsedBackendAddress && !initialAddressLabel.trim()) {
-                setMainStatusMessageAction("Please select a valid address first.");
+                setMainStatusMessageAction(
+                    "Please select a valid address first.",
+                );
                 return;
             }
 
@@ -196,7 +198,10 @@ export function useSearchFeatures({
                     if (newUrl) {
                         debouncedRouterReplaceAction(newUrl, { scroll: false });
                         if (sessionIdRef.current) {
-                            updateSearchSlugAction(sessionIdRef.current, newUrl);
+                            updateSearchSlugAction(
+                                sessionIdRef.current,
+                                newUrl,
+                            );
                         }
                     }
                 }
@@ -265,7 +270,10 @@ export function useSearchFeatures({
                             sessionId: currentSearchLabel,
                         });
                     } else if (slugType === "FINAL") {
-                        updateSearchSlugAction(currentSearchLabel, urlForHistory);
+                        updateSearchSlugAction(
+                            currentSearchLabel,
+                            urlForHistory,
+                        );
                     }
                 }
             }
@@ -336,7 +344,11 @@ export function useSearchFeatures({
             setIsRefiningOffersAction(false);
             searchIsActiveRef.current = false;
         },
-        [setMainStatusMessageAction, setIsWaitingInitialOffersAction, setIsRefiningOffersAction],
+        [
+            setMainStatusMessageAction,
+            setIsWaitingInitialOffersAction,
+            setIsRefiningOffersAction,
+        ],
     );
 
     return {

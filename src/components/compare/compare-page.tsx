@@ -57,7 +57,7 @@ export default function ComparePage(): JSX.Element {
                     {/* Dropdown for accessing and clearing recent address searches */}
                     <RecentSearchesDropdown
                         searches={state.recentSearches}
-                        onClear={actions.clearRecentSearches}
+                        onClearAction={actions.clearRecentSearches}
                         className="fixed top-4 right-4 z-50"
                     />
 
