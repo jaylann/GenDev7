@@ -495,7 +495,7 @@ export function useComparePageState(): ComparePageState {
             sonnerToast.promise(sharePromise, {
                 loading: `Creating link for "${safePlanName}"…`,
                 success: async ({ shared_slug }: { shared_slug: string }) => {
-                    console.log("Shared slug received:", shared_slug);
+                    logger.info("Shared slug received:", shared_slug);
                     const url = buildUrl(
                         shared_slug,
                         "recommended",
