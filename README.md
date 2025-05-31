@@ -304,7 +304,7 @@ While *BetterSurf* is a robust and feature-rich application, the following point
 *   **Google Places API Versioning:**
     *   The Google Places API integration may generate console warnings from the SDK, recommending an update to a newer version. The currently implemented SDK version remains fully supported by Google and is not scheduled for deprecation for at least the next 12 months. Migration, when deemed necessary, is anticipated to be a straightforward process with minimal development overhead.
 *   **Transient Google Maps SDK Diagnostic:**
-    *   A transient CORS-related warning from the Google Maps SDK may occasionally appear in the browser console, typically upon the first interaction with the address input field. This diagnostic message is non-disruptive, and the address autocompletion feature initializes and functions correctly without any perceptible impact on its performance or the user experience.
+    *   A transient CORS-related error from the Google Maps SDK may occasionally appear in the browser console, typically upon the first page laod. This diagnostic message is non-disruptive, and the address autocompletion feature initializes and functions correctly without any perceptible impact on its performance or the user experience.
 
 ---
 
