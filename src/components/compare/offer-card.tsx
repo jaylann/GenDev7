@@ -4,11 +4,12 @@ import React, { FC, JSX, useMemo } from "react";
 import { motion } from "framer-motion";
 import {
     CalendarClock,
-    Database, DownloadIcon,
+    Database,
+    DownloadIcon,
     HardHat,
     Share2Icon,
     Tv2,
-    Wifi
+    Wifi,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import {

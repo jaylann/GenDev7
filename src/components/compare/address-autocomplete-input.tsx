@@ -330,7 +330,10 @@ export const AddressAutocompleteInput: React.FC<
                     if (value.trim() && suggestions.data.length > 0)
                         setShowSuggestions(true);
                 }}
-                placeholder={defaultAddressText || "Landsberger Str. 110, 80339 München, Germany"}
+                placeholder={
+                    defaultAddressText ||
+                    "Landsberger Str. 110, 80339 München, Germany"
+                }
                 className={cn(
                     "h-12 bg-slate-800/50 dark:bg-slate-800/50",
                     inputClassName,

@@ -47,12 +47,12 @@ interface OfferFilterPopoverProps {
 const POPOVER_COLLISION_PADDING: number = 16;
 
 export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
-                                                                    appliedFilters,
-                                                                    onApplyFiltersAction,
-                                                                    originalOffers,
-                                                                    isLoadingOffers,
-                                                                    activeFilterCount,
-                                                                }) => {
+    appliedFilters,
+    onApplyFiltersAction,
+    originalOffers,
+    isLoadingOffers,
+    activeFilterCount,
+}) => {
     const [isOpen, setIsOpen] = useState(false);
     const [draftFilters, setDraftFilters] =
         useState<FiltersState>(appliedFilters);
@@ -164,8 +164,8 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                             className="flex space-x-2.5"
                         >
                             {(uniqueContractDurations.length
-                                    ? uniqueContractDurations
-                                    : AVAILABLE_CONTRACT_DURATIONS
+                                ? uniqueContractDurations
+                                : AVAILABLE_CONTRACT_DURATIONS
                             )
                                 .filter((d) => [12, 24, 36].includes(d))
                                 .map((d) => (
@@ -203,12 +203,12 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                                         onCheckedChange={(checked) => {
                                             const newTypes = checked
                                                 ? [
-                                                    ...draftFilters.connectionTypes,
-                                                    type,
-                                                ]
+                                                      ...draftFilters.connectionTypes,
+                                                      type,
+                                                  ]
                                                 : draftFilters.connectionTypes.filter(
-                                                    (t) => t !== type,
-                                                );
+                                                      (t) => t !== type,
+                                                  );
                                             handleDraftFilterChange(
                                                 "connectionTypes",
                                                 newTypes,
@@ -249,12 +249,12 @@ export const OfferFilterPopover: FC<OfferFilterPopoverProps> = ({
                                             onCheckedChange={(checked) => {
                                                 const newList = checked
                                                     ? [
-                                                        ...draftFilters.selectedProviders,
-                                                        provider,
-                                                    ]
+                                                          ...draftFilters.selectedProviders,
+                                                          provider,
+                                                      ]
                                                     : draftFilters.selectedProviders.filter(
-                                                        (p) => p !== provider,
-                                                    );
+                                                          (p) => p !== provider,
+                                                      );
                                                 handleDraftFilterChange(
                                                     "selectedProviders",
                                                     newList,
