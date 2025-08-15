@@ -308,4 +308,7 @@ While *BetterSurf* is a robust application, the following points are noted for t
 
 ---
 
-Made with ❤️ by Justin Lanfermann
+<p align="center">
+  Made with ❤️ by <a href="https://lanfermann.dev">Justin Lanfermann</a>
+</p>
+
