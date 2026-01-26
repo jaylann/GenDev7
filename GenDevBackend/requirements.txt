@@ -124,7 +124,7 @@ python-dotenv==1.1.0
     #   gendev (pyproject.toml)
     #   pydantic-settings
     #   uvicorn
-python-multipart==0.0.20
+python-multipart==0.0.22
     # via gendev (pyproject.toml)
 pytz==2025.2
     # via
