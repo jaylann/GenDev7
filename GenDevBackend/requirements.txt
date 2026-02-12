@@ -134,7 +134,7 @@ pyyaml==6.0.2
     # via uvicorn
 redis==6.0.0
     # via gendev (pyproject.toml)
-requests==2.32.3
+requests==2.32.4
     # via
     #   pgeocode
     #   requests-file
